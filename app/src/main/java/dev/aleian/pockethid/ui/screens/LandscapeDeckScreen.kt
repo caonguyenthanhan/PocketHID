@@ -114,6 +114,7 @@ fun LandscapeDeckScreen(
     var showDiagnostics by remember { mutableStateOf(false) }
     var showPairingSheet by remember { mutableStateOf(false) }
     var showSettingsScreen by remember { mutableStateOf(false) }
+    var showCommandPalette by remember { mutableStateOf(false) }
 
     // Drag lock for Mouse mode
     var isDragLocked by remember { mutableStateOf(false) }
@@ -176,6 +177,16 @@ fun LandscapeDeckScreen(
         }
     }
 
+    fun sendConsumerKey(usageCode: Int, label: String = "") {
+        if (!canSendInput()) return
+        triggerHaptic()
+        lastScancode = "0x" + Integer.toHexString(usageCode).uppercase()
+        lastInputLabel = label.ifEmpty { lastScancode }
+        scope.launch {
+            transport?.sendConsumerClick(usageCode)
+        }
+    }
+
     fun cycleModifier(current: ModifierToggleState): ModifierToggleState {
         triggerHaptic()
         return when (current) {
@@ -225,7 +236,8 @@ fun LandscapeDeckScreen(
                 )
             },
             onDiagnosticsClick = { showDiagnostics = true },
-            onSettingsClick = { showSettingsScreen = true }
+            onSettingsClick = { showSettingsScreen = true },
+            onSearchClick = { showCommandPalette = true }
         )
 
         // GLOBAL 3-MODE SWITCHER (KEYBOARD | MOUSE | PRESENTER)
@@ -528,6 +540,160 @@ fun LandscapeDeckScreen(
                                 }
 
                                 2 -> {
+                                    // MEDIA MODE: Dedicated Audio & Playback Controller
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        // Row 1: Playback Controls
+                                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            DeckKey(text = "⏮ PREV", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendConsumerKey(HidConstants.CONSUMER_SCAN_PREV, "PrevTrack")
+                                            }
+                                            DeckKey(
+                                                text = "⏯ PLAY / PAUSE",
+                                                modifier = Modifier.weight(2f).fillMaxHeight(),
+                                                containerColor = SurfaceCard,
+                                                textColor = Color(0xFF10B981),
+                                                fontSize = 14.sp
+                                            ) {
+                                                sendConsumerKey(HidConstants.CONSUMER_PLAY_PAUSE, "Play/Pause")
+                                            }
+                                            DeckKey(text = "NEXT ⏭", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendConsumerKey(HidConstants.CONSUMER_SCAN_NEXT, "NextTrack")
+                                            }
+                                            DeckKey(text = "⏹ STOP", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                                                sendConsumerKey(HidConstants.CONSUMER_STOP, "Stop")
+                                            }
+                                        }
+
+                                        // Row 2: Volume & Audio Master
+                                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            DeckKey(
+                                                text = "VOL −",
+                                                modifier = Modifier.weight(1.5f).fillMaxHeight(),
+                                                textColor = TextPrimary,
+                                                fontSize = 13.sp
+                                            ) {
+                                                sendConsumerKey(HidConstants.CONSUMER_VOLUME_DOWN, "Vol-")
+                                            }
+                                            DeckKey(
+                                                text = "🔇 MUTE AUDIO",
+                                                modifier = Modifier.weight(2f).fillMaxHeight(),
+                                                containerColor = SurfaceCard,
+                                                textColor = Color(0xFFF59E0B),
+                                                fontSize = 13.sp
+                                            ) {
+                                                sendConsumerKey(HidConstants.CONSUMER_MUTE, "Mute")
+                                            }
+                                            DeckKey(
+                                                text = "VOL ＋",
+                                                modifier = Modifier.weight(1.5f).fillMaxHeight(),
+                                                textColor = TextPrimary,
+                                                fontSize = 13.sp
+                                            ) {
+                                                sendConsumerKey(HidConstants.CONSUMER_VOLUME_UP, "Vol+")
+                                            }
+                                        }
+
+                                        // Row 3: Video / Stream Shortcuts
+                                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            DeckKey(text = "SEEK −5s (◀)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_LEFT, 0, "Seek-5s")
+                                            }
+                                            DeckKey(text = "SPACE (Pause)", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendRawKey(HidConstants.KEY_SPACE, 0, "Space")
+                                            }
+                                            DeckKey(text = "FULLSCREEN (F)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_F, 0, "Fullscreen")
+                                            }
+                                            DeckKey(text = "SEEK +5s (▶)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_RIGHT, 0, "Seek+5s")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                3 -> {
+                                    // SYSTEM MODE: Windows & Virtual Desktops Universal Command Controller
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        // Row 1: Virtual Desktops Management
+                                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            DeckKey(text = "◀ DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendRawKey(
+                                                    HidConstants.KEY_LEFT,
+                                                    (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte(),
+                                                    "PrevDesktop"
+                                                )
+                                            }
+                                            DeckKey(text = "＋ NEW DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFF10B981)) {
+                                                sendRawKey(
+                                                    HidConstants.KEY_D,
+                                                    (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte(),
+                                                    "NewDesktop"
+                                                )
+                                            }
+                                            DeckKey(text = "✕ CLOSE DESK", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                                                sendRawKey(
+                                                    HidConstants.KEY_F4,
+                                                    (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte(),
+                                                    "CloseDesktop"
+                                                )
+                                            }
+                                            DeckKey(text = "DESKTOP ▶", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendRawKey(
+                                                    HidConstants.KEY_RIGHT,
+                                                    (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte(),
+                                                    "NextDesktop"
+                                                )
+                                            }
+                                        }
+
+                                        // Row 2: Windows System Shell
+                                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            DeckKey(text = "TASK VIEW (Win+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendRawKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI, "TaskView")
+                                            }
+                                            DeckKey(text = "SNIP TOOL (Win+⇧+S)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
+                                                sendRawKey(
+                                                    HidConstants.KEY_S,
+                                                    (HidConstants.MOD_LEFT_GUI.toInt() or HidConstants.MOD_LEFT_SHIFT.toInt()).toByte(),
+                                                    "SnipTool"
+                                                )
+                                            }
+                                            DeckKey(text = "EXPLORER (Win+E)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_E, HidConstants.MOD_LEFT_GUI, "Explorer")
+                                            }
+                                            DeckKey(text = "RUN (Win+R)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_R, HidConstants.MOD_LEFT_GUI, "Run")
+                                            }
+                                        }
+
+                                        // Row 3: Window Snap & Actions
+                                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            DeckKey(text = "SNAP ◀", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_LEFT, HidConstants.MOD_LEFT_GUI, "SnapLeft")
+                                            }
+                                            DeckKey(text = "MAXIMIZE ▲", modifier = Modifier.weight(1.1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                                                sendRawKey(HidConstants.KEY_UP, HidConstants.MOD_LEFT_GUI, "Maximize")
+                                            }
+                                            DeckKey(text = "SNAP ▶", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_RIGHT, HidConstants.MOD_LEFT_GUI, "SnapRight")
+                                            }
+                                            DeckKey(text = "ACTION CTR (Win+A)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                                                sendRawKey(HidConstants.KEY_A, HidConstants.MOD_LEFT_GUI, "ActionCenter")
+                                            }
+                                            DeckKey(text = "CLOSE (Alt+F4)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                                                sendRawKey(HidConstants.KEY_F4, HidConstants.MOD_LEFT_ALT, "CloseWindow")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                4 -> {
                                     // F-KEYS MODE: Clean 2-Row Layout + System Function Keys
                                     Column(
                                         modifier = Modifier.fillMaxWidth().weight(1f),
@@ -582,7 +748,7 @@ fun LandscapeDeckScreen(
                                     }
                                 }
 
-                                3 -> {
+                                5 -> {
                                     // NUMPAD MODE: Generous 4x4 Numeric Touchpad
                                     Column(
                                         modifier = Modifier.fillMaxWidth().weight(1f),
@@ -818,6 +984,14 @@ fun LandscapeDeckScreen(
                 showPairingSheet = false
                 showSettingsScreen = true
             }
+        )
+    }
+
+    // Command Palette Modal
+    if (showCommandPalette) {
+        CommandPaletteSheet(
+            transport = transport,
+            onDismiss = { showCommandPalette = false }
         )
     }
 }

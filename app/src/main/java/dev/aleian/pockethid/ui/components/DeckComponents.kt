@@ -27,7 +27,10 @@ import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,6 +83,7 @@ fun TopCommandBar(
     onToggleHaptic: () -> Unit,
     onDiagnosticsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -142,8 +146,21 @@ fun TopCommandBar(
             }
         }
 
-        // Right Utilities: Haptic Toggle + Telemetry/HUD + Settings
+        // Right Utilities: Search/Palette + Haptic Toggle + Telemetry/HUD + Settings
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Command Palette / Search Icon
+            IconButton(
+                onClick = onSearchClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Open Command Palette",
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
             // Haptic toggle indicator
             IconButton(
                 onClick = onToggleHaptic,
@@ -239,22 +256,23 @@ fun DeckModeSwitcher(
 }
 
 /**
- * Sub-mode Selector inside Keyboard: TYPE | SHORTCUTS | F-KEYS | NUM
+ * Sub-mode Selector inside Keyboard: TYPE | SHORTCUTS | MEDIA | SYSTEM | F-KEYS | NUMPAD
  */
 @Composable
 fun SubModeSelector(
-    selectedSubMode: Int, // 0: Type, 1: Shortcuts, 2: F-Keys, 3: Num
+    selectedSubMode: Int, // 0: Type, 1: Shortcuts, 2: Media, 3: System, 4: F-Keys, 5: Numpad
     onSelectSubMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val subModes = listOf("TYPE", "SHORTCUTS", "F-KEYS", "NUMPAD")
+    val subModes = listOf("TYPE", "SHORTCUTS", "MEDIA", "SYSTEM", "F-KEYS", "NUMPAD")
 
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(6.dp))
             .background(DarkSurfaceVariant)
             .border(1.dp, DarkBorder, RoundedCornerShape(6.dp))
-            .padding(2.dp),
+            .padding(2.dp)
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         subModes.forEachIndexed { index, name ->

@@ -135,6 +135,7 @@ fun MainScreen(
     var showPairingSheet by remember { mutableStateOf(false) }
     var showSettingsScreen by remember { mutableStateOf(false) }
     var showDiagnosticsSheet by remember { mutableStateOf(false) }
+    var showCommandPalette by remember { mutableStateOf(false) }
 
     if (showSettingsScreen) {
         SettingsScreen(
@@ -175,7 +176,8 @@ fun MainScreen(
                         )
                     },
                     onDiagnosticsClick = { showDiagnosticsSheet = true },
-                    onSettingsClick = { showSettingsScreen = true }
+                    onSettingsClick = { showSettingsScreen = true },
+                    onSearchClick = { showCommandPalette = true }
                 )
 
                 // Inline Contextual Alert Banners
@@ -392,6 +394,13 @@ fun MainScreen(
             DiagnosticsSheet(
                 connectionState = connectionState,
                 onDismiss = { showDiagnosticsSheet = false }
+            )
+        }
+
+        if (showCommandPalette) {
+            CommandPaletteSheet(
+                transport = transport,
+                onDismiss = { showCommandPalette = false }
             )
         }
     }

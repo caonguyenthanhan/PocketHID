@@ -3,8 +3,9 @@ package dev.aleian.pockethid.model
 object HidConstants {
     const val REPORT_ID_KEYBOARD: Byte = 1
     const val REPORT_ID_MOUSE: Byte = 2
+    const val REPORT_ID_CONSUMER: Byte = 3
 
-    // Combo Report Descriptor (Keyboard + Mouse)
+    // Combo Report Descriptor (Keyboard + Mouse + Consumer Media)
     val COMBO_REPORT_DESCRIPTOR = byteArrayOf(
         // Report ID 1 — Keyboard (8 byte: modifiers, reserved, 6 keycodes)
         0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x06.toByte(), 0xA1.toByte(), 0x01.toByte(), 0x85.toByte(), 0x01.toByte(),
@@ -21,8 +22,30 @@ object HidConstants {
         0x95.toByte(), 0x01.toByte(), 0x75.toByte(), 0x05.toByte(), 0x81.toByte(), 0x01.toByte(), // padding
         0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x30.toByte(), 0x09.toByte(), 0x31.toByte(), 0x09.toByte(), 0x38.toByte(),
         0x15.toByte(), 0x81.toByte(), 0x25.toByte(), 0x7F.toByte(), 0x75.toByte(), 0x08.toByte(), 0x95.toByte(), 0x03.toByte(), 0x81.toByte(), 0x06.toByte(), // X, Y, wheel relative
-        0xC0.toByte(), 0xC0.toByte()
+        0xC0.toByte(), 0xC0.toByte(),
+        // Report ID 3 — Consumer Control (Media)
+        0x05.toByte(), 0x0C.toByte(), // Usage Page (Consumer)
+        0x09.toByte(), 0x01.toByte(), // Usage (Consumer Control)
+        0xA1.toByte(), 0x01.toByte(), // Collection (Application)
+        0x85.toByte(), 0x03.toByte(), //   Report ID (3)
+        0x15.toByte(), 0x00.toByte(), //   Logical Minimum (0)
+        0x26.toByte(), 0xFF.toByte(), 0x03.toByte(), // Logical Maximum (0x03FF)
+        0x19.toByte(), 0x00.toByte(), //   Usage Minimum (0)
+        0x2A.toByte(), 0xFF.toByte(), 0x03.toByte(), // Usage Maximum (0x03FF)
+        0x95.toByte(), 0x01.toByte(), //   Report Count (1)
+        0x75.toByte(), 0x10.toByte(), //   Report Size (16)
+        0x81.toByte(), 0x00.toByte(), //   Input (Data, Array)
+        0xC0.toByte()                 // End Collection
     )
+
+    // Consumer Usages (Media)
+    const val CONSUMER_PLAY_PAUSE = 0x00CD
+    const val CONSUMER_SCAN_NEXT = 0x00B5
+    const val CONSUMER_SCAN_PREV = 0x00B6
+    const val CONSUMER_STOP = 0x00B7
+    const val CONSUMER_VOLUME_UP = 0x00E9
+    const val CONSUMER_VOLUME_DOWN = 0x00EA
+    const val CONSUMER_MUTE = 0x00E2
 
     // Modifier Masks for Keyboard Report
     const val MOD_LEFT_CTRL: Byte = 0x01

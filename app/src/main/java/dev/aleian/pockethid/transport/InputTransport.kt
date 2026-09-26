@@ -20,4 +20,5 @@ interface InputTransport {
     fun sendKeyPress(keyCode: Byte, modifiers: Byte): Boolean
     fun sendKeyRelease(): Boolean
     suspend fun sendKeyClick(keyCode: Byte, modifiers: Byte = 0)
+    fun sendConsumerClick(usageCode: Int): Boolean
 }

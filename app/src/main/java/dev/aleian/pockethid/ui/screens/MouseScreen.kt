@@ -137,6 +137,9 @@ fun MouseScreen(
     var touchDownTime by remember { mutableStateOf(0L) }
     var hasMovedBeyondDeadzone by remember { mutableStateOf(false) }
     var pointerCount by remember { mutableStateOf(1) }
+    var threeFingerStartX by remember { mutableStateOf(0f) }
+    var threeFingerStartY by remember { mutableStateOf(0f) }
+    var hasTriggeredThreeFingerGesture by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -174,6 +177,11 @@ fun MouseScreen(
 
                         MotionEvent.ACTION_POINTER_DOWN -> {
                             pointerCount = event.pointerCount
+                            if (pointerCount == 3) {
+                                threeFingerStartX = event.x
+                                threeFingerStartY = event.y
+                                hasTriggeredThreeFingerGesture = false
+                            }
                             true
                         }
 
@@ -201,13 +209,50 @@ fun MouseScreen(
 
                                 lastTouchX = currentX
                                 lastTouchY = currentY
-                            } else if (pointerCount >= 2) {
+                            } else if (pointerCount == 2) {
                                 val rawDy = currentY - lastTouchY
                                 val scrollAction = gestureInterpreter.processTwoFingerScroll(rawDy)
                                 if (scrollAction != null) {
                                     transport?.sendMouseMove(0, 0, HidConstants.MOUSE_BUTTON_NONE, scrollAction.wheel)
                                 }
                                 lastTouchY = currentY
+                            } else if (pointerCount >= 3 && !hasTriggeredThreeFingerGesture) {
+                                val deltaX = currentX - threeFingerStartX
+                                val deltaY = currentY - threeFingerStartY
+                                val threshold = 100f
+                                if (abs(deltaX) > threshold || abs(deltaY) > threshold) {
+                                    hasTriggeredThreeFingerGesture = true
+                                    triggerHaptic()
+                                    scope.launch {
+                                        if (abs(deltaX) > abs(deltaY)) {
+                                            if (deltaX > 0) {
+                                                // Swipe right -> Prev desktop
+                                                transport?.sendKeyClick(
+                                                    HidConstants.KEY_LEFT,
+                                                    (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                                                )
+                                                Toast.makeText(context, "Desktop ◀", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                // Swipe left -> Next desktop
+                                                transport?.sendKeyClick(
+                                                    HidConstants.KEY_RIGHT,
+                                                    (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                                                )
+                                                Toast.makeText(context, "Desktop ▶", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            if (deltaY < 0) {
+                                                // Swipe up -> Task View
+                                                transport?.sendKeyClick(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI)
+                                                Toast.makeText(context, "Task View", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                // Swipe down -> Show Desktop
+                                                transport?.sendKeyClick(HidConstants.KEY_D, HidConstants.MOD_LEFT_GUI)
+                                                Toast.makeText(context, "Show Desktop", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             true
                         }
@@ -218,6 +263,7 @@ fun MouseScreen(
                                 sendClick(HidConstants.MOUSE_BUTTON_LEFT)
                             }
                             gestureInterpreter.setDragging(false)
+                            hasTriggeredThreeFingerGesture = false
                             true
                         }
 
@@ -226,11 +272,13 @@ fun MouseScreen(
                             if (pointerCount == 2 && duration < 300 && !hasMovedBeyondDeadzone) {
                                 sendClick(HidConstants.MOUSE_BUTTON_RIGHT)
                             }
+                            hasTriggeredThreeFingerGesture = false
                             true
                         }
 
                         MotionEvent.ACTION_CANCEL -> {
                             gestureInterpreter.setDragging(false)
+                            hasTriggeredThreeFingerGesture = false
                             true
                         }
 
@@ -252,7 +300,7 @@ fun MouseScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "1 finger: move / tap click  •  2 fingers: scroll / right click",
+                    text = "1 finger: move / click  •  2: scroll  •  3: desktops / overview",
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     color = TextMuted.copy(alpha = 0.7f)

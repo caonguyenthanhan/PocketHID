@@ -201,6 +201,8 @@ class BtHidTransport(
                 hidDevice?.replyReport(device, type, id, ByteArray(8))
             } else if (id == HidConstants.REPORT_ID_MOUSE) {
                 hidDevice?.replyReport(device, type, id, ByteArray(4))
+            } else if (id == HidConstants.REPORT_ID_CONSUMER) {
+                hidDevice?.replyReport(device, type, id, ByteArray(2))
             }
         }
 
@@ -407,5 +409,37 @@ class BtHidTransport(
         delay(KEY_PRESS_DELAY_MS)
         sendKeyRelease()
         delay(KEY_PRESS_DELAY_MS)
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun sendConsumerClick(usageCode: Int): Boolean {
+        val hid = hidDevice ?: return false
+        val device = resolveActiveDevice() ?: return false
+        if (!isAppRegistered) return false
+
+        val report = byteArrayOf(
+            (usageCode and 0xFF).toByte(),
+            ((usageCode shr 8) and 0xFF).toByte()
+        )
+        val emptyReport = ByteArray(2)
+
+        return try {
+            val sent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), report)
+            if (sent && _connectionState.value !is ConnectionState.Connected) {
+                _connectionState.value = ConnectionState.Connected(device)
+            }
+            scope.launch {
+                delay(KEY_PRESS_DELAY_MS)
+                try {
+                    hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to release consumer key", e)
+                }
+            }
+            sent
+        } catch (e: Exception) {
+            Log.e(TAG, "sendConsumerClick failed", e)
+            false
+        }
     }
 }

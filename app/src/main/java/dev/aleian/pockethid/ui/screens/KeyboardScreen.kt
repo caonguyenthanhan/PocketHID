@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,12 +60,15 @@ import androidx.core.widget.doAfterTextChanged
 import dev.aleian.pockethid.mapping.KeyMapper
 import dev.aleian.pockethid.model.HidConstants
 import dev.aleian.pockethid.transport.InputTransport
+import dev.aleian.pockethid.ui.components.DeckKey
+import dev.aleian.pockethid.ui.components.SubModeSelector
 import dev.aleian.pockethid.ui.theme.AccentGreen
 import dev.aleian.pockethid.ui.theme.DarkBg
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurface
 import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
 import dev.aleian.pockethid.ui.theme.PrimaryBlue
+import dev.aleian.pockethid.ui.theme.SurfaceCard
 import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
@@ -91,6 +96,8 @@ fun KeyboardScreen(
     val view = LocalView.current
     val scope = rememberCoroutineScope()
     val settings by dev.aleian.pockethid.model.SettingsRepository.settings.collectAsState()
+
+    var selectedLayer by remember { mutableIntStateOf(0) } // 0: Type, 1: Shortcuts, 2: Media, 3: System, 4: F-Keys, 5: Numpad
 
     var ctrlState by remember { mutableStateOf(ModifierState.OFF) }
     var shiftState by remember { mutableStateOf(ModifierState.OFF) }
@@ -150,6 +157,15 @@ fun KeyboardScreen(
         }
     }
 
+    fun sendConsumerKey(usageCode: Int, label: String = "") {
+        if (!canSendInput()) return
+        triggerHaptic()
+        lastSentCharInfo = label
+        scope.launch {
+            transport?.sendConsumerClick(usageCode)
+        }
+    }
+
     fun cycleModifier(currentState: ModifierState): ModifierState {
         triggerHaptic()
         return when (currentState) {
@@ -201,7 +217,8 @@ fun KeyboardScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Sticky Modifiers Bar
         Row(
@@ -214,251 +231,530 @@ fun KeyboardScreen(
             ModifierButton("Win/Cmd", guiState, Modifier.weight(1.2f)) { guiState = cycleModifier(guiState) }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        // SubMode Layer Selector (TYPE | SHORTCUTS | MEDIA | SYSTEM | F-KEYS | NUMPAD)
+        SubModeSelector(
+            selectedSubMode = selectedLayer,
+            onSelectSubMode = { selectedLayer = it },
+            modifier = Modifier.fillMaxWidth()
+        )
 
-        // Special Keys Row (Horizontal Scroll)
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            contentPadding = PaddingValues(horizontal = 2.dp)
-        ) {
-            items(specialKeys) { key ->
-                SpecialKeyButton(label = key.label) {
-                    lastSentCharInfo = "Sent key: ${key.label}"
-                    sendKey(key.keyCode, key.baseModifier)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Quick Shortcuts Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            QuickShortcutButton("Ctrl+C", Modifier.weight(1f)) {
-                sendKey(HidConstants.KEY_C, HidConstants.MOD_LEFT_CTRL)
-                lastSentCharInfo = "Sent Ctrl+C"
-                terminalStreamText = "^C (SIGINT)"
-            }
-            QuickShortcutButton("Ctrl+V", Modifier.weight(1f)) {
-                sendKey(HidConstants.KEY_V, HidConstants.MOD_LEFT_CTRL)
-                lastSentCharInfo = "Sent Ctrl+V"
-                terminalStreamText = "^V (PASTE)"
-            }
-            QuickShortcutButton("Ctrl+Z", Modifier.weight(1f)) {
-                sendKey(HidConstants.KEY_Z, HidConstants.MOD_LEFT_CTRL)
-                lastSentCharInfo = "Sent Ctrl+Z"
-                terminalStreamText = "^Z (TSTP)"
-            }
-            QuickShortcutButton("Alt+Tab", Modifier.weight(1f)) {
-                sendKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_ALT)
-                lastSentCharInfo = "Sent Alt+Tab"
-                terminalStreamText = "Alt+Tab (SWITCH)"
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Live Keystroke Terminal & Input Monitor (from mockups)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(DarkSurfaceVariant)
-                .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
-                .padding(10.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        // Dynamic Active Layer View
+        when (selectedLayer) {
+            0 -> {
+                // LAYER 0: TYPE (Special Keys + Quick Shortcuts + Keystroke Monitor + Tap to Type)
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(AccentGreen)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "HID STREAM INJECTION",
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            color = TextMuted
-                        )
-                    }
-                    Text(
-                        text = "rate: ${settings.pasteDelayMs}ms",
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = PrimaryBlue
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(DarkBg)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Special Keys Row (Horizontal Scroll)
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp)
                     ) {
-                        Text(
-                            text = "host> ",
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            color = AccentGreen
-                        )
-                        Text(
-                            text = terminalStreamText,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = TextPrimary,
-                            maxLines = 1
-                        )
+                        items(specialKeys) { key ->
+                            SpecialKeyButton(label = key.label) {
+                                lastSentCharInfo = "Sent key: ${key.label}"
+                                sendKey(key.keyCode, key.baseModifier)
+                            }
+                        }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(DarkSurfaceVariant)
-                                .clickable { terminalStreamText = "ready>" },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("✕", fontSize = 10.sp, color = TextMuted)
+                    // Quick Shortcuts Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        QuickShortcutButton("Ctrl+C", Modifier.weight(1f)) {
+                            sendKey(HidConstants.KEY_C, HidConstants.MOD_LEFT_CTRL)
+                            lastSentCharInfo = "Sent Ctrl+C"
+                            terminalStreamText = "^C (SIGINT)"
                         }
+                        QuickShortcutButton("Ctrl+V", Modifier.weight(1f)) {
+                            sendKey(HidConstants.KEY_V, HidConstants.MOD_LEFT_CTRL)
+                            lastSentCharInfo = "Sent Ctrl+V"
+                            terminalStreamText = "^V (PASTE)"
+                        }
+                        QuickShortcutButton("Ctrl+Z", Modifier.weight(1f)) {
+                            sendKey(HidConstants.KEY_Z, HidConstants.MOD_LEFT_CTRL)
+                            lastSentCharInfo = "Sent Ctrl+Z"
+                            terminalStreamText = "^Z (TSTP)"
+                        }
+                        QuickShortcutButton("Alt+Tab", Modifier.weight(1f)) {
+                            sendKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_ALT)
+                            lastSentCharInfo = "Sent Alt+Tab"
+                            terminalStreamText = "Alt+Tab (SWITCH)"
+                        }
+                    }
 
-                        Box(
-                            modifier = Modifier
-                                .height(26.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(PrimaryBlue.copy(alpha = 0.2f))
-                                .clickable {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
-                                    val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
-                                    if (!clip.isNullOrEmpty()) {
-                                        terminalStreamText = clip.take(24) + "..."
-                                        scope.launch {
-                                            for (char in clip) {
-                                                val stroke = KeyMapper.mapCharToStroke(char)
-                                                if (stroke != null) {
-                                                    transport?.sendKeyClick(stroke.keyCode, stroke.modifiers)
-                                                    kotlinx.coroutines.delay(settings.pasteDelayMs)
+                    // Live Keystroke Terminal & Input Monitor
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(DarkSurfaceVariant)
+                            .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+                            .padding(10.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(RoundedCornerShape(3.dp))
+                                            .background(AccentGreen)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "HID STREAM INJECTION",
+                                        fontSize = 9.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextMuted
+                                    )
+                                }
+                                Text(
+                                    text = "rate: ${settings.pasteDelayMs}ms",
+                                    fontSize = 9.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = PrimaryBlue
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(DarkBg)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "host> ",
+                                        fontSize = 11.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AccentGreen
+                                    )
+                                    Text(
+                                        text = terminalStreamText,
+                                        fontSize = 11.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = TextPrimary,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(26.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(DarkSurfaceVariant)
+                                            .clickable { terminalStreamText = "ready>" },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("✕", fontSize = 10.sp, color = TextMuted)
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .height(26.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(PrimaryBlue.copy(alpha = 0.2f))
+                                            .clickable {
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                                val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
+                                                if (!clip.isNullOrEmpty()) {
+                                                    terminalStreamText = clip.take(24) + "..."
+                                                    scope.launch {
+                                                        for (char in clip) {
+                                                            val stroke = KeyMapper.mapCharToStroke(char)
+                                                            if (stroke != null) {
+                                                                transport?.sendKeyClick(stroke.keyCode, stroke.modifiers)
+                                                                kotlinx.coroutines.delay(settings.pasteDelayMs)
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        }
+                                            .padding(horizontal = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "PASTE",
+                                            fontSize = 9.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold,
+                                            color = PrimaryBlue
+                                        )
                                     }
                                 }
-                                .padding(horizontal = 8.dp),
-                            contentAlignment = Alignment.Center
+                            }
+                        }
+                    }
+
+                    // IME Input Area (Transparent EditText inside)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(DarkSurface)
+                            .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
+                            .clickable { focusHiddenInput() }
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Keyboard,
+                                contentDescription = null,
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(40.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
                             Text(
-                                text = "PASTE",
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryBlue
+                                text = "Tap to open phone keyboard",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = TextPrimary
+                            )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = lastSentCharInfo,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = TextMuted
+                            )
+
+                            // Invisible Android EditText for capturing system IME
+                            AndroidView(
+                                factory = { ctx ->
+                                    EditText(ctx).apply {
+                                        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                                        setTextColor(android.graphics.Color.TRANSPARENT)
+                                        alpha = 0.01f
+
+                                        setOnKeyListener { _, keyCode, event ->
+                                            if (event.action == KeyEvent.ACTION_DOWN) {
+                                                val stroke = KeyMapper.mapAndroidKeyEvent(keyCode)
+                                                if (stroke != null) {
+                                                    sendKey(stroke.keyCode, stroke.modifiers)
+                                                    lastSentCharInfo = "Key code: $keyCode"
+                                                    return@setOnKeyListener true
+                                                }
+                                            }
+                                            false
+                                        }
+
+                                        doAfterTextChanged { editable ->
+                                            val text = editable?.toString() ?: ""
+                                            if (text.isNotEmpty()) {
+                                                for (char in text) {
+                                                    val stroke = KeyMapper.mapCharToStroke(char)
+                                                    if (stroke != null) {
+                                                        sendKey(stroke.keyCode, stroke.modifiers)
+                                                        lastSentCharInfo = "Typed: '$char'"
+                                                    }
+                                                }
+                                                editable?.clear()
+                                            }
+                                        }
+
+                                        hiddenEditText = this
+                                    }
+                                },
+                                modifier = Modifier.size(1.dp)
                             )
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // IME Input Area (Transparent EditText inside)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .clip(RoundedCornerShape(16.dp))
-                .background(DarkSurface)
-                .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
-                .clickable { focusHiddenInput() }
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Keyboard,
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(40.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Tap to open phone keyboard",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = lastSentCharInfo,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TextMuted
-                )
-
-                // Invisible Android EditText for capturing system IME
-                AndroidView(
-                    factory = { ctx ->
-                        EditText(ctx).apply {
-                            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                            setTextColor(android.graphics.Color.TRANSPARENT)
-                            alpha = 0.01f
-
-                            setOnKeyListener { _, keyCode, event ->
-                                if (event.action == KeyEvent.ACTION_DOWN) {
-                                    val stroke = KeyMapper.mapAndroidKeyEvent(keyCode)
-                                    if (stroke != null) {
-                                        sendKey(stroke.keyCode, stroke.modifiers)
-                                        lastSentCharInfo = "Key code: $keyCode"
-                                        return@setOnKeyListener true
-                                    }
-                                }
-                                false
-                            }
-
-                            doAfterTextChanged { editable ->
-                                val text = editable?.toString() ?: ""
-                                if (text.isNotEmpty()) {
-                                    for (char in text) {
-                                        val stroke = KeyMapper.mapCharToStroke(char)
-                                        if (stroke != null) {
-                                            sendKey(stroke.keyCode, stroke.modifiers)
-                                            lastSentCharInfo = "Typed: '$char'"
-                                        }
-                                    }
-                                    editable?.clear()
-                                }
-                            }
-
-                            hiddenEditText = this
+            1 -> {
+                // LAYER 1: SHORTCUTS (Matrix Grid of High-Frequency Workflow Actions)
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Row 1: Clipboard
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "COPY (^C)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_C, HidConstants.MOD_LEFT_CTRL)
                         }
-                    },
-                    modifier = Modifier.size(1.dp)
-                )
+                        DeckKey(text = "PASTE (^V)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_V, HidConstants.MOD_LEFT_CTRL)
+                        }
+                        DeckKey(text = "CUT (^X)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_X, HidConstants.MOD_LEFT_CTRL)
+                        }
+                        DeckKey(text = "ALL (^A)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_A, HidConstants.MOD_LEFT_CTRL)
+                        }
+                    }
+
+                    // Row 2: History & Actions
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "UNDO (^Z)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
+                            sendKey(HidConstants.KEY_Z, HidConstants.MOD_LEFT_CTRL)
+                        }
+                        DeckKey(text = "REDO (^Y)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
+                            sendKey(HidConstants.KEY_Y, HidConstants.MOD_LEFT_CTRL)
+                        }
+                        DeckKey(text = "SAVE (^S)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFF10B981)) {
+                            sendKey(HidConstants.KEY_S, HidConstants.MOD_LEFT_CTRL)
+                        }
+                        DeckKey(text = "FIND (^F)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_F, HidConstants.MOD_LEFT_CTRL)
+                        }
+                    }
+
+                    // Row 3: Windows Management
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "ALT+TAB", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_ALT)
+                        }
+                        DeckKey(text = "DESKTOP (Win+D)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_D, HidConstants.MOD_LEFT_GUI)
+                        }
+                        DeckKey(text = "TASK MGR", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(
+                                HidConstants.KEY_ESC,
+                                (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_SHIFT.toInt()).toByte()
+                            )
+                        }
+                        DeckKey(text = "LOCK (Win+L)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            sendKey(HidConstants.KEY_L, HidConstants.MOD_LEFT_GUI)
+                        }
+                    }
+
+                    // Row 4: Instant Navigation Keys
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "SNIP TOOL (Win+⇧+S)", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
+                            sendKey(
+                                HidConstants.KEY_S,
+                                (HidConstants.MOD_LEFT_GUI.toInt() or HidConstants.MOD_LEFT_SHIFT.toInt()).toByte()
+                            )
+                        }
+                        DeckKey(text = "ENTER", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_ENTER)
+                        }
+                        DeckKey(text = "ESC", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_ESC)
+                        }
+                        DeckKey(text = "TAB", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_TAB)
+                        }
+                    }
+                }
+            }
+
+            2 -> {
+                // LAYER 2: MEDIA (Media Remote Deck)
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Row 1: Playback Controls
+                    Row(modifier = Modifier.fillMaxWidth().weight(1.2f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "⏮ PREV", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendConsumerKey(HidConstants.CONSUMER_SCAN_PREV, "PrevTrack")
+                        }
+                        DeckKey(
+                            text = "⏯ PLAY / PAUSE",
+                            modifier = Modifier.weight(2f).fillMaxHeight(),
+                            containerColor = SurfaceCard,
+                            textColor = Color(0xFF10B981),
+                            fontSize = 15.sp
+                        ) {
+                            sendConsumerKey(HidConstants.CONSUMER_PLAY_PAUSE, "Play/Pause")
+                        }
+                        DeckKey(text = "NEXT ⏭", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendConsumerKey(HidConstants.CONSUMER_SCAN_NEXT, "NextTrack")
+                        }
+                    }
+
+                    // Row 2: Volume & Mute
+                    Row(modifier = Modifier.fillMaxWidth().weight(1.2f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "VOL −", modifier = Modifier.weight(1.2f).fillMaxHeight(), fontSize = 14.sp) {
+                            sendConsumerKey(HidConstants.CONSUMER_VOLUME_DOWN, "Vol-")
+                        }
+                        DeckKey(
+                            text = "🔇 MUTE AUDIO",
+                            modifier = Modifier.weight(1.6f).fillMaxHeight(),
+                            containerColor = SurfaceCard,
+                            textColor = Color(0xFFF59E0B),
+                            fontSize = 14.sp
+                        ) {
+                            sendConsumerKey(HidConstants.CONSUMER_MUTE, "Mute")
+                        }
+                        DeckKey(text = "VOL ＋", modifier = Modifier.weight(1.2f).fillMaxHeight(), fontSize = 14.sp) {
+                            sendConsumerKey(HidConstants.CONSUMER_VOLUME_UP, "Vol+")
+                        }
+                    }
+
+                    // Row 3: Video Seek & Fullscreen
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "SEEK −5s (◀)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_LEFT)
+                        }
+                        DeckKey(text = "SPACE (Pause)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_SPACE)
+                        }
+                        DeckKey(text = "FULLSCREEN (F)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_F)
+                        }
+                        DeckKey(text = "SEEK +5s (▶)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_RIGHT)
+                        }
+                    }
+                }
+            }
+
+            3 -> {
+                // LAYER 3: SYSTEM (Windows & Virtual Desktops Controller)
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Row 1: Virtual Desktops
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "◀ DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(
+                                HidConstants.KEY_LEFT,
+                                (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            )
+                        }
+                        DeckKey(text = "＋ NEW", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFF10B981)) {
+                            sendKey(
+                                HidConstants.KEY_D,
+                                (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            )
+                        }
+                        DeckKey(text = "✕ CLOSE", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            sendKey(
+                                HidConstants.KEY_F4,
+                                (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            )
+                        }
+                        DeckKey(text = "DESKTOP ▶", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(
+                                HidConstants.KEY_RIGHT,
+                                (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            )
+                        }
+                    }
+
+                    // Row 2: Windows System Shell
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "TASK VIEW (Win+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI)
+                        }
+                        DeckKey(text = "SNIP TOOL (Win+⇧+S)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
+                            sendKey(
+                                HidConstants.KEY_S,
+                                (HidConstants.MOD_LEFT_GUI.toInt() or HidConstants.MOD_LEFT_SHIFT.toInt()).toByte()
+                            )
+                        }
+                        DeckKey(text = "EXPLORER (Win+E)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_E, HidConstants.MOD_LEFT_GUI)
+                        }
+                    }
+
+                    // Row 3: Window Management & Run
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "SNAP ◀", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_LEFT, HidConstants.MOD_LEFT_GUI)
+                        }
+                        DeckKey(text = "MAXIMIZE ▲", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            sendKey(HidConstants.KEY_UP, HidConstants.MOD_LEFT_GUI)
+                        }
+                        DeckKey(text = "SNAP ▶", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_RIGHT, HidConstants.MOD_LEFT_GUI)
+                        }
+                        DeckKey(text = "RUN (Win+R)", modifier = Modifier.weight(1.1f).fillMaxHeight()) {
+                            sendKey(HidConstants.KEY_R, HidConstants.MOD_LEFT_GUI)
+                        }
+                        DeckKey(text = "CLOSE (Alt+F4)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            sendKey(HidConstants.KEY_F4, HidConstants.MOD_LEFT_ALT)
+                        }
+                    }
+                }
+            }
+
+            4 -> {
+                // LAYER 4: F-KEYS (F1 - F12 + Extended Keys)
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("F1" to HidConstants.KEY_F1, "F2" to HidConstants.KEY_F2, "F3" to HidConstants.KEY_F3, "F4" to HidConstants.KEY_F4, "F5" to HidConstants.KEY_F5, "F6" to HidConstants.KEY_F6).forEach { (lbl, code) ->
+                            DeckKey(text = lbl, modifier = Modifier.weight(1f).fillMaxHeight()) { sendKey(code) }
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("F7" to HidConstants.KEY_F7, "F8" to HidConstants.KEY_F8, "F9" to HidConstants.KEY_F9, "F10" to HidConstants.KEY_F10, "F11" to HidConstants.KEY_F11, "F12" to HidConstants.KEY_F12).forEach { (lbl, code) ->
+                            DeckKey(text = lbl, modifier = Modifier.weight(1f).fillMaxHeight()) { sendKey(code) }
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        DeckKey(text = "PRTSC", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) { sendKey(HidConstants.KEY_PRINTSCREEN) }
+                        DeckKey(text = "HOME", modifier = Modifier.weight(1f).fillMaxHeight()) { sendKey(HidConstants.KEY_HOME) }
+                        DeckKey(text = "END", modifier = Modifier.weight(1f).fillMaxHeight()) { sendKey(HidConstants.KEY_END) }
+                        DeckKey(text = "PGUP", modifier = Modifier.weight(1f).fillMaxHeight()) { sendKey(HidConstants.KEY_PAGEUP) }
+                        DeckKey(text = "PGDN", modifier = Modifier.weight(1f).fillMaxHeight()) { sendKey(HidConstants.KEY_PAGEDOWN) }
+                    }
+                }
+            }
+
+            5 -> {
+                // LAYER 5: NUMPAD (Full Numeric Keypad)
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "7", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP7) }
+                        DeckKey(text = "8", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP8) }
+                        DeckKey(text = "9", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP9) }
+                        DeckKey(text = "/", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp, textColor = PrimaryBlue) { sendKey(HidConstants.KEY_KPSLASH) }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "4", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP4) }
+                        DeckKey(text = "5", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP5) }
+                        DeckKey(text = "6", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP6) }
+                        DeckKey(text = "*", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp, textColor = PrimaryBlue) { sendKey(HidConstants.KEY_KPASTERISK) }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "1", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP1) }
+                        DeckKey(text = "2", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP2) }
+                        DeckKey(text = "3", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP3) }
+                        DeckKey(text = "-", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp, textColor = PrimaryBlue) { sendKey(HidConstants.KEY_KPMINUS) }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "0", modifier = Modifier.weight(2f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KP0) }
+                        DeckKey(text = ".", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp) { sendKey(HidConstants.KEY_KPDOT) }
+                        DeckKey(text = "+", modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 16.sp, textColor = PrimaryBlue) { sendKey(HidConstants.KEY_KPPLUS) }
+                    }
+                }
             }
         }
     }

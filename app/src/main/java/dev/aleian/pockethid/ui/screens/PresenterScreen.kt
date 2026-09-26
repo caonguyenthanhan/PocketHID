@@ -56,6 +56,16 @@ import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 
+import android.view.MotionEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.Highlight
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PresenterScreen(
     transport: InputTransport?,
@@ -64,6 +74,10 @@ fun PresenterScreen(
     val view = LocalView.current
     val scope = rememberCoroutineScope()
     val settings by SettingsRepository.settings.collectAsState()
+
+    var showPointerPad by remember { mutableStateOf(false) }
+    var lastPointerX by remember { mutableStateOf(0f) }
+    var lastPointerY by remember { mutableStateOf(0f) }
 
     fun triggerHaptic() {
         if (settings.keyboardHaptics) {
@@ -81,13 +95,13 @@ fun PresenterScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Top Secondary Function Cluster
+        // Top Primary Slide Control Actions
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             PresenterUtilityButton(
                 icon = Icons.Default.PlayArrow,
@@ -98,6 +112,28 @@ fun PresenterScreen(
             }
 
             PresenterUtilityButton(
+                icon = Icons.Default.FastForward,
+                label = "RESUME ⇧F5",
+                modifier = Modifier.weight(1f)
+            ) {
+                sendKey(HidConstants.KEY_F5, HidConstants.MOD_LEFT_SHIFT)
+            }
+
+            PresenterUtilityButton(
+                icon = Icons.Default.Close,
+                label = "EXIT ESC",
+                modifier = Modifier.weight(1f)
+            ) {
+                sendKey(HidConstants.KEY_ESC)
+            }
+        }
+
+        // Secondary Utility Bar: Screen Blanking & Laser Pointer Mode Toggle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PresenterUtilityButton(
                 icon = Icons.Default.VisibilityOff,
                 label = "BLACK (B)",
                 modifier = Modifier.weight(1f)
@@ -106,11 +142,76 @@ fun PresenterScreen(
             }
 
             PresenterUtilityButton(
-                icon = Icons.Default.Close,
-                label = "EXIT (ESC)",
+                icon = Icons.Default.Lightbulb,
+                label = "WHITE (W)",
                 modifier = Modifier.weight(1f)
             ) {
-                sendKey(HidConstants.KEY_ESC)
+                sendKey(HidConstants.KEY_W)
+            }
+
+            PresenterUtilityButton(
+                icon = Icons.Default.Highlight,
+                label = if (showPointerPad) "POINTER ON" else "POINTER",
+                modifier = Modifier.weight(1f)
+            ) {
+                triggerHaptic()
+                showPointerPad = !showPointerPad
+            }
+        }
+
+        // Optional Laser Pointer Trackpad Zone
+        AnimatedVisibility(visible = showPointerPad) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(DarkSurfaceVariant)
+                    .border(1.dp, PrimaryBlue.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
+                    .pointerInteropFilter { event ->
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> {
+                                lastPointerX = event.x
+                                lastPointerY = event.y
+                                true
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                val dx = (event.x - lastPointerX).toInt()
+                                val dy = (event.y - lastPointerY).toInt()
+                                if (dx != 0 || dy != 0) {
+                                    transport?.sendMouseMove(dx, dy, HidConstants.MOUSE_BUTTON_NONE, 0)
+                                }
+                                lastPointerX = event.x
+                                lastPointerY = event.y
+                                true
+                            }
+                            else -> true
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Highlight,
+                        contentDescription = null,
+                        tint = PrimaryBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "LASER POINTER TRACKPAD",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                    Text(
+                        text = "Glide thumb to guide laser cursor on slide",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextMuted
+                    )
+                }
             }
         }
 
@@ -119,7 +220,7 @@ fun PresenterScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Previous Slide Button (Left Half)
             PresenterSlideButton(
