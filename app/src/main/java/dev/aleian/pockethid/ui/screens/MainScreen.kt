@@ -22,15 +22,12 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BluetoothConnected
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mouse
+import androidx.compose.material.icons.filled.Slideshow
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.WarningAmber
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -58,17 +55,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
-import dev.aleian.pockethid.ui.components.ConnectionBar
+import dev.aleian.pockethid.ui.components.TopCommandBar
 import dev.aleian.pockethid.ui.theme.AccentAmber
-import dev.aleian.pockethid.ui.theme.AccentGreen
 import dev.aleian.pockethid.ui.theme.DarkBg
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurface
 import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
 import dev.aleian.pockethid.ui.theme.ErrorContainer
 import dev.aleian.pockethid.ui.theme.PrimaryBlue
-import dev.aleian.pockethid.ui.theme.StatusConnected
 import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
@@ -83,11 +79,15 @@ fun MainScreen(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val settings by SettingsRepository.settings.collectAsState()
 
-    // When the phone is turned horizontally, launch the Landscape Engineering Deck
+    // When the phone is turned horizontally, launch the Landscape Command Deck
     if (isLandscape) {
         LandscapeDeckScreen(
             transport = transport,
+            pairedDevices = pairedDevices,
+            onConnectToDevice = onConnectToDevice,
+            onMakeDiscoverable = onMakeDiscoverable,
             onExitLandscape = onToggleOrientation,
             onToggleOrientation = onToggleOrientation
         )
@@ -130,9 +130,10 @@ fun MainScreen(
         }
     }
 
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Mouse, 1: Keyboard
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Presenter
     var showPairingSheet by remember { mutableStateOf(false) }
     var showSettingsScreen by remember { mutableStateOf(false) }
+    var showDiagnosticsSheet by remember { mutableStateOf(false) }
 
     if (showSettingsScreen) {
         SettingsScreen(
@@ -162,12 +163,18 @@ fun MainScreen(
         },
         topBar = {
             Column {
-                ConnectionBar(
-                    state = connectionState,
-                    onPairClick = { showPairingSheet = true },
-                    onDisconnectClick = { transport?.disconnect() },
-                    onSettingsClick = { showSettingsScreen = true },
-                    onRotateClick = onToggleOrientation
+                TopCommandBar(
+                    connectionState = connectionState,
+                    hapticEnabled = settings.keyboardHaptics,
+                    onRotateClick = onToggleOrientation,
+                    onHostClick = { showPairingSheet = true },
+                    onToggleHaptic = {
+                        SettingsRepository.updateSettings(
+                            settings.copy(keyboardHaptics = !settings.keyboardHaptics)
+                        )
+                    },
+                    onDiagnosticsClick = { showDiagnosticsSheet = true },
+                    onSettingsClick = { showSettingsScreen = true }
                 )
 
                 // Inline Contextual Alert Banners
@@ -181,10 +188,10 @@ fun MainScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 2.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(DarkSurfaceVariant)
-                                    .border(1.dp, DarkBorder, RoundedCornerShape(10.dp))
+                                    .border(1.dp, DarkBorder, RoundedCornerShape(8.dp))
                                     .clickable { showPairingSheet = true }
                                     .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
@@ -224,10 +231,10 @@ fun MainScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 2.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(DarkSurfaceVariant)
-                                    .border(1.dp, PrimaryBlue.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                    .border(1.dp, PrimaryBlue.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                                     .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -239,7 +246,7 @@ fun MainScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Đang kết nối tới ${state.device?.name ?: "máy tính"}... Vui lòng xác nhận trên màn hình nếu có yêu cầu.",
+                                        text = "Đang kết nối tới ${state.device?.name ?: "máy tính"}...",
                                         fontSize = 11.sp,
                                         color = PrimaryBlue
                                     )
@@ -251,10 +258,10 @@ fun MainScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 2.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(ErrorContainer.copy(alpha = 0.25f))
-                                    .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                    .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                                     .clickable { showPairingSheet = true }
                                     .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
@@ -303,8 +310,8 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
-                    label = { Text("Mouse", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
+                    label = { Text("Keyboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -316,8 +323,21 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
-                    label = { Text("Keyboard", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
+                    label = { Text("Mouse", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = PrimaryBlue,
+                        selectedTextColor = PrimaryBlue,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted,
+                        indicatorColor = DarkSurface
+                    )
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
+                    label = { Text("Presenter", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -335,8 +355,9 @@ fun MainScreen(
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> MouseScreen(transport = transport)
-                1 -> KeyboardScreen(transport = transport)
+                0 -> KeyboardScreen(transport = transport)
+                1 -> MouseScreen(transport = transport)
+                2 -> PresenterScreen(transport = transport)
             }
         }
 
@@ -354,6 +375,13 @@ fun MainScreen(
                     showPairingSheet = false
                     showSettingsScreen = true
                 }
+            )
+        }
+
+        if (showDiagnosticsSheet) {
+            DiagnosticsSheet(
+                connectionState = connectionState,
+                onDismiss = { showDiagnosticsSheet = false }
             )
         }
     }
