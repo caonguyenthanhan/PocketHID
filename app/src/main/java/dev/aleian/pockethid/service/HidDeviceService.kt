@@ -154,7 +154,8 @@ class HidDeviceService : Service() {
     private fun acquireWakeLock() {
         try {
             if (wakeLock?.isHeld == false) {
-                wakeLock?.acquire(10 * 60 * 1000L) // 10 minutes max
+                // PARTIAL_WAKE_LOCK keeps CPU awake for Bluetooth packets while display is off/sleeping
+                wakeLock?.acquire()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error acquiring wake lock", e)

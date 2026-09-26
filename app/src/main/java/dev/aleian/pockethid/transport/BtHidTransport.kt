@@ -29,6 +29,7 @@ class BtHidTransport(
     companion object {
         private const val TAG = "BtHidTransport"
         private const val KEY_PRESS_DELAY_MS = 12L
+        private const val CONSUMER_PRESS_DELAY_MS = 75L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -203,6 +204,8 @@ class BtHidTransport(
                 hidDevice?.replyReport(device, type, id, ByteArray(4))
             } else if (id == HidConstants.REPORT_ID_CONSUMER) {
                 hidDevice?.replyReport(device, type, id, ByteArray(2))
+            } else if (id == HidConstants.REPORT_ID_GAMEPAD) {
+                hidDevice?.replyReport(device, type, id, ByteArray(13))
             }
         }
 
@@ -229,9 +232,9 @@ class BtHidTransport(
         try {
             val sdp = BluetoothHidDeviceAppSdpSettings(
                 "PocketHID",
-                "PocketHID Keyboard & Mouse",
+                "PocketHID Composite Controller",
                 "Aleian",
-                0xC0.toByte(), // Combo (Keyboard + Mouse)
+                (BluetoothHidDevice.SUBCLASS1_COMBO.toInt() or BluetoothHidDevice.SUBCLASS2_GAMEPAD.toInt()).toByte(),
                 HidConstants.COMBO_REPORT_DESCRIPTOR
             )
             val qos = BluetoothHidDeviceAppQosSettings(
@@ -364,18 +367,27 @@ class BtHidTransport(
         }
     }
 
+    override suspend fun sendMouseClick(buttons: Byte) {
+        sendMouseMove(0, 0, buttons, 0)
+        delay(16)
+        sendMouseMove(0, 0, HidConstants.MOUSE_BUTTON_NONE, 0)
+        delay(16)
+    }
+
     @SuppressLint("MissingPermission")
-    override fun sendKeyPress(keyCode: Byte, modifiers: Byte): Boolean {
+    override fun sendKeyReport(keyCodes: ByteArray, modifiers: Byte): Boolean {
         val hid = hidDevice ?: return false
         val device = resolveActiveDevice() ?: return false
         if (!isAppRegistered) return false
 
-        val keyboardReport = byteArrayOf(
-            modifiers,
-            0x00, // reserved
-            keyCode,
-            0x00, 0x00, 0x00, 0x00, 0x00
-        )
+        val keyboardReport = ByteArray(8)
+        keyboardReport[0] = modifiers
+        keyboardReport[1] = 0x00 // reserved
+
+        val count = minOf(keyCodes.size, 6)
+        for (i in 0 until count) {
+            keyboardReport[2 + i] = keyCodes[i]
+        }
 
         return try {
             val sent = hid.sendReport(device, HidConstants.REPORT_ID_KEYBOARD.toInt(), keyboardReport)
@@ -384,9 +396,13 @@ class BtHidTransport(
             }
             sent
         } catch (e: Exception) {
-            Log.e(TAG, "sendKeyPress failed", e)
+            Log.e(TAG, "sendKeyReport failed", e)
             false
         }
+    }
+
+    override fun sendKeyPress(keyCode: Byte, modifiers: Byte): Boolean {
+        return sendKeyReport(byteArrayOf(keyCode), modifiers)
     }
 
     @SuppressLint("MissingPermission")
@@ -413,10 +429,29 @@ class BtHidTransport(
 
     @SuppressLint("MissingPermission")
     override fun sendConsumerClick(usageCode: Int): Boolean {
-        val hid = hidDevice ?: return false
-        val device = resolveActiveDevice() ?: return false
-        if (!isAppRegistered) return false
+        val hid = hidDevice ?: run {
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
+                usageCode, pressSent = false, releaseSent = false, status = "FAILED (no hidDevice)"
+            )
+            return false
+        }
+        val device = resolveActiveDevice() ?: run {
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
+                usageCode, pressSent = false, releaseSent = false, status = "FAILED (no active device)"
+            )
+            return false
+        }
+        if (!isAppRegistered) {
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
+                usageCode, pressSent = false, releaseSent = false, status = "FAILED (not registered)"
+            )
+            return false
+        }
 
+        val actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode)
         val report = byteArrayOf(
             (usageCode and 0xFF).toByte(),
             ((usageCode shr 8) and 0xFF).toByte()
@@ -428,18 +463,136 @@ class BtHidTransport(
             if (sent && _connectionState.value !is ConnectionState.Connected) {
                 _connectionState.value = ConnectionState.Connected(device)
             }
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                actionName, usageCode, pressSent = sent, releaseSent = false,
+                status = if (sent) "SUCCESS" else "FAILED"
+            )
+
             scope.launch {
-                delay(KEY_PRESS_DELAY_MS)
+                delay(CONSUMER_PRESS_DELAY_MS)
                 try {
-                    hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
+                    val released = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
+                    dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                        actionName, usageCode, pressSent = sent, releaseSent = released,
+                        status = if (released) "SUCCESS" else "RELEASE_FAILED"
+                    )
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to release consumer key", e)
+                    dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                        actionName, usageCode, pressSent = sent, releaseSent = false,
+                        status = "RELEASE_EXCEPTION: ${e.message}"
+                    )
                 }
             }
             sent
         } catch (e: Exception) {
             Log.e(TAG, "sendConsumerClick failed", e)
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                actionName, usageCode, pressSent = false, releaseSent = false,
+                status = "EXCEPTION: ${e.message}"
+            )
             false
         }
     }
+
+    @SuppressLint("MissingPermission")
+    override fun sendConsumerPress(usageCode: Int): Boolean {
+        val hid = hidDevice ?: return false
+        val device = resolveActiveDevice() ?: return false
+        if (!isAppRegistered) return false
+
+        val actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode)
+        val report = byteArrayOf(
+            (usageCode and 0xFF).toByte(),
+            ((usageCode shr 8) and 0xFF).toByte()
+        )
+        return try {
+            val sent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), report)
+            if (sent && _connectionState.value !is ConnectionState.Connected) {
+                _connectionState.value = ConnectionState.Connected(device)
+            }
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                actionName, usageCode, pressSent = sent, releaseSent = false,
+                status = if (sent) "SUCCESS" else "FAILED"
+            )
+            sent
+        } catch (e: Exception) {
+            Log.e(TAG, "sendConsumerPress failed", e)
+            false
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun sendConsumerRelease(): Boolean {
+        val hid = hidDevice ?: return false
+        val device = resolveActiveDevice() ?: return false
+        if (!isAppRegistered) return false
+
+        val emptyReport = ByteArray(2)
+        return try {
+            val sent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
+            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                "RELEASE", 0, pressSent = false, releaseSent = sent,
+                status = if (sent) "SUCCESS" else "FAILED"
+            )
+            sent
+        } catch (e: Exception) {
+            Log.e(TAG, "sendConsumerRelease failed", e)
+            false
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun sendGamepadReport(
+        buttons: Int,
+        hat: Byte,
+        leftX: Short,
+        leftY: Short,
+        rightX: Short,
+        rightY: Short,
+        leftTrigger: Byte,
+        rightTrigger: Byte
+    ): Boolean {
+        val hid = hidDevice ?: return false
+        val device = resolveActiveDevice() ?: return false
+        if (!isAppRegistered) return false
+
+        val report = ByteArray(13)
+        // Buttons (16-bit bitmask, little endian)
+        report[0] = (buttons and 0xFF).toByte()
+        report[1] = ((buttons shr 8) and 0xFF).toByte()
+        // Hat Switch (lower 4 bits)
+        report[2] = (hat.toInt() and 0x0F).toByte()
+        // Left Stick X
+        report[3] = (leftX.toInt() and 0xFF).toByte()
+        report[4] = ((leftX.toInt() shr 8) and 0xFF).toByte()
+        // Left Stick Y
+        report[5] = (leftY.toInt() and 0xFF).toByte()
+        report[6] = ((leftY.toInt() shr 8) and 0xFF).toByte()
+        // Right Stick X
+        report[7] = (rightX.toInt() and 0xFF).toByte()
+        report[8] = ((rightX.toInt() shr 8) and 0xFF).toByte()
+        // Right Stick Y
+        report[9] = (rightY.toInt() and 0xFF).toByte()
+        report[10] = ((rightY.toInt() shr 8) and 0xFF).toByte()
+        // Analog Triggers (0..255)
+        report[11] = leftTrigger
+        report[12] = rightTrigger
+
+        return try {
+            val sent = hid.sendReport(device, HidConstants.REPORT_ID_GAMEPAD.toInt(), report)
+            if (sent && _connectionState.value !is ConnectionState.Connected) {
+                _connectionState.value = ConnectionState.Connected(device)
+            }
+            sent
+        } catch (e: Exception) {
+            Log.e(TAG, "sendGamepadReport failed", e)
+            false
+        }
+    }
+
+    override fun sendGamepadNeutral(): Boolean {
+        return sendGamepadReport(0, HidConstants.GAMEPAD_HAT_CENTERED, 0, 0, 0, 0, 0, 0)
+    }
 }
+

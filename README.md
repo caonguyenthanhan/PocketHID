@@ -1,9 +1,10 @@
-# 📱 PocketHID — Android Bluetooth HID Keyboard & Trackpad
+# 📱 PocketHID — Android Universal Bluetooth HID Controller & Command Deck
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android_9.0%2B_(API_28%2B)-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android Version" />
   <img src="https://img.shields.io/badge/UI-Jetpack_Compose_Material_3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="Compose" />
-  <img src="https://img.shields.io/badge/Bluetooth-HID_Device_Profile-0082FC?style=for-the-badge&logo=bluetooth&logoColor=white" alt="Bluetooth HID" />
+  <img src="https://img.shields.io/badge/Bluetooth-HID_Device_Composite_(SDP_0xC8)-0082FC?style=for-the-badge&logo=bluetooth&logoColor=white" alt="Bluetooth HID" />
+  <img src="https://img.shields.io/badge/Testing-JUnit4_100%25_Pass-brightgreen?style=for-the-badge&logo=junit5&logoColor=white" alt="Tests" />
   <img src="https://img.shields.io/badge/License-Apache_2.0-orange?style=for-the-badge" alt="License" />
 </p>
 
@@ -11,149 +12,206 @@
 
 ## 💡 Giới thiệu (Overview)
 
-**PocketHID** biến chiếc điện thoại Android của bạn thành một chiếc **bàn phím cơ không dây và chuột cảm ứng đa điểm (Touchpad)** cao cấp cho máy tính (Windows, macOS, Linux, ChromeOS, Raspberry Pi) hoặc Smart TV.
+**PocketHID** biến điện thoại thông minh Android của bạn thành một bộ điều khiển **Universal Bluetooth HID** đa năng 5-trong-1 không dây độ trễ cực thấp:
+1. **⌨️ Smart Typing & Landscape Command Deck** (Bàn phím cơ ảo đa tầng kèm hàng phím số cố định & tích hợp Android IME).
+2. **🖱️ Precision Multi-Touch Trackpad** (Bàn rê cảm ứng 1–4 ngón, cử chỉ Desktop Zoom và vùng cuộn nhanh mép phải).
+3. **🎮 Driverless Bluetooth HID Gamepad** (Tay cầm chơi game chuẩn USB HID nhận diện trực tiếp trong Windows `joy.cpl`).
+4. **📽️ Presenter & Laser Remote** (Điều khiển thuyết trình từ xa chuyên nghiệp).
+5. **📱 One-Hand Web & Video Touch Remote** (Điều khiển duyệt web và xem video chỉ với một ngón cái).
 
-### 🌟 Điểm nổi bật: Không cần cài Client / Driver trên máy tính!
-PocketHID sử dụng trực tiếp **Bluetooth HID Device Profile** chuẩn phần cứng của Android OS. Máy tính nhận diện điện thoại của bạn như một bàn phím và chuột Bluetooth vật lý thực thụ:
-- ❌ **Không cần cài phần mềm** nhận diện trên PC/Laptop.
-- ❌ **Không cần chạy server nền hay kết nối cùng mạng Wi-Fi**.
-- ✅ **Hoạt động được ngay cả ở màn hình khóa, màn hình đăng nhập Windows/macOS và thậm chí trong BIOS/UEFI.**
+### 🌟 Điểm nổi bật: Chuẩn phần cứng Bluetooth HID — Không cần Server / Client!
+PocketHID kích hoạt trực tiếp **Bluetooth HID Device Profile** tiêu chuẩn của hệ điều hành Android (Composite Device: Keyboard + Mouse + Consumer Media + Gamepad):
+- ❌ **Không cần cài bất kỳ phần mềm, server hay driver nào** trên máy tính chủ.
+- ❌ **Không phụ thuộc vào mạng Wi-Fi hay cổng kết nối mạng nội bộ**.
+- ✅ **Hoạt động trơn tru ngay tại màn hình đăng nhập Windows/macOS, màn hình khóa và trong môi trường BIOS/UEFI.**
+- ✅ **Hỗ trợ đa nền tảng:** Windows, macOS, Linux, ChromeOS, Android TV, Raspberry Pi.
 
 ---
 
-## ✨ Tính năng chính (Features)
+## 🕹️ 5 Chế Độ Điều Khiển Cốt Lõi (Core Modes)
 
-### 1. 🖱️ Precision Trackpad & Mouse (Chế độ dọc)
-- **Cảm ứng đa điểm mượt mà:**
-  - Chạm 1 ngón: Chuột trái (Left Click).
-  - Chạm 2 ngón: Chuột phải (Right Click).
-  - Vuốt 2 ngón: Cuộn trang mượt mà (hỗ trợ Natural Scroll hoặc Standard Scroll).
-- **Thanh cuộn ảo chuyên dụng:** Kéo thanh cuộn bên cạnh phải để cuộn tài liệu/code tốc độ cao.
-- **Khóa kéo thả (Drag & Drop Lock):** Nút giữ chuột trái để kéo cửa sổ hoặc bôi đen văn bản dễ dàng.
-- **Tùy chỉnh tốc độ:** Điều chỉnh độ nhạy chuột (Sensitivity) và thuật toán gia tốc (Pointer Acceleration).
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│               KEYBOARD  │  MOUSE  │  GAMEPAD  │  PRESENTER  │  ONE-HAND│
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-### 2. ⌨️ Smart Typing & Safe Paste (Bàn phím dọc)
-- Gõ văn bản trực tiếp từ điện thoại truyền từng phím tức thì qua Bluetooth.
-- **Safe Clipboard Paste:** Dán văn bản từ clipboard của điện thoại sang máy tính an toàn, tích hợp bộ đệm chống tràn HID buffer (`pasteDelayMs`).
-- **Phím chức năng nhanh:** Esc, Tab, Enter, Backspace, Windows/Super, Ctrl, Alt, Shift, Page Up/Down, Home/End.
-- **Cụm Media Controller:** Tăng/giảm âm lượng, Mute, Play/Pause, Next/Previous bài hát.
+---
 
-### 3. 🕹️ Landscape Cyberpunk Deck (Bàn phím cơ ngang 3 vùng công thái học)
-Khi xoay ngang hoặc bấm nút **XOAY MÀN HÌNH**, ứng dụng chuyển sang giao diện Console Cyberpunk công thái học:
-- **Zone 1 — Left Thumb Deck:**
-  - Macro Matrix thao tác nhanh: `Ctrl+C` (SIGINT), `Ctrl+Z` (TSTP), `Alt+Tab` (Window Switcher), `Win+D` (Show Desktop).
-  - Phím bổ trợ Sticky/Locked Modifiers (`CTRL`, `ALT`, `SUPER`, `SHIFT`) với đèn báo trạng thái.
-  - Phím `ESC`, `TAB` và cụm điều hướng Micro D-Pad 4 chiều.
-- **Zone 2 — 75%/TKL Mechanical Keybed:**
-  - Đầy đủ hàng phím `F1` đến `F12`, hàng phím số, hàng chữ QWERTY chuẩn ANSI.
-  - Bố cục phím tối ưu tỷ lệ, phím to dày dặn, sát khít (3dp spacing), không bị khoảng trống thừa.
-  - Phản hồi xúc giác Haptic Feedback khi gõ phím.
-- **Zone 3 — Right Thumb Deck:**
-  - Chuyển đổi 1 chạm giữa bàn phím số **Numpad** đầy đủ (phím số to rõ, dễ thao tác ngón cái) và **Trackpad ngón cái** tích hợp phím chuột trái/phải riêng biệt.
-  - Cụm phím điều hướng nhanh 6 nút: `INS`, `HOME`, `PGUP`, `DEL`, `END`, `PGDN`.
-- **Top HUD & Scancode Monitor:**
-  - Hiển thị buffer lệnh thời gian thực và mã quét phần cứng (`HEX: 0x...`).
-  - Nút **`XOAY DỌC`** chuyển đổi hướng màn hình nhanh chóng mà không cần mở khóa xoay hệ thống.
-  - Tương thích Safe Insets, chống tai thỏ/nốt ruồi và status bar che mất nội dung.
+### 1. 🎮 Driverless Bluetooth HID Gamepad (Chuẩn Windows `joy.cpl`)
+PocketHID xuất ra bộ báo cáo tay cầm tiêu chuẩn quốc tế (**Report ID 4, 13 bytes**) qua Bluetooth SDP Subclass `0xC8` (Combo Keyboard/Mouse + Gamepad):
+- **Windows Enumeration:** Máy tính Windows nhận diện PocketHID ngay lập tức trong bảng điều khiển **Game Controllers (`joy.cpl`)** và **Device Manager** dưới dạng thiết bị DirectInput tiêu chuẩn mà không cần phần mềm hay driver ảo.
+- **11 Nút bấm kỹ thuật số (Digital Buttons):** `A`, `B`, `X`, `Y`, `LB`, `RB`, `Back/Select`, `Start`, `Guide/Home`, `L3` (nhấn cần trái), `R3` (nhấn cần phải).
+- **8-Way D-Pad (Hat Switch):** Điều hướng 8 hướng chuẩn USB HID Generic Desktop Hat Switch (`1..8`, neutral `0`).
+- **4 Trục Analog (Dual Thumbsticks):**
+  - **Left Stick (X, Y):** Đóng gói trong Pointer Physical Collection, dải giá trị chuẩn `-32768 .. +32767`.
+  - **Right Stick (Z, Rz):** Đóng gói trong Pointer Physical Collection, dải giá trị chuẩn `-32768 .. +32767`.
+  - Hỗ trợ tùy chỉnh Deadzone, thuật toán phản hồi (Linear, Precision, Aggressive), Sensitivity và Invert Y.
+- **2 Cò Analog (Analog Triggers):** `LT` (Rx) và `RT` (Ry) với dải giá trị tuyến tính `0 .. 255`.
+- **Cơ chế chống kẹt phím (Anti-Stuck Protection):** Tự động phát báo cáo trung lập (`Neutral Report`) khi rời màn hình, pause app, hoặc ngắt kết nối Bluetooth.
 
-### 4. 🔗 Host Manager & Tự động kết nối
-- Tự động ghi nhớ thiết bị đã ghép đôi gần nhất và tự động kết nối lại khi mở ứng dụng.
-- Quản lý danh sách thiết bị máy tính đã ghép đôi (Paired Devices BottomSheet).
-- Nút kích hoạt chế độ Discoverable để máy tính mới quét thấy điện thoại nhanh chóng.
-- Hệ thống thông báo đẩy Inline Alert Banner và Snackbar cảnh báo tình trạng kết nối.
+---
+
+### 2. 🖱️ Precision Multi-Touch Trackpad & Right Edge Fast Scroll Zone
+Mặt cảm ứng đa điểm diện tích lớn, phản hồi tức thì với thuật toán chống xung đột cử chỉ (**Gesture Priority Lock**):
+
+| Cử chỉ | Thao tác | Tác vụ điều khiển |
+| :--- | :--- | :--- |
+| **1 ngón** | **Di chuyển (Move)** | Rê chuột mượt mà (Đường cong gia tốc phi tuyến + Deadzone chống rung) |
+| | **Chạm (Tap)** | Nhấp chuột trái (Left Click) |
+| | **Chạm đúp (Double Tap)** | Nhấp đúp chuột trái (Double Left Click) |
+| | **Chạm + Giữ (Tap + Hold)** | Khóa chuột trái để kéo thả (Drag Mode) |
+| **2 ngón** | **Rê dọc / Rê ngang** | Cuộn trang dọc & cuộn ngang (hỗ trợ Natural Scroll trong Cài đặt) |
+| | **Chạm (Tap)** | Nhấp chuột phải (Right Click) |
+| | **Pinch Out (Bung 2 ngón)** | **Zoom In** (Phóng to màn hình qua `Ctrl + Wheel Up` hoặc `Cmd + Plus`) |
+| | **Pinch In (Chụm 2 ngón)** | **Zoom Out** (Thu nhỏ màn hình qua `Ctrl + Wheel Down` hoặc `Cmd + Minus`) |
+| **3 ngón** | **Chạm (Tap)** | Nhấp chuột giữa (Middle Click) |
+| | **Vuốt Trái / Phải** | Chuyển đổi Desktop ảo: `Ctrl + Win + ◀` / `Ctrl + Win + ▶` |
+| | **Vuốt Lên (Swipe Up)** | Mở Task View / Quản lý tác vụ: `Win + Tab` |
+| | **Vuốt Xuống (Swipe Down)** | Thu nhỏ toàn bộ về màn hình chính: `Win + D` |
+| **4 ngón** | **Chạm (Tap)** | Mở nhanh Command Deck / Quick Actions Palette |
+| | **Vuốt Trái / Phải** | Chuyển đổi ứng dụng đang chạy: `Alt + Tab` / `Alt + Shift + Tab` |
+| | **Vuốt Lên / Xuống** | Task Overview / Show Desktop |
+
+- **⚡ Right Edge Fast Scroll Zone:** Dải cuộn nhanh dọc mép phải (chiếm 8–12% diện tích, min 32dp, max 64dp). Vuốt dọc mép phải cho tốc độ cuộn siêu tốc (1.5x–5.0x, mặc định 2.5x) mà không ảnh hưởng vùng di chuột chính. Khóa cử chỉ cô lập: chỉ kích hoạt khi chạm bắt đầu tại mép phải, tự động nhường quyền khi có thêm ngón tay hạ xuống.
+- **Cụm phím chuột vật lý độc lập (LEFT / MID / RIGHT / LOCK):** Hỗ trợ đè nút chuột trái bằng một tay và dùng ngón tay khác rê trên Trackpad để kéo thả văn bản, di chuyển cửa sổ chính xác.
+
+---
+
+### 3. 📱 One-Hand Web & Video Touch Remote
+Chế độ điều khiển từ xa tối ưu hóa cho **một ngón cái**, hỗ trợ tùy chọn tay thuận Trái/Phải:
+- **🌐 Web Sub-mode:**
+  - Vuốt ngón cái lên/xuống: Cuộn trang mượt mà bằng báo cáo chuột thật (`Mouse Wheel HID`).
+  - Vuốt trái/phải: Quay lại trang (`Browser Back`) / Tiến trang (`Browser Forward`).
+  - Chạm đơn: Nhấp chuột trái.
+  - Thanh công cụ ngón cái: `Lùi`, `Tiến`, `Home`, `Tải lại (F5)`, `+ Tab mới`.
+- **🎬 Video Sub-mode:**
+  - Chạm đơn: Phát / Dừng video (`Consumer Control: PLAY_PAUSE`).
+  - Vuốt dọc: Tăng / Giảm âm lượng hệ thống với chu kỳ giữ phím chuẩn 75ms (`VOLUME_UP` / `VOLUME_DOWN`).
+  - Vuốt ngang: Tua lùi 10s / Tua tiến 10s (chạm giữ để tua liên tục an toàn).
+  - Thanh công cụ ngón cái: `Bài trước`, `Lùi 10s`, `Phát/Dừng`, `Tiến 10s`, `Bài tiếp`, `Tắt tiếng (Mute)`.
+
+---
+
+### 4. ⌨️ Smart Typing Deck & Portrait Android IME Integration
+- **Tích hợp bộ gõ Android IME trực tiếp (`PocketImeInputView`):** Gõ tiếng Việt (Telex/VNI), tiếng Anh trên các bàn phím Gboard, Samsung Keyboard mượt mà, trực tiếp phân giải `commitText`, `deleteSurroundingText`, `sendKeyEvent` sang chuỗi HID scancodes không độ trễ.
+- **Hàng phím số cố định (Dedicated Number Row):** Nằm trực tiếp trên hàng chữ QWERTY:
+  ```text
+  `  1  2  3  4  5  6  7  8  9  0  -  =  ⌫ (Backspace)
+  ```
+- **Ký tự đặc biệt qua SHIFT:** Khi kích hoạt `SHIFT`, hàng phím tự động chuyển sang ký tự đặc biệt:
+  ```text
+  ~  !  @  #  $  %  ^  &  *  (  )  _  +  ⌫
+  ```
+- **Backspace Tap + Hold to Repeat:** Giữ phím > 350ms sẽ tự động kích hoạt chế độ lặp lại xóa liên tục kèm rung xúc giác (haptic tick).
+- **Safe Clipboard Paste:** Dán văn bản từ clipboard điện thoại sang PC với tốc độ điều tiết an toàn (`pasteDelayMs`), chống tràn bộ đệm L2CAP HID buffer.
+
+---
+
+### 5. 🕹️ Landscape Command Deck & Multi-Layer Engine
+Khi xoay ngang điện thoại, PocketHID chuyển sang giao diện điều khiển công thái học 3 vùng:
+- **Zone 1 — Left Thumb Cluster:** Cụm phím bổ trợ Sticky/Locked Modifiers (`CTRL`, `ALT`, `SUPER`, `SHIFT`), phím `ESC`, `TAB`, Safe Paste và Micro D-Pad.
+- **Zone 2 — Central Command Bay:**
+  - **TYPE Layer:** Bàn phím QWERTY đầy đủ có hàng phím số cố định.
+  - **SHORTCUTS Layer:** Bảng macro một chạm cho Clipboard, Window Management, Terminal (`^C`, `^Z`, `^L`).
+  - **MEDIA Layer:** Điều khiển đa phương tiện độc lập qua Consumer Report ID 3 (Volume, Play/Pause, Seek ±5s, Mute).
+  - **SYSTEM Layer:** Quản lý cửa sổ Snap (Left/Right/Maximize), Virtual Desktops, Snip Tool, Explorer.
+  - **F-KEYS Layer:** Dãy phím chức năng từ `F1` đến `F12` cùng `PrtSc`, `Home`, `End`, `PgUp`, `PgDn`.
+  - **NUMPAD Layer:** Bàn phím số kế toán tiêu chuẩn.
+- **Zone 3 — Right Thumb Cluster:** Phím `ENTER`, `BKSP` nổi bật và cụm phím điều hướng 4 chiều công thái học.
+- **Presenter & Laser Pointer Mode:** Chế độ thuyết trình chuyên dụng (Next/Prev slide, Black screen, Laser pointer).
+- **Command Palette Sheet (`Ctrl+K`):** Tìm kiếm và kích hoạt nhanh mọi lệnh điều khiển trong tích tắc.
+
+---
+
+### 6. 🔍 Bảng Chẩn Đoán & Kiểm Thử Toàn Diện (Diagnostics HUD)
+Mở nhanh qua icon chẩn đoán hoặc cử chỉ 4 ngón, chia thành 4 tab trực quan:
+- **`[ SYSTEM ]`:** Xác thực Bluetooth HID, độ trễ truyền tin, tốc độ lấy mẫu Polling rate, và telemetry giải mã bộ gõ IME.
+- **`[ GAMEPAD ]`:** Bảng kiểm thử tay cầm trực tiếp:
+  - Ma trận 11 nút số + D-pad sáng đèn khi chạm.
+  - 2D Stick Visual Crosshair (lưới canvas 2D hiển thị chấm vị trí cần gạt thời gian thực).
+  - Thanh áp lực cò analog LT/RT (chuẩn hóa `0.00 .. 1.00`).
+  - Màn hình soi byte thô: `Bytes: [ 04 XX XX XX XX XX XX XX XX XX XX XX XX ]`.
+  - Cờ trạng thái: `NEUTRAL REPORT: YES/NO`.
+  - Bộ đếm Latch Multi-touch (Down transitions, Up transitions, phát hiện nút bấm bị kẹt).
+- **`[ MEDIA ]`:** 7 nút test âm lượng/media với chu kỳ giữ phím 75ms và hiển thị phản hồi trạng thái từ `ConsumerDiagnosticsHub`.
+- **`[ CHECKLIST ]`:** Quy trình chuẩn xác thực thiết bị trên Windows `joy.cpl` và Device Manager.
+
+---
+
+### 7. ⚡ Semantic Action Engine & Kiến Trúc Đa Nền Tảng
+Hệ thống giải mã hành động trung tâm (`PocketAction`, `ActionResolver`, `ActionDispatcher`, `ActionRegistry`):
+- Tự động nhận biết và điều chỉnh phím tắt theo hệ điều hành đích: **Windows**, **macOS**, và **Linux** (ví dụ: Copy trên Windows là `Ctrl+C`, trên macOS tự động chuyển sang `Cmd+C`).
+- Chuẩn hóa toàn bộ cử chỉ trackpad, phím bấm trình chiếu và macro mà không gắn chặt vào scancode phần cứng.
+
+---
+
+### 8. 🔋 Quản Lý Năng Lượng & Ngủ Tự Nhiên (Power Policy)
+- **Không bao giờ ép khóa máy:** PocketHID tuyệt đối không gọi các hàm API khóa máy cưỡng bức.
+- **Timeout ngủ tự nhiên:** Tự động giữ sáng màn hình khi đang thao tác; sau **10 phút** không có tương tác, màn hình tự động tắt/ngủ tự nhiên theo cài đặt hệ thống.
+- **Foreground Service bền bỉ:** Kết nối Bluetooth HID tiếp tục duy trì thông suốt ở chế độ nền khi màn hình tắt.
 
 ---
 
 ## 🛠️ Công nghệ sử dụng (Tech Stack)
 
-- **Ngôn ngữ:** Kotlin 100%
-- **Giao diện:** Jetpack Compose + Material Design 3
-- **Kiến trúc:** Clean Architecture & MVI/StateFlow Pattern
-- **Giao tiếp phần cứng:** Android Bluetooth HID Device API (`BluetoothProfile.HID_DEVICE`)
-- **Quản lý cấu hình:** `StateFlow` + Android SharedPreferences
-- **Min SDK:** Android 9.0 (API 28)
-- **Target SDK:** Android 14 / 15 (API 34)
+| Thành phần | Công nghệ |
+| :--- | :--- |
+| **Ngôn ngữ** | Kotlin 100% (Kotlin 2.0.21) |
+| **UI Framework** | Jetpack Compose BOM 2024.12.01, Material Design 3 |
+| **Kiến trúc** | Clean Modular Architecture, MVI StateFlow, Semantic Action Engine |
+| **Bluetooth HID** | Android Bluetooth HID Device API (`BluetoothHidDevice`, Composite SDP `0xC8`) |
+| **Kiểm thử tự động** | JUnit 4 (100% Pass: `GamepadReportDescriptorTest`, `GamepadMathTest`, `ActionResolverTest`, `ScreenWakePolicyTest`, `FastScrollControllerTest`, `GestureInterpreterTest`, `KeyMapperTest`) |
+| **Yêu cầu hệ thống** | Android 9.0 (API 28) trở lên |
 
 ---
 
 ## 📦 Hướng dẫn cài đặt & Biên dịch (Installation & Build)
 
-### 1. Yêu cầu thiết bị
-- Điện thoại chạy **Android 9.0 (Pie) trở lên**.
-- Thiết bị hỗ trợ Bluetooth HID Device profile (hầu hết điện thoại Samsung, Xiaomi, Pixel, Oppo, Sony hiện đại đều hỗ trợ sẵn).
+### 1. Yêu cầu môi trường
+- Máy tính đã cài đặt **JDK 17** hoặc **JDK 21**.
+- Android SDK (API 34/35).
 
 ### 2. Biên dịch từ mã nguồn
 ```bash
-# 1. Clone repository về máy
+# 1. Clone repository
 git clone https://github.com/caonguyenthanhan/PocketHID.git
 cd PocketHID
 
-# 2. Cấp quyền thực thi cho Gradle wrapper (Linux/macOS)
-chmod +x gradlew
+# 2. Chạy kiểm thử tự động (Unit Tests)
+./gradlew testDebugUnitTest
+# Trên Windows:
+.\gradlew.bat testDebugUnitTest
 
-# 3. Biên dịch bản Debug APK
+# 3. Biên dịch bản cài đặt Debug APK
 ./gradlew assembleDebug
-
-# Trên Windows PowerShell:
+# Trên Windows:
 .\gradlew.bat assembleDebug
 ```
-File APK cài đặt sẽ được tạo tại:
-```
+File APK cài đặt sau khi build thành công nằm tại:
+```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ---
 
-## 🚀 Hướng dẫn kết nối với máy tính (How to Use)
+## 🚀 Hướng dẫn kết nối với máy tính (How to Connect)
 
-1. **Bật Bluetooth** trên cả điện thoại và máy tính của bạn.
-2. Mở ứng dụng **PocketHID** trên điện thoại, cấp quyền Bluetooth khi được yêu cầu.
-3. Trên thanh trạng thái ứng dụng:
-   - Nhấn **Pair**: Nếu máy tính đã từng kết nối, chỉ cần chọn máy tính trong danh sách để kết nối.
-   - Nếu kết nối lần đầu: Nhấn **Bật chế độ tìm kiếm (Make Discoverable)** trong ứng dụng. Sau đó trên máy tính, vào mục *Bluetooth & Devices* -> *Add Device* -> Chọn điện thoại của bạn và xác nhận mã PIN ghép đôi.
-4. Sau khi kết nối thành công, thanh trạng thái sẽ chuyển sang **Xanh lá (Connected)**:
-   - Sử dụng tab **Mouse** để di chuột, cuộn trang hoặc nhấp chuột.
-   - Sử dụng tab **Keyboard** để gõ phím hoặc paste văn bản.
-   - Nhấn biểu tượng **Xoay màn hình** hoặc xoay ngang điện thoại để mở bàn phím cơ TKL Cyberpunk Deck!
-
----
-
-## 📂 Cấu trúc thư mục (Project Structure)
-
-```
-PocketHID/
-├── app/
-│   ├── src/main/java/dev/aleian/pockethid/
-│   │   ├── mapping/
-│   │   │   ├── GestureInterpreter.kt     # Phân tích cử chỉ chuột 1 ngón, 2 ngón, cuộn
-│   │   │   └── KeyMapper.kt              # Ánh xạ ký tự UTF-8 sang mã HID Scancode
-│   │   ├── model/
-│   │   │   ├── AppSettings.kt            # Cấu hình độ nhạy, haptic, polling rate
-│   │   │   ├── ConnectionState.kt        # StateFlow quản lý trạng thái kết nối
-│   │   │   └── HidConstants.kt           # Bảng mã HID Keyboard & Mouse Report Descriptor
-│   │   ├── service/
-│   │   │   └── HidDeviceService.kt       # Foreground Service quản lý Bluetooth HID Profile
-│   │   ├── transport/
-│   │   │   ├── BtHidTransport.kt         # Lớp phát sinh HID Report gửi qua Bluetooth
-│   │   │   └── InputTransport.kt         # Interface Input Transport
-│   │   ├── ui/
-│   │   │   ├── components/               # ConnectionBar, MiniTrackpad, Macro buttons
-│   │   │   ├── screens/                  # MainScreen, MouseScreen, KeyboardScreen, LandscapeDeckScreen, SettingsScreen, PairingSheet
-│   │   │   └── theme/                    # Bảng màu Dark Cyberpunk, Typography, Dimens
-│   │   ├── MainActivity.kt               # Điều khiển Activity & Force Orientation
-│   │   └── PocketHidApp.kt
-│   └── build.gradle.kts
-├── gradle/
-└── README.md
-```
+1. **Bật Bluetooth** trên cả điện thoại và máy tính.
+2. Mở ứng dụng **PocketHID** trên điện thoại và cấp quyền Bluetooth (trên Android 12+, cấp quyền `Nearby Devices`).
+3. **Ghép đôi lần đầu:**
+   - Trong PocketHID, mở thẻ ghép đôi và nhấn **"Bật chế độ tìm kiếm (Make Discoverable)"**.
+   - Trên máy tính: Vào **Settings** ➔ **Bluetooth & Devices** ➔ **Add Device** ➔ Chọn điện thoại của bạn và xác nhận mã PIN.
+4. **Kiểm tra Gamepad trên Windows:**
+   - Nhấn `Win + R` ➔ Gõ `joy.cpl` ➔ Nhấn Enter.
+   - PocketHID sẽ xuất hiện trong danh sách Game Controllers đã cài đặt.
+   - Nhấn **Properties** ➔ **Test** để trải nghiệm đầy đủ các nút bấm, D-pad và cần xoay analog!
 
 ---
 
 ## 📄 Bản quyền (License)
 
-Dự án được phát hành theo giấy phép **Apache License 2.0**. Xem chi tiết tại [LICENSE](LICENSE) nếu có.
-
----
+Dự án được phát hành theo giấy phép **Apache License 2.0**.
 
 <p align="center">
   Phát triển với ❤️ bởi <b>Cao Nguyễn Thành An</b>

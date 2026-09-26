@@ -1,0 +1,476 @@
+package dev.aleian.pockethid.ui.screens.deck
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.ui.components.DeckKey
+import dev.aleian.pockethid.ui.components.DedicatedNumberRow
+import dev.aleian.pockethid.ui.components.ModifierToggleState
+import dev.aleian.pockethid.ui.components.SubModeSelector
+import dev.aleian.pockethid.ui.theme.*
+
+@Composable
+fun DeckKeyboardZone(
+    selectedSubMode: Int,
+    onSelectSubMode: (Int) -> Unit,
+    ctrlState: ModifierToggleState,
+    altState: ModifierToggleState,
+    shiftState: ModifierToggleState,
+    onCycleCtrl: () -> Unit,
+    onCycleAlt: () -> Unit,
+    onCycleShift: () -> Unit,
+    onSendRawKey: (keyCode: Byte, extraMod: Byte, label: String) -> Unit,
+    onSendConsumerKey: (usageCode: Int, label: String) -> Unit,
+    hapticsEnabled: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val isShiftActive = shiftState != ModifierToggleState.OFF
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(8.dp))
+            .background(DarkSurface)
+            .border(1.dp, DarkBorder, RoundedCornerShape(8.dp))
+            .padding(4.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        // Sub-mode Header Selector
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SubModeSelector(
+                selectedSubMode = selectedSubMode,
+                onSelectSubMode = onSelectSubMode
+            )
+            Text(
+                text = "TOUCH OPTIMIZED",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextMuted
+            )
+        }
+
+        // Dynamic Center Content based on Sub-mode
+        when (selectedSubMode) {
+            0 -> {
+                // TYPE MODE: Dedicated Number Row + Generous Touch QWERTY
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    // ROW 1: PERMANENT DEDICATED NUMBER ROW (` 1 2 3 4 5 6 7 8 9 0 - = BKSP)
+                    DedicatedNumberRow(
+                        isShiftActive = isShiftActive,
+                        onSendKey = { keyCode, extraMod, label ->
+                            onSendRawKey(keyCode, extraMod, label)
+                        },
+                        onBackspaceRepeat = {
+                            onSendRawKey(HidConstants.KEY_BACKSPACE, 0, "BKSP")
+                        },
+                        hapticsEnabled = hapticsEnabled,
+                        fontSize = 11.sp,
+                        keyHeight = 32.dp
+                    )
+
+                    // ROW 2: Q W E R T Y U I O P [ ] \
+                    val row1Labels = if (isShiftActive) {
+                        listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|")
+                    } else {
+                        listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\")
+                    }
+                    val row1Codes = listOf(
+                        HidConstants.KEY_Q, HidConstants.KEY_W, HidConstants.KEY_E,
+                        HidConstants.KEY_R, HidConstants.KEY_T, HidConstants.KEY_Y,
+                        HidConstants.KEY_U, HidConstants.KEY_I, HidConstants.KEY_O,
+                        HidConstants.KEY_P, HidConstants.KEY_LEFTBRACE, HidConstants.KEY_RIGHTBRACE,
+                        HidConstants.KEY_BACKSLASH
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        row1Labels.forEachIndexed { i, l ->
+                            DeckKey(text = l, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 12.sp) {
+                                onSendRawKey(row1Codes[i], 0, l)
+                            }
+                        }
+                    }
+
+                    // ROW 3: A S D F G H J K L ; '
+                    val row2Labels = if (isShiftActive) {
+                        listOf("A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\"")
+                    } else {
+                        listOf("A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'")
+                    }
+                    val row2Codes = listOf(
+                        HidConstants.KEY_A, HidConstants.KEY_S, HidConstants.KEY_D,
+                        HidConstants.KEY_F, HidConstants.KEY_G, HidConstants.KEY_H,
+                        HidConstants.KEY_J, HidConstants.KEY_K, HidConstants.KEY_L,
+                        HidConstants.KEY_SEMICOLON, HidConstants.KEY_APOSTROPHE
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        row2Labels.forEachIndexed { i, l ->
+                            DeckKey(text = l, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 12.sp) {
+                                onSendRawKey(row2Codes[i], 0, l)
+                            }
+                        }
+                    }
+
+                    // ROW 4: Z X C V B N M , . /
+                    val row3Labels = if (isShiftActive) {
+                        listOf("Z", "X", "C", "V", "B", "N", "M", "<", ">", "?")
+                    } else {
+                        listOf("Z", "X", "C", "V", "B", "N", "M", ",", ".", "/")
+                    }
+                    val row3Codes = listOf(
+                        HidConstants.KEY_Z, HidConstants.KEY_X, HidConstants.KEY_C,
+                        HidConstants.KEY_V, HidConstants.KEY_B, HidConstants.KEY_N,
+                        HidConstants.KEY_M, HidConstants.KEY_COMMA, HidConstants.KEY_DOT,
+                        HidConstants.KEY_SLASH
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        row3Labels.forEachIndexed { i, l ->
+                            DeckKey(text = l, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 12.sp) {
+                                onSendRawKey(row3Codes[i], 0, l)
+                            }
+                        }
+                    }
+
+                    // ROW 5: BOTTOM MODIFIER + SPACEBAR DECK (CTRL ALT SPACE SHIFT ENTER)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1.1f),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        DeckKey(
+                            text = "CTRL",
+                            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+                            containerColor = if (ctrlState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
+                            textColor = if (ctrlState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
+                            fontSize = 11.sp
+                        ) {
+                            onCycleCtrl()
+                        }
+
+                        DeckKey(
+                            text = "ALT",
+                            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+                            containerColor = if (altState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
+                            textColor = if (altState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
+                            fontSize = 11.sp
+                        ) {
+                            onCycleAlt()
+                        }
+
+                        DeckKey(
+                            text = "SPACE",
+                            modifier = Modifier.weight(3.6f).fillMaxHeight(),
+                            containerColor = SurfaceCard,
+                            textColor = PrimaryBlue,
+                            fontSize = 12.sp
+                        ) {
+                            onSendRawKey(HidConstants.KEY_SPACE, 0, "SPACE")
+                        }
+
+                        DeckKey(
+                            text = "SHIFT",
+                            modifier = Modifier.weight(1.3f).fillMaxHeight(),
+                            containerColor = if (isShiftActive) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
+                            textColor = if (isShiftActive) PrimaryBlue else TextPrimary,
+                            fontSize = 11.sp
+                        ) {
+                            onCycleShift()
+                        }
+
+                        DeckKey(
+                            text = "ENTER",
+                            modifier = Modifier.weight(1.6f).fillMaxHeight(),
+                            containerColor = PrimaryBlue.copy(alpha = 0.2f),
+                            textColor = PrimaryBlue,
+                            fontSize = 11.sp
+                        ) {
+                            onSendRawKey(HidConstants.KEY_ENTER, 0, "ENTER")
+                        }
+                    }
+                }
+            }
+
+            1 -> {
+                // SHORTCUTS MODE: Large Instant Workflow Macro Grid
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Row 1: Clipboard
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "COPY  (^C)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_C, HidConstants.MOD_LEFT_CTRL, "Copy")
+                        }
+                        DeckKey(text = "PASTE (^V)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_V, HidConstants.MOD_LEFT_CTRL, "Paste")
+                        }
+                        DeckKey(text = "CUT   (^X)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_X, HidConstants.MOD_LEFT_CTRL, "Cut")
+                        }
+                        DeckKey(text = "UNDO  (^Z)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = AccentAmber) {
+                            onSendRawKey(HidConstants.KEY_Z, HidConstants.MOD_LEFT_CTRL, "Undo")
+                        }
+                        DeckKey(text = "REDO  (^Y)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = AccentAmber) {
+                            onSendRawKey(HidConstants.KEY_Y, HidConstants.MOD_LEFT_CTRL, "Redo")
+                        }
+                    }
+
+                    // Row 2: Navigation & Search
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "SELECT ALL (^A)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_A, HidConstants.MOD_LEFT_CTRL, "SelectAll")
+                        }
+                        DeckKey(text = "FIND (^F)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_F, HidConstants.MOD_LEFT_CTRL, "Find")
+                        }
+                        DeckKey(text = "SAVE (^S)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFF10B981)) {
+                            onSendRawKey(HidConstants.KEY_S, HidConstants.MOD_LEFT_CTRL, "Save")
+                        }
+                        DeckKey(text = "SWITCH (Alt+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_ALT, "Alt+Tab")
+                        }
+                        DeckKey(text = "DESKTOP (Win+D)", modifier = Modifier.weight(1.3f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_D, HidConstants.MOD_LEFT_GUI, "Win+D")
+                        }
+                    }
+
+                    // Row 3: Terminal & Dev Power Tools
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "SIGINT (^C)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            onSendRawKey(HidConstants.KEY_C, HidConstants.MOD_LEFT_CTRL, "^C")
+                        }
+                        DeckKey(text = "TSTP (^Z)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = AccentAmber) {
+                            onSendRawKey(HidConstants.KEY_Z, HidConstants.MOD_LEFT_CTRL, "^Z")
+                        }
+                        DeckKey(text = "CLEAR (^L)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_L, HidConstants.MOD_LEFT_CTRL, "^L")
+                        }
+                        DeckKey(text = "EOF (^D)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_D, HidConstants.MOD_LEFT_CTRL, "^D")
+                        }
+                        DeckKey(text = "LOCK (Win+L)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            onSendRawKey(HidConstants.KEY_L, HidConstants.MOD_LEFT_GUI, "Win+L")
+                        }
+                    }
+                }
+            }
+
+            2 -> {
+                // MEDIA MODE: Consumer Report Controller
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Row 1: Volume & Mute
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "MUTE", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            onSendConsumerKey(HidConstants.CONSUMER_MUTE, "Mute")
+                        }
+                        DeckKey(text = "VOL −", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendConsumerKey(HidConstants.CONSUMER_VOLUME_DOWN, "Vol-")
+                        }
+                        DeckKey(text = "VOL ＋", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendConsumerKey(HidConstants.CONSUMER_VOLUME_UP, "Vol+")
+                        }
+                    }
+
+                    // Row 2: Playback Track Control
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "⏮ PREV", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendConsumerKey(HidConstants.CONSUMER_SCAN_PREV, "Prev")
+                        }
+                        DeckKey(text = "⏯ PLAY / PAUSE", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendConsumerKey(HidConstants.CONSUMER_PLAY_PAUSE, "Play/Pause")
+                        }
+                        DeckKey(text = "NEXT ⏭", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendConsumerKey(HidConstants.CONSUMER_SCAN_NEXT, "Next")
+                        }
+                    }
+
+                    // Row 3: YouTube & Video Player Shortcuts
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "SEEK −5s (◀)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_LEFT, 0, "Seek-5s")
+                        }
+                        DeckKey(text = "SPACE (Pause)", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_SPACE, 0, "Space")
+                        }
+                        DeckKey(text = "FULLSCREEN (F)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_F, 0, "Fullscreen")
+                        }
+                        DeckKey(text = "SEEK +5s (▶)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_RIGHT, 0, "Seek+5s")
+                        }
+                    }
+                }
+            }
+
+            3 -> {
+                // SYSTEM MODE: Windows & Virtual Desktops Universal Command Controller
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Row 1: Virtual Desktops Management
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "◀ DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            val mods = (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            onSendRawKey(HidConstants.KEY_LEFT, mods, "PrevDesktop")
+                        }
+                        DeckKey(text = "＋ NEW DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFF10B981)) {
+                            val mods = (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            onSendRawKey(HidConstants.KEY_D, mods, "NewDesktop")
+                        }
+                        DeckKey(text = "✕ CLOSE DESK", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            val mods = (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            onSendRawKey(HidConstants.KEY_F4, mods, "CloseDesktop")
+                        }
+                        DeckKey(text = "DESKTOP ▶", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            val mods = (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
+                            onSendRawKey(HidConstants.KEY_RIGHT, mods, "NextDesktop")
+                        }
+                    }
+
+                    // Row 2: Windows System Shell
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "TASK VIEW (Win+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI, "TaskView")
+                        }
+                        DeckKey(text = "SNIP TOOL (Win+⇧+S)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
+                            val mods = (HidConstants.MOD_LEFT_GUI.toInt() or HidConstants.MOD_LEFT_SHIFT.toInt()).toByte()
+                            onSendRawKey(HidConstants.KEY_S, mods, "SnipTool")
+                        }
+                        DeckKey(text = "EXPLORER (Win+E)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_E, HidConstants.MOD_LEFT_GUI, "Explorer")
+                        }
+                        DeckKey(text = "RUN (Win+R)", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_R, HidConstants.MOD_LEFT_GUI, "Run")
+                        }
+                    }
+
+                    // Row 3: Window Snap & Actions
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(text = "SNAP ◀", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_LEFT, HidConstants.MOD_LEFT_GUI, "SnapLeft")
+                        }
+                        DeckKey(text = "MAXIMIZE ▲", modifier = Modifier.weight(1.1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_UP, HidConstants.MOD_LEFT_GUI, "Maximize")
+                        }
+                        DeckKey(text = "SNAP ▶", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_RIGHT, HidConstants.MOD_LEFT_GUI, "SnapRight")
+                        }
+                        DeckKey(text = "ACTION CTR (Win+A)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_A, HidConstants.MOD_LEFT_GUI, "ActionCenter")
+                        }
+                        DeckKey(text = "CLOSE (Alt+F4)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            onSendRawKey(HidConstants.KEY_F4, HidConstants.MOD_LEFT_ALT, "CloseWindow")
+                        }
+                    }
+                }
+            }
+
+            4 -> {
+                // F-KEYS MODE: Clean 2-Row Layout + System Function Keys
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // F1 - F6
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        val f1to6 = listOf(
+                            "F1" to HidConstants.KEY_F1, "F2" to HidConstants.KEY_F2,
+                            "F3" to HidConstants.KEY_F3, "F4" to HidConstants.KEY_F4,
+                            "F5" to HidConstants.KEY_F5, "F6" to HidConstants.KEY_F6
+                        )
+                        f1to6.forEach { (lbl, code) ->
+                            DeckKey(text = lbl, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 13.sp) {
+                                onSendRawKey(code, 0, lbl)
+                            }
+                        }
+                    }
+
+                    // F7 - F12
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        val f7to12 = listOf(
+                            "F7" to HidConstants.KEY_F7, "F8" to HidConstants.KEY_F8,
+                            "F9" to HidConstants.KEY_F9, "F10" to HidConstants.KEY_F10,
+                            "F11" to HidConstants.KEY_F11, "F12" to HidConstants.KEY_F12
+                        )
+                        f7to12.forEach { (lbl, code) ->
+                            DeckKey(text = lbl, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 13.sp) {
+                                onSendRawKey(code, 0, lbl)
+                            }
+                        }
+                    }
+
+                    // Extended System Keys
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        DeckKey(text = "PRTSC", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onSendRawKey(HidConstants.KEY_PRINTSCREEN, 0, "PrtSc")
+                        }
+                        DeckKey(text = "HOME", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_HOME, 0, "Home")
+                        }
+                        DeckKey(text = "END", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_END, 0, "End")
+                        }
+                        DeckKey(text = "PGUP", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_PAGEUP, 0, "PgUp")
+                        }
+                        DeckKey(text = "PGDN", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            onSendRawKey(HidConstants.KEY_PAGEDOWN, 0, "PgDn")
+                        }
+                    }
+                }
+            }
+
+            5 -> {
+                // NUMPAD MODE: Dedicated Financial / Code Numpad
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val numRows: List<List<Pair<String, Byte>>> = listOf(
+                        listOf("7" to HidConstants.KEY_KP7, "8" to HidConstants.KEY_KP8, "9" to HidConstants.KEY_KP9, "/" to HidConstants.KEY_KPSLASH),
+                        listOf("4" to HidConstants.KEY_KP4, "5" to HidConstants.KEY_KP5, "6" to HidConstants.KEY_KP6, "*" to HidConstants.KEY_KPASTERISK),
+                        listOf("1" to HidConstants.KEY_KP1, "2" to HidConstants.KEY_KP2, "3" to HidConstants.KEY_KP3, "−" to HidConstants.KEY_KPMINUS),
+                        listOf("0" to HidConstants.KEY_KP0, "." to HidConstants.KEY_KPDOT, "＝" to HidConstants.KEY_KPEQUAL, "＋" to HidConstants.KEY_KPPLUS)
+                    )
+                    for (rowKeys in numRows) {
+                        Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            for (item in rowKeys) {
+                                DeckKey(text = item.first, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 15.sp) {
+                                    onSendRawKey(item.second, 0, item.first)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

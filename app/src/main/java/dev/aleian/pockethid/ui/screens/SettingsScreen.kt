@@ -2,8 +2,6 @@ package dev.aleian.pockethid.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,30 +14,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.BatteryChargingFull
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -62,25 +49,16 @@ import dev.aleian.pockethid.model.AppSettings
 import dev.aleian.pockethid.model.ConnectionState
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
-import dev.aleian.pockethid.ui.theme.AccentAmber
-import dev.aleian.pockethid.ui.theme.AccentGreen
 import dev.aleian.pockethid.ui.theme.DarkBg
-import dev.aleian.pockethid.ui.theme.DarkBorder
-import dev.aleian.pockethid.ui.theme.ErrorContainer
 import dev.aleian.pockethid.ui.theme.OnPrimaryContainer
 import dev.aleian.pockethid.ui.theme.PrimaryBlue
 import dev.aleian.pockethid.ui.theme.PrimaryContainer
 import dev.aleian.pockethid.ui.theme.StatusConnected
 import dev.aleian.pockethid.ui.theme.SurfaceCard
-import dev.aleian.pockethid.ui.theme.SurfaceContainer
 import dev.aleian.pockethid.ui.theme.SurfaceContainerHigh
-import dev.aleian.pockethid.ui.theme.SurfaceContainerLow
 import dev.aleian.pockethid.ui.theme.SurfaceContainerLowest
-import dev.aleian.pockethid.ui.theme.SurfaceRaised
-import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
-import java.util.Locale
 
 @Composable
 fun SettingsScreen(
@@ -102,6 +80,24 @@ fun SettingsScreen(
     var pasteDelay by remember(currentSettings) { mutableLongStateOf(currentSettings.pasteDelayMs) }
     var keyboardHaptics by remember(currentSettings) { mutableStateOf(currentSettings.keyboardHaptics) }
     var keepAwake by remember(currentSettings) { mutableStateOf(currentSettings.keepAwakeTimeout) }
+    var gpLeftDeadzone by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadLeftDeadzone) }
+    var gpLeftSens by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadLeftSensitivity) }
+    var gpLeftCurve by remember(currentSettings) { mutableStateOf(currentSettings.gamepadLeftCurve) }
+    var gpRightDeadzone by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadRightDeadzone) }
+    var gpRightSens by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadRightSensitivity) }
+    var gpRightCurve by remember(currentSettings) { mutableStateOf(currentSettings.gamepadRightCurve) }
+    var gpTriggerSens by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadTriggerSensitivity) }
+    var gpInvertY by remember(currentSettings) { mutableStateOf(currentSettings.gamepadInvertY) }
+    var pinchZoomEnabled by remember(currentSettings) { mutableStateOf(currentSettings.pinchZoomEnabled) }
+    var pinchThreshold by remember(currentSettings) { mutableFloatStateOf(currentSettings.pinchThresholdPx) }
+    var zoomMode by remember(currentSettings) { mutableStateOf(currentSettings.zoomMode) }
+    var keepScreenAwake by remember(currentSettings) { mutableStateOf(currentSettings.keepScreenAwake) }
+    var screenSleepTimeoutMinutes by remember(currentSettings) { mutableIntStateOf(currentSettings.screenSleepTimeoutMinutes) }
+    var oneHandHandedness by remember(currentSettings) { mutableStateOf(currentSettings.oneHandHandedness) }
+    var oneHandSeekStep by remember(currentSettings) { mutableIntStateOf(currentSettings.oneHandSeekStepSeconds) }
+    var oneHandScrollSens by remember(currentSettings) { mutableFloatStateOf(currentSettings.oneHandScrollSensitivity) }
+    var fastScrollEnabled by remember(currentSettings) { mutableStateOf(currentSettings.fastScrollEnabled) }
+    var fastScrollMultiplier by remember(currentSettings) { mutableFloatStateOf(currentSettings.fastScrollMultiplier) }
 
     val hostName = when (connState) {
         is ConnectionState.Connected -> (connState as ConnectionState.Connected).device.name ?: "BT-HID-HOST"
@@ -186,559 +182,86 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Telemetry Banner
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainerLow)
-                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
-                    .padding(12.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(StatusConnected)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = "HOST: $hostName".uppercase(),
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = PrimaryBlue
-                                )
-                                Text(
-                                    text = "BT HID Profile v1.1 • Classic ACL",
-                                    fontSize = 11.sp,
-                                    color = TextSecondary
-                                )
-                            }
-                        }
-                    }
+            SettingsTelemetryBanner(hostName = hostName, pollingRate = pollingRate)
 
-                    // 3-col telemetry stats
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(SurfaceContainerLowest.copy(alpha = 0.5f))
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("LATENCY", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                            Text("8.0 ms", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = TextPrimary)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("TICK RATE", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                            Text("${pollingRate.toInt()} Hz", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("DRAIN BUDGET", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                            Text("~3.2%/h", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = StatusConnected)
-                        }
-                    }
-                }
-            }
+            // Section 1: Mouse & Trackpad Engine
+            MouseTrackpadSettingsSection(
+                pollingRate = pollingRate,
+                onPollingRateChange = { pollingRate = it },
+                deadZone = deadZone,
+                onDeadZoneChange = { deadZone = it },
+                accelFactor = accelFactor,
+                onAccelFactorChange = { accelFactor = it },
+                hapticTrackpad = hapticTrackpad,
+                onHapticTrackpadChange = { hapticTrackpad = it },
+                hapticIntensity = hapticIntensity,
+                onHapticIntensityChange = { hapticIntensity = it },
+                naturalScroll = naturalScroll,
+                onNaturalScrollChange = { naturalScroll = it },
+                dragLock = dragLock,
+                onDragLockChange = { dragLock = it },
+                pinchZoomEnabled = pinchZoomEnabled,
+                onPinchZoomEnabledChange = { pinchZoomEnabled = it },
+                pinchThreshold = pinchThreshold,
+                onPinchThresholdChange = { pinchThreshold = it },
+                zoomMode = zoomMode,
+                onZoomModeChange = { zoomMode = it },
+                fastScrollEnabled = fastScrollEnabled,
+                onFastScrollEnabledChange = { fastScrollEnabled = it },
+                fastScrollMultiplier = fastScrollMultiplier,
+                onFastScrollMultiplierChange = { fastScrollMultiplier = it }
+            )
 
-            // SECTION 1: Mouse & Trackpad Engine (Subsystem 0x01)
-            SectionHeader(icon = Icons.Default.Mouse, title = "Mouse & Trackpad Engine", subtitle = "Subsystem 0x01")
+            // Section 2: Keyboard & Scancode Engine
+            KeyboardSettingsSection(
+                pasteDelay = pasteDelay,
+                onPasteDelayChange = { pasteDelay = it },
+                keyboardHaptics = keyboardHaptics,
+                onKeyboardHapticsChange = { keyboardHaptics = it }
+            )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainer)
-                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
-                    .padding(14.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    // Polling Rate
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Tần số lấy mẫu (Polling Rate)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text("${pollingRate.toInt()} Hz", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(SurfaceContainerLowest)
-                                .padding(3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            SegmentButton(
-                                label = "62.5 Hz",
-                                subLabel = "16ms Low-Pwr",
-                                isSelected = pollingRate == 62.5f,
-                                modifier = Modifier.weight(1f)
-                            ) { pollingRate = 62.5f }
+            // Section 3: Gamepad Calibration
+            GamepadSettingsSection(
+                gpLeftDeadzone = gpLeftDeadzone,
+                onGpLeftDeadzoneChange = { gpLeftDeadzone = it },
+                gpLeftSens = gpLeftSens,
+                onGpLeftSensChange = { gpLeftSens = it },
+                gpLeftCurve = gpLeftCurve,
+                onGpLeftCurveChange = { gpLeftCurve = it },
+                gpRightDeadzone = gpRightDeadzone,
+                onGpRightDeadzoneChange = { gpRightDeadzone = it },
+                gpRightSens = gpRightSens,
+                onGpRightSensChange = { gpRightSens = it },
+                gpRightCurve = gpRightCurve,
+                onGpRightCurveChange = { gpRightCurve = it },
+                gpTriggerSens = gpTriggerSens,
+                onGpTriggerSensChange = { gpTriggerSens = it },
+                gpInvertY = gpInvertY,
+                onGpInvertYChange = { gpInvertY = it }
+            )
 
-                            SegmentButton(
-                                label = "125 Hz",
-                                subLabel = "8ms PRD Std",
-                                isSelected = pollingRate == 125f,
-                                modifier = Modifier.weight(1f)
-                            ) { pollingRate = 125f }
+            // Section 4: One-Hand Remote Control
+            OneHandSettingsSection(
+                oneHandHandedness = oneHandHandedness,
+                onOneHandHandednessChange = { oneHandHandedness = it },
+                oneHandSeekStep = oneHandSeekStep,
+                onOneHandSeekStepChange = { oneHandSeekStep = it },
+                oneHandScrollSens = oneHandScrollSens,
+                onOneHandScrollSensChange = { oneHandScrollSens = it }
+            )
 
-                            SegmentButton(
-                                label = "250 Hz",
-                                subLabel = "4ms Turbo",
-                                isSelected = pollingRate == 250f,
-                                modifier = Modifier.weight(1f)
-                            ) { pollingRate = 250f }
-                        }
-                        Text(
-                            text = "Khuyên dùng 125 Hz để cân bằng jitter & thời lượng pin.",
-                            fontSize = 11.sp,
-                            color = TextSecondary
-                        )
-                    }
-
-                    // Deadzone
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Dead Zone chống trôi Tap-Click", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                                Text("Chặn rung vi mô trong 30ms đầu sau touch-down", fontSize = 11.sp, color = TextSecondary)
-                            }
-                            Text("$deadZone px", fontSize = 13.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-                        }
-                        Slider(
-                            value = deadZone.toFloat(),
-                            onValueChange = { deadZone = it.toInt() },
-                            valueRange = 0f..5f,
-                            steps = 4,
-                            colors = SliderDefaults.colors(
-                                thumbColor = PrimaryBlue,
-                                activeTrackColor = PrimaryBlue,
-                                inactiveTrackColor = SurfaceRaised
-                            )
-                        )
-                    }
-
-                    // Acceleration Factor
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Gia tốc phi tuyến (Acceleration Curve)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text(
-                                text = "k = ${String.format(Locale.US, "%.1f", accelFactor)}×",
-                                fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryBlue
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(SurfaceContainerLowest)
-                                .padding(8.dp)
-                        ) {
-                            Text(
-                                text = "v_out = v_in × (1 + ${String.format(Locale.US, "%.1f", accelFactor)} × min(v_in / 8, 1))",
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 11.sp,
-                                color = PrimaryBlue
-                            )
-                        }
-                        Slider(
-                            value = accelFactor,
-                            onValueChange = { accelFactor = (Math.round(it * 10f) / 10f) },
-                            valueRange = 0.5f..3.0f,
-                            steps = 24,
-                            colors = SliderDefaults.colors(
-                                thumbColor = PrimaryBlue,
-                                activeTrackColor = PrimaryBlue,
-                                inactiveTrackColor = SurfaceRaised
-                            )
-                        )
-                    }
-
-                    // Haptics & Intensity
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Phản hồi xúc giác Trackpad", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                                Text("Rung ERM/LRA khi click & drag-lock", fontSize = 11.sp, color = TextSecondary)
-                            }
-                            Switch(
-                                checked = hapticTrackpad,
-                                onCheckedChange = { hapticTrackpad = it },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = TextPrimary,
-                                    checkedTrackColor = PrimaryContainer
-                                )
-                            )
-                        }
-
-                        if (hapticTrackpad) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(SurfaceContainerLowest)
-                                    .padding(3.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                listOf("Nhẹ", "Vừa", "Mạnh").forEach { level ->
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(if (hapticIntensity == level) SurfaceRaised else SurfaceContainerLowest)
-                                            .clickable { hapticIntensity = level }
-                                            .padding(vertical = 6.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = level,
-                                            fontSize = 11.sp,
-                                            fontWeight = if (hapticIntensity == level) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (hapticIntensity == level) TextPrimary else TextSecondary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Natural Scroll Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Đảo chiều cuộn tự nhiên (Natural Scroll)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text("Kéo 2 ngón theo hướng nội dung di chuyển", fontSize = 11.sp, color = TextSecondary)
-                        }
-                        Switch(
-                            checked = naturalScroll,
-                            onCheckedChange = { naturalScroll = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = TextPrimary,
-                                checkedTrackColor = PrimaryContainer
-                            )
-                        )
-                    }
-
-                    // Double-tap Drag Lock Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Double-tap Drag Lock (Khóa kéo)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text("Ngưỡng nhả con trỏ tự do: 250ms", fontSize = 11.sp, color = TextSecondary)
-                        }
-                        Switch(
-                            checked = dragLock,
-                            onCheckedChange = { dragLock = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = TextPrimary,
-                                checkedTrackColor = PrimaryContainer
-                            )
-                        )
-                    }
-                }
-            }
-
-            // SECTION 2: Keyboard & Scancode Engine (Subsystem 0x02)
-            SectionHeader(icon = Icons.Default.Keyboard, title = "Keyboard & Scancode Engine", subtitle = "Subsystem 0x02")
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainer)
-                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
-                    .padding(14.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    // Safe Paste Throttle Slider
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Độ trễ dán chuỗi (Paste Throttle)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                                Text("Chống nghẽn buffer HID ring & nuốt ký tự host", fontSize = 11.sp, color = TextSecondary)
-                            }
-                            Text("$pasteDelay ms", fontSize = 13.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-                        }
-                        Slider(
-                            value = pasteDelay.toFloat(),
-                            onValueChange = { pasteDelay = it.toLong() },
-                            valueRange = 10f..50f,
-                            steps = 7,
-                            colors = SliderDefaults.colors(
-                                thumbColor = PrimaryBlue,
-                                activeTrackColor = PrimaryBlue,
-                                inactiveTrackColor = SurfaceRaised
-                            )
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Fast (10ms)", fontSize = 10.sp, color = TextMuted)
-                            Text("Safe Zone (15ms - 25ms)", fontSize = 10.sp, color = StatusConnected, fontWeight = FontWeight.SemiBold)
-                            Text("Ultra Safe (50ms)", fontSize = 10.sp, color = TextMuted)
-                        }
-                    }
-
-                    // Sticky Modifiers Mechanism
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Cơ chế Sticky Modifiers", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text("Tap 1 lần: giữ phím kế tiếp • Tap 2 lần: Khóa cứng", fontSize = 11.sp, color = TextSecondary)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(SurfaceContainerLowest)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "LATCH+LOCK",
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryBlue
-                            )
-                        }
-                    }
-
-                    // Key Vibration Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Rung phản hồi phím (Key Vibration)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text("Cảm giác tactile nảy micro-switch khi gõ", fontSize = 11.sp, color = TextSecondary)
-                        }
-                        Switch(
-                            checked = keyboardHaptics,
-                            onCheckedChange = { keyboardHaptics = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = TextPrimary,
-                                checkedTrackColor = PrimaryContainer
-                            )
-                        )
-                    }
-                }
-            }
-
-            // SECTION 3: Power & Background Service
-            SectionHeader(icon = Icons.Default.BatteryChargingFull, title = "Power & Background Service", subtitle = "TargetSdk 35")
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainer)
-                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
-                    .padding(14.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    // Service Status Pill Card
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(SurfaceContainerLowest)
-                            .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(SurfaceCard),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Security,
-                                    contentDescription = null,
-                                    tint = StatusConnected,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text("FOREGROUND_SERVICE", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                Text("Type: CONNECTED_DEVICE (Active)", fontSize = 10.sp, color = TextSecondary)
-                            }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(StatusConnected.copy(alpha = 0.2f))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "RUNNING",
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = StatusConnected
-                            )
-                        }
-                    }
-
-                    // Keep Awake Timeout Selector
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Giữ kết nối khi tắt màn hình", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            Text(keepAwake, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(SurfaceContainerLowest)
-                                .padding(3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            listOf("5 Phút", "15 Phút", "Vô hạn").forEach { option ->
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(if (keepAwake == option) PrimaryContainer else SurfaceContainerLowest)
-                                        .clickable { keepAwake = option }
-                                        .padding(vertical = 8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = option,
-                                            fontSize = 12.sp,
-                                            fontWeight = if (keepAwake == option) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (keepAwake == option) OnPrimaryContainer else TextSecondary
-                                        )
-                                        Text(
-                                            text = when (option) {
-                                                "5 Phút" -> "PRD Chuẩn"
-                                                "15 Phút" -> "Mở rộng"
-                                                else -> "Tốn pin"
-                                            },
-                                            fontSize = 9.sp,
-                                            color = if (keepAwake == option) OnPrimaryContainer.copy(alpha = 0.8f) else TextMuted
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        if (keepAwake == "Vô hạn") {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(ErrorContainer.copy(alpha = 0.2f))
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = null,
-                                    tint = AccentAmber,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Chế độ vô hạn sẽ ngăn Android Doze Mode, làm tăng tiêu hao pin.",
-                                    fontSize = 11.sp,
-                                    color = AccentAmber
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            // Section 5: Screen Behavior & Power
+            ScreenBehaviorSettingsSection(
+                keepScreenAwake = keepScreenAwake,
+                onKeepScreenAwakeChange = { keepScreenAwake = it },
+                screenSleepTimeoutMinutes = screenSleepTimeoutMinutes,
+                onScreenSleepTimeoutMinutesChange = { screenSleepTimeoutMinutes = it }
+            )
 
             // Quick Diagnostics Summary Box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainerLow)
-                    .padding(12.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("HARDWARE CONFIG SYNC HASH", fontSize = 10.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                        Text("CRC-32: #4A92F1", fontSize = 10.sp, fontFamily = FontFamily.Monospace, color = PrimaryBlue, fontWeight = FontWeight.Bold)
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceRaised)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.92f)
-                                .height(4.dp)
-                                .background(PrimaryBlue)
-                        )
-                    }
-                    Text(
-                        text = "Các thông số này được lưu riêng biệt cho Host: $hostName",
-                        fontSize = 10.sp,
-                        color = TextSecondary
-                    )
-                }
-            }
+            DiagnosticsSummarySection(hostName = hostName)
 
-            // Action Buttons
+            // Action Buttons (Save / Reset)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
@@ -752,7 +275,25 @@ fun SettingsScreen(
                             dragLock = dragLock,
                             pasteDelayMs = pasteDelay,
                             keyboardHaptics = keyboardHaptics,
-                            keepAwakeTimeout = keepAwake
+                            keepAwakeTimeout = keepAwake,
+                            gamepadLeftDeadzone = gpLeftDeadzone,
+                            gamepadLeftSensitivity = gpLeftSens,
+                            gamepadLeftCurve = gpLeftCurve,
+                            gamepadRightDeadzone = gpRightDeadzone,
+                            gamepadRightSensitivity = gpRightSens,
+                            gamepadRightCurve = gpRightCurve,
+                            gamepadTriggerSensitivity = gpTriggerSens,
+                            gamepadInvertY = gpInvertY,
+                            pinchZoomEnabled = pinchZoomEnabled,
+                            pinchThresholdPx = pinchThreshold,
+                            zoomMode = zoomMode,
+                            keepScreenAwake = keepScreenAwake,
+                            screenSleepTimeoutMinutes = screenSleepTimeoutMinutes,
+                            oneHandHandedness = oneHandHandedness,
+                            oneHandSeekStepSeconds = oneHandSeekStep,
+                            oneHandScrollSensitivity = oneHandScrollSens,
+                            fastScrollEnabled = fastScrollEnabled,
+                            fastScrollMultiplier = fastScrollMultiplier
                         )
                         SettingsRepository.updateSettings(updated)
                         Toast.makeText(context, "Đã lưu cấu hình PocketHID thành công!", Toast.LENGTH_SHORT).show()
@@ -784,6 +325,24 @@ fun SettingsScreen(
                         pasteDelay = 15L
                         keyboardHaptics = true
                         keepAwake = "5 Phút"
+                        gpLeftDeadzone = 0.10f
+                        gpLeftSens = 1.0f
+                        gpLeftCurve = "Linear"
+                        gpRightDeadzone = 0.10f
+                        gpRightSens = 1.0f
+                        gpRightCurve = "Linear"
+                        gpTriggerSens = 1.0f
+                        gpInvertY = false
+                        pinchZoomEnabled = true
+                        pinchThreshold = 35.0f
+                        zoomMode = "Wheel"
+                        keepScreenAwake = false
+                        screenSleepTimeoutMinutes = 10
+                        oneHandHandedness = "Right"
+                        oneHandSeekStep = 10
+                        oneHandScrollSens = 1.0f
+                        fastScrollEnabled = true
+                        fastScrollMultiplier = 2.5f
                         Toast.makeText(context, "Đã khôi phục cài đặt mặc định kỹ thuật.", Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier
@@ -801,73 +360,6 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = title.uppercase(),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-        }
-        Text(
-            text = subtitle,
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextMuted
-        )
-    }
-}
-
-@Composable
-private fun SegmentButton(
-    label: String,
-    subLabel: String,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (isSelected) PrimaryContainer else SurfaceContainerLowest)
-            .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = label,
-                fontSize = 11.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                color = if (isSelected) OnPrimaryContainer else TextSecondary
-            )
-            Text(
-                text = subLabel,
-                fontSize = 8.sp,
-                color = if (isSelected) OnPrimaryContainer.copy(alpha = 0.8f) else TextMuted
-            )
         }
     }
 }

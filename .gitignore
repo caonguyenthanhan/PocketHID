@@ -19,3 +19,5 @@ tree_scan_result.json
 tree_scan_result.txt
 stitch_new_build_project.zip
 stitch_new_build_project/
+.kotlin/
+

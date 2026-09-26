@@ -26,7 +26,9 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.Slideshow
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -45,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -131,11 +134,11 @@ fun MainScreen(
         }
     }
 
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Presenter
-    var showPairingSheet by remember { mutableStateOf(false) }
-    var showSettingsScreen by remember { mutableStateOf(false) }
-    var showDiagnosticsSheet by remember { mutableStateOf(false) }
-    var showCommandPalette by remember { mutableStateOf(false) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter
+    var showPairingSheet by rememberSaveable { mutableStateOf(false) }
+    var showSettingsScreen by rememberSaveable { mutableStateOf(false) }
+    var showDiagnosticsSheet by rememberSaveable { mutableStateOf(false) }
+    var showCommandPalette by rememberSaveable { mutableStateOf(false) }
 
     if (showSettingsScreen) {
         SettingsScreen(
@@ -313,8 +316,8 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
-                    label = { Text("Mouse", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
+                    label = { Text("Keyboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -326,8 +329,8 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
-                    label = { Text("Keyboard", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
+                    label = { Text("Mouse", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -339,8 +342,34 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Gamepad") },
+                    label = { Text("Gamepad", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = PrimaryBlue,
+                        selectedTextColor = PrimaryBlue,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted,
+                        indicatorColor = DarkSurface
+                    )
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 3,
+                    onClick = { selectedTab = 3 },
                     icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
-                    label = { Text("Presenter", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
+                    label = { Text("Presenter", fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = PrimaryBlue,
+                        selectedTextColor = PrimaryBlue,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted,
+                        indicatorColor = DarkSurface
+                    )
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 4,
+                    onClick = { selectedTab = 4 },
+                    icon = { Icon(Icons.Default.TouchApp, contentDescription = "One-Hand") },
+                    label = { Text("One-Hand", fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -358,18 +387,27 @@ fun MainScreen(
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> MouseScreen(
+                0 -> KeyboardScreen(
+                    transport = transport,
+                    connectionState = connectionState
+                )
+                1 -> MouseScreen(
                     transport = transport,
                     connectionState = connectionState,
                     onPairClick = { showPairingSheet = true },
                     onHostInfoClick = { showDiagnosticsSheet = true },
                     onSettingsClick = { showSettingsScreen = true }
                 )
-                1 -> KeyboardScreen(
+                2 -> GamepadScreen(
+                    transport = transport,
+                    connectionState = connectionState,
+                    onOpenDiagnostics = { showDiagnosticsSheet = true }
+                )
+                3 -> PresenterScreen(transport = transport)
+                4 -> OneHandScreen(
                     transport = transport,
                     connectionState = connectionState
                 )
-                2 -> PresenterScreen(transport = transport)
             }
         }
 
@@ -393,6 +431,7 @@ fun MainScreen(
         if (showDiagnosticsSheet) {
             DiagnosticsSheet(
                 connectionState = connectionState,
+                transport = transport,
                 onDismiss = { showDiagnosticsSheet = false }
             )
         }

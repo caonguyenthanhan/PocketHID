@@ -85,10 +85,10 @@ fun PresenterScreen(
         }
     }
 
-    fun sendKey(keyCode: Byte, modifiers: Byte = 0) {
+    fun dispatchAction(action: dev.aleian.pockethid.action.PocketAction) {
         triggerHaptic()
         scope.launch {
-            transport?.sendKeyClick(keyCode, modifiers)
+            dev.aleian.pockethid.action.ActionDispatcher.dispatch(action, transport, settings.hostOs)
         }
     }
 
@@ -108,7 +108,7 @@ fun PresenterScreen(
                 label = "START F5",
                 modifier = Modifier.weight(1f)
             ) {
-                sendKey(HidConstants.KEY_F5)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.StartSlideshow)
             }
 
             PresenterUtilityButton(
@@ -116,7 +116,7 @@ fun PresenterScreen(
                 label = "RESUME ⇧F5",
                 modifier = Modifier.weight(1f)
             ) {
-                sendKey(HidConstants.KEY_F5, HidConstants.MOD_LEFT_SHIFT)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.ResumeSlideshow)
             }
 
             PresenterUtilityButton(
@@ -124,7 +124,7 @@ fun PresenterScreen(
                 label = "EXIT ESC",
                 modifier = Modifier.weight(1f)
             ) {
-                sendKey(HidConstants.KEY_ESC)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.ExitSlideshow)
             }
         }
 
@@ -138,7 +138,7 @@ fun PresenterScreen(
                 label = "BLACK (B)",
                 modifier = Modifier.weight(1f)
             ) {
-                sendKey(HidConstants.KEY_B)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.BlankBlack)
             }
 
             PresenterUtilityButton(
@@ -146,7 +146,7 @@ fun PresenterScreen(
                 label = "WHITE (W)",
                 modifier = Modifier.weight(1f)
             ) {
-                sendKey(HidConstants.KEY_W)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.BlankWhite)
             }
 
             PresenterUtilityButton(
@@ -231,7 +231,7 @@ fun PresenterScreen(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                sendKey(HidConstants.KEY_LEFT)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.PreviousSlide)
             }
 
             // Next Slide Button (Right Half - Primary Highlight)
@@ -244,7 +244,7 @@ fun PresenterScreen(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                sendKey(HidConstants.KEY_RIGHT)
+                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.NextSlide)
             }
         }
 

@@ -4,8 +4,9 @@ object HidConstants {
     const val REPORT_ID_KEYBOARD: Byte = 1
     const val REPORT_ID_MOUSE: Byte = 2
     const val REPORT_ID_CONSUMER: Byte = 3
+    const val REPORT_ID_GAMEPAD: Byte = 4
 
-    // Combo Report Descriptor (Keyboard + Mouse + Consumer Media)
+    // Combo Report Descriptor (Keyboard + Mouse + Consumer Media + Gamepad)
     val COMBO_REPORT_DESCRIPTOR = byteArrayOf(
         // Report ID 1 — Keyboard (8 byte: modifiers, reserved, 6 keycodes)
         0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x06.toByte(), 0xA1.toByte(), 0x01.toByte(), 0x85.toByte(), 0x01.toByte(),
@@ -35,8 +36,125 @@ object HidConstants {
         0x95.toByte(), 0x01.toByte(), //   Report Count (1)
         0x75.toByte(), 0x10.toByte(), //   Report Size (16)
         0x81.toByte(), 0x00.toByte(), //   Input (Data, Array)
-        0xC0.toByte()                 // End Collection
+        0xC0.toByte(),                // End Collection
+        // Report ID 4 — Gamepad (13 bytes: 16 buttons, 1 hat switch, 4 axes, 2 triggers)
+        0x05.toByte(), 0x01.toByte(), // Usage Page (Generic Desktop)
+        0x09.toByte(), 0x05.toByte(), // Usage (Gamepad)
+        0xA1.toByte(), 0x01.toByte(), // Collection (Application)
+        0x85.toByte(), 0x04.toByte(), //   Report ID (4)
+        // 16 Digital Buttons
+        0x05.toByte(), 0x09.toByte(), //   Usage Page (Button)
+        0x19.toByte(), 0x01.toByte(), //   Usage Minimum (Button 1)
+        0x29.toByte(), 0x10.toByte(), //   Usage Maximum (Button 16)
+        0x15.toByte(), 0x00.toByte(), //   Logical Minimum (0)
+        0x25.toByte(), 0x01.toByte(), //   Logical Maximum (1)
+        0x75.toByte(), 0x01.toByte(), //   Report Size (1)
+        0x95.toByte(), 0x10.toByte(), //   Report Count (16)
+        0x81.toByte(), 0x02.toByte(), //   Input (Data, Var, Abs)
+        // Hat Switch (D-Pad, 4 bits + 4 bits padding = 1 byte)
+        0x05.toByte(), 0x01.toByte(), //   Usage Page (Generic Desktop)
+        0x09.toByte(), 0x39.toByte(), //   Usage (Hat switch)
+        0x15.toByte(), 0x01.toByte(), //   Logical Minimum (1)
+        0x25.toByte(), 0x08.toByte(), //   Logical Maximum (8)
+        0x35.toByte(), 0x00.toByte(), //   Physical Minimum (0)
+        0x46.toByte(), 0x3B.toByte(), 0x01.toByte(), // Physical Maximum (315)
+        0x65.toByte(), 0x14.toByte(), //   Unit (Eng Rot: Angular Pos)
+        0x75.toByte(), 0x04.toByte(), //   Report Size (4)
+        0x95.toByte(), 0x01.toByte(), //   Report Count (1)
+        0x81.toByte(), 0x42.toByte(), //   Input (Data, Var, Abs, Null State)
+        0x75.toByte(), 0x04.toByte(), //   Report Size (4) - padding
+        0x95.toByte(), 0x01.toByte(), //   Report Count (1)
+        0x81.toByte(), 0x03.toByte(), //   Input (Const, Var, Abs)
+        // Reset Physical Items and Unit to avoid polluting following analog axes
+        0x65.toByte(), 0x00.toByte(), //   Unit (None)
+        0x35.toByte(), 0x00.toByte(), //   Physical Minimum (0)
+        0x45.toByte(), 0x00.toByte(), //   Physical Maximum (0)
+        // Left Stick (X, Y) wrapped in Physical Pointer Collection
+        0x05.toByte(), 0x01.toByte(), //   Usage Page (Generic Desktop)
+        0x09.toByte(), 0x01.toByte(), //   Usage (Pointer)
+        0xA1.toByte(), 0x00.toByte(), //   Collection (Physical)
+        0x09.toByte(), 0x30.toByte(), //     Usage (X)
+        0x09.toByte(), 0x31.toByte(), //     Usage (Y)
+        0x16.toByte(), 0x00.toByte(), 0x80.toByte(), //   Logical Minimum (-32768)
+        0x26.toByte(), 0xFF.toByte(), 0x7F.toByte(), //   Logical Maximum (32767)
+        0x75.toByte(), 0x10.toByte(), //     Report Size (16)
+        0x95.toByte(), 0x02.toByte(), //     Report Count (2)
+        0x81.toByte(), 0x02.toByte(), //     Input (Data, Var, Abs)
+        0xC0.toByte(),                 //   End Collection (Physical)
+        // Right Stick (Z, Rz) wrapped in Physical Pointer Collection
+        0x05.toByte(), 0x01.toByte(), //   Usage Page (Generic Desktop)
+        0x09.toByte(), 0x01.toByte(), //   Usage (Pointer)
+        0xA1.toByte(), 0x00.toByte(), //   Collection (Physical)
+        0x09.toByte(), 0x32.toByte(), //     Usage (Z)
+        0x09.toByte(), 0x35.toByte(), //     Usage (Rz)
+        0x16.toByte(), 0x00.toByte(), 0x80.toByte(), //   Logical Minimum (-32768)
+        0x26.toByte(), 0xFF.toByte(), 0x7F.toByte(), //   Logical Maximum (32767)
+        0x75.toByte(), 0x10.toByte(), //     Report Size (16)
+        0x95.toByte(), 0x02.toByte(), //     Report Count (2)
+        0x81.toByte(), 0x02.toByte(), //     Input (Data, Var, Abs)
+        0xC0.toByte(),                 //   End Collection (Physical)
+        // 2 Analog Triggers (LT as Rx, RT as Ry: 0..255)
+        0x05.toByte(), 0x01.toByte(), //   Usage Page (Generic Desktop)
+        0x09.toByte(), 0x33.toByte(), //   Usage (Rx)
+        0x09.toByte(), 0x34.toByte(), //   Usage (Ry)
+        0x15.toByte(), 0x00.toByte(), //   Logical Minimum (0)
+        0x26.toByte(), 0xFF.toByte(), 0x00.toByte(), //   Logical Maximum (255)
+        0x75.toByte(), 0x08.toByte(), //   Report Size (8)
+        0x95.toByte(), 0x02.toByte(), //   Report Count (2)
+        0x81.toByte(), 0x02.toByte(), //   Input (Data, Var, Abs)
+        0xC0.toByte()                 // End Collection (Application)
     )
+
+    const val GAMEPAD_REPORT_LENGTH: Int = 13
+    const val GAMEPAD_BUTTON_COUNT: Int = 16
+    const val GAMEPAD_AXES_COUNT: Int = 6
+
+    // Gamepad Buttons (16-bit bitmask)
+    const val GAMEPAD_BTN_A: Int = 1 shl 0
+    const val GAMEPAD_BTN_B: Int = 1 shl 1
+    const val GAMEPAD_BTN_X: Int = 1 shl 2
+    const val GAMEPAD_BTN_Y: Int = 1 shl 3
+    const val GAMEPAD_BTN_LB: Int = 1 shl 4
+    const val GAMEPAD_BTN_RB: Int = 1 shl 5
+    const val GAMEPAD_BTN_BACK: Int = 1 shl 6
+    const val GAMEPAD_BTN_START: Int = 1 shl 7
+    const val GAMEPAD_BTN_GUIDE: Int = 1 shl 8
+    const val GAMEPAD_BTN_L3: Int = 1 shl 9
+    const val GAMEPAD_BTN_R3: Int = 1 shl 10
+    const val GAMEPAD_BTN_DPAD_UP: Int = 1 shl 11
+    const val GAMEPAD_BTN_DPAD_DOWN: Int = 1 shl 12
+    const val GAMEPAD_BTN_DPAD_LEFT: Int = 1 shl 13
+    const val GAMEPAD_BTN_DPAD_RIGHT: Int = 1 shl 14
+
+    // Gamepad Hat Switch (D-Pad 8-way directional values)
+    const val GAMEPAD_HAT_CENTERED: Byte = 0
+    const val GAMEPAD_HAT_UP: Byte = 1
+    const val GAMEPAD_HAT_UP_RIGHT: Byte = 2
+    const val GAMEPAD_HAT_RIGHT: Byte = 3
+    const val GAMEPAD_HAT_DOWN_RIGHT: Byte = 4
+    const val GAMEPAD_HAT_DOWN: Byte = 5
+    const val GAMEPAD_HAT_DOWN_LEFT: Byte = 6
+    const val GAMEPAD_HAT_LEFT: Byte = 7
+    const val GAMEPAD_HAT_UP_LEFT: Byte = 8
+
+    fun calculateHatSwitch(up: Boolean, down: Boolean, left: Boolean, right: Boolean): Byte {
+        val u = up && !down
+        val d = down && !up
+        val l = left && !right
+        val r = right && !left
+
+        return when {
+            u && r -> GAMEPAD_HAT_UP_RIGHT
+            d && r -> GAMEPAD_HAT_DOWN_RIGHT
+            d && l -> GAMEPAD_HAT_DOWN_LEFT
+            u && l -> GAMEPAD_HAT_UP_LEFT
+            u -> GAMEPAD_HAT_UP
+            d -> GAMEPAD_HAT_DOWN
+            l -> GAMEPAD_HAT_LEFT
+            r -> GAMEPAD_HAT_RIGHT
+            else -> GAMEPAD_HAT_CENTERED
+        }
+    }
 
     // Consumer Usages (Media)
     const val CONSUMER_PLAY_PAUSE = 0x00CD
@@ -166,6 +284,7 @@ object HidConstants {
     const val KEY_KP0: Byte = 0x62
     const val KEY_KPDOT: Byte = 0x63
     const val KEY_MENU: Byte = 0x65
+    const val KEY_KPEQUAL: Byte = 0x67
 
     const val KEY_LEFTCTRL: Byte = 0xE0.toByte()
     const val KEY_LEFTSHIFT: Byte = 0xE1.toByte()

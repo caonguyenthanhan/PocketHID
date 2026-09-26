@@ -37,4 +37,58 @@
 - [x] Cải thiện xử lý lỗi chi tiết khi máy tính từ chối kết nối hoặc bị ngắt kết nối đột ngột
 - [x] Biên dịch kiểm tra thành công (`./gradlew.bat assembleDebug` -> PASS 100%)
 
+## Phase 4: Multi-Finger Touch Gestures & Dedicated Number Row
+- [x] Nâng cấp `GestureInterpreter.kt` với State Machine nhận diện cử chỉ 1, 2, 3, 4 ngón và Gesture Priority Lock (ngăn xung đột)
+- [x] Triển khai cử chỉ 1 ngón: Di chuột (Gia tốc + Deadzone), Tap (Left click), Double Tap (Double click), Tap+Hold (Drag)
+- [x] Triển khai cử chỉ 2 ngón: Cuộn dọc, Cuộn ngang (Pan H), 2-Finger Tap (Right click), 2-Finger Tap+Hold
+- [x] Triển khai cử chỉ 3 ngón: 3-Finger Tap (Middle click), Swipe Trái/Phải (Chuyển Desktop ảo), Swipe Lên (Task View), Swipe Xuống (Show Desktop)
+- [x] Triển khai cử chỉ 4 ngón: 4-Finger Tap (Mở Command Deck / Quick Actions), Swipe Trái/Phải (Chuyển App Alt+Tab), Swipe Lên (Task Overview), Swipe Xuống (Thu nhỏ về Desktop)
+- [x] Xây dựng `MultiTouchTrackpad.kt` dùng chung cho cả Landscape và Portrait, có subtle hint và Dialog hướng dẫn cử chỉ
+- [x] Giữ nguyên cụm phím chuột vật lý bên dưới (LEFT, MIDDLE, RIGHT, LOCK) hỗ trợ vừa ấn giữ nút vừa rê chuột để kéo thả
+- [x] Xây dựng `DedicatedNumberRow.kt` với hàng phím số cố định (` 1 2 3 4 5 6 7 8 9 0 - = BKSP), hỗ trợ Shift ra ký tự đặc biệt và Backspace hold-to-repeat
+- [x] Tích hợp hàng phím số cố định vào `LandscapeDeckScreen.kt` và `KeyboardScreen.kt` (TYPE mode)
+- [x] Bổ sung Gesture Telemetry HUD vào `DiagnosticsSheet.kt`
+- [x] Viết bộ Unit Test tự động cho `GestureInterpreterTest` và `KeyMapperTest` (`testDebugUnitTest` PASS 100%)
+- [x] Tạo `PROJECT_STRUCTURE.md` chuẩn hóa kiến trúc thư mục theo checklist scaffold
+- [x] Biên dịch APK Debug (`./gradlew.bat assembleDebug` -> BUILD SUCCESSFUL in 5s)
+
+## Phase 8: One-Hand Web & Video Control Mode & Settings Modularization
+- [x] Bổ sung primary mode thứ 5: `KEYBOARD | MOUSE | GAMEPAD | PRESENTER | ONE-HAND` trên Portrait & Landscape
+- [x] Sub-modes `WEB` và `VIDEO` với segmented control chuyển đổi nhanh
+- [x] Thumb surface công thái học hỗ trợ tùy chọn tay thuận Trái / Phải
+- [x] Báo cáo chuột thật Mouse Wheel HID cho cuộn trang web
+- [x] Consumer Control HID cho Video: Play/Pause, Volume Up/Down, Mute, Seek
+- [x] Mở rộng Semantic Action Engine với `PocketAction.WebAction` & `VideoAction`, phân giải OS-aware
+- [x] Tái cấu trúc module `SettingsSections.kt` giải quyết triệt để JVM 64KB `MethodTooLargeException`
+
+## Phase 9: Right Edge Fast Scroll Zone for Trackpad
+- [x] Tạo `FastScrollController.kt` chuyên trách nhận diện activation zone (8–12% chiều rộng mép phải, min 32dp, max 64dp)
+- [x] Tính toán delta Y, vận tốc (velocity) và đường cong gia tốc phi tuyến riêng biệt cho cuộn nhanh
+- [x] Giới hạn tốc độ cuộn tối đa (clamping max wheel per report) chống văng trang
+- [x] Gửi báo cáo chuột thật Mouse Wheel HID, đồng bộ 100% với cài đặt `naturalScroll`
+- [x] Khóa cử chỉ chỉ khi `ACTION_DOWN` bắt đầu tại mép phải, ngăn chặn hoàn toàn việc chạm từ giữa rê sang
+- [x] Ngăn ngừa xung đột cử chỉ: khi cuộn nhanh không di chuột, không click, không tap, không pinch zoom
+- [x] Tuân thủ thứ bậc đa ngón (4 > 3 > 2 > 1): Tự động nhường quyền khi có thêm ngón tay hạ xuống
+- [x] Dải giao diện mép phải tinh tế với viền phân cách, grip markers `⋮`, icon `↕`, và nhãn `FAST`
+- [x] Hiển thị highlight viền và banner thoáng qua `FAST SCROLL ×2.5` khi chạm kích hoạt
+- [x] Rung nhẹ 1 xung haptic khi kích hoạt (không rung liên tục khi đang cuộn)
+- [x] Gắn nhãn trợ năng (Accessibility) "Fast Scroll Area. Swipe vertically to quickly scroll."
+- [x] Cài đặt bật/tắt và thanh trượt tốc độ cuộn nhanh (1.5x–5.0x, mặc định 2.5x) trong `SettingsSections.kt` & `AppSettings.kt`
+## Phase 10: Gamepad Windows Enumeration (joy.cpl) & Consumer Control Diagnostics
+- [x] Phân tích và phát hiện nguyên nhân gốc rễ: SDP Subclass 0xC0 thiếu Gamepad, ô nhiễm Global items trong HID descriptor, padding 0x01 thay vì 0x03, thiếu Pointer Physical Collection, và chu kỳ nhả Consumer Key 12ms
+- [x] Sửa lỗi HID Report Descriptor trong `HidConstants.kt`: Bọc Pointer Physical Collection cho Left X/Y và Right Z/Rz, reset Physical Min/Max/Unit sau Hat switch, dùng 0x03 cho đệm Hat
+- [x] Cập nhật SDP Subclass trong `BtHidTransport.kt`: `(SUBCLASS1_COMBO or SUBCLASS2_GAMEPAD).toByte()` (0xC8)
+- [x] Sửa lỗi Media Consumer Control: Tăng thời gian giữ phím lên 75ms (`CONSUMER_PRESS_DELAY_MS`), thêm `sendConsumerPress` & `sendConsumerRelease`
+- [x] Xây dựng `ConsumerDiagnosticsHub.kt` thu thập telemetry chi tiết: actionName, usageCode, pressSent, releaseSent, transportStatus
+- [x] Nâng cấp `GamepadState.kt` / `GamepadDiagnosticsHub`: rawBytes 13 byte, rawReportHex, isNeutral flag, và bộ đếm latch/down/up transition chống kẹt phím
+- [x] Module hóa giao diện chẩn đoán `dev.aleian.pockethid.ui.screens.diagnostics`:
+  - `EnumerationStatusCard.kt`: Kiểm tra SDP 0xC8, 4 collections, độ dài report 13 bytes, Gamepad Host Status
+  - `GamepadTestPanel.kt`: Ma trận 11 nút bấm + D-pad, 2D crosshair sticks, thanh áp lực cò (0..1), soi byte thô HEX, cờ NEUTRAL REPORT, bộ đếm latch
+  - `MediaConsumerTestPanel.kt`: 7 nút bấm test âm lượng/media với trạng thái phản hồi trực tiếp
+  - `HostChecklistPanel.kt`: Quy trình hướng dẫn dev quên thiết bị cũ, pair lại và test `joy.cpl`
+- [x] Cập nhật `DiagnosticsSheet.kt` với tab chuyển đổi 4 mục `[ SYSTEM ] [ GAMEPAD ] [ MEDIA ] [ CHECKLIST ]` và scroll dọc mượt mà
+- [x] Viết bộ unit test toàn diện `GamepadReportDescriptorTest` kiểm tra Report ID 4, độ dài 13 byte, bitmask, hat, axes, triggers, neutral state, và latch transitions
+- [x] Chạy `./gradlew.bat testDebugUnitTest` pass 100% và `./gradlew.bat assembleDebug` thành công
+
+
 

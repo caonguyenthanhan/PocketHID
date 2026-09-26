@@ -29,6 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.SettingsRepository
+import dev.aleian.pockethid.power.ScreenWakeManager
 import dev.aleian.pockethid.service.HidDeviceService
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.screens.MainScreen
@@ -36,6 +38,11 @@ import dev.aleian.pockethid.ui.screens.PermissionScreen
 import dev.aleian.pockethid.ui.screens.UnsupportedScreen
 import dev.aleian.pockethid.ui.theme.DarkBg
 import dev.aleian.pockethid.ui.theme.PocketHIDTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -44,6 +51,9 @@ class MainActivity : ComponentActivity() {
         private const val PREFS_NAME = "pockethid_prefs"
         private const val KEY_LAST_DEVICE_ADDRESS = "last_device_mac"
     }
+
+    private val activityScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private lateinit var screenWakeManager: ScreenWakeManager
 
     private var transport: InputTransport? by mutableStateOf(null)
     private var hasPermissions by mutableStateOf(false)
@@ -90,6 +100,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        screenWakeManager = ScreenWakeManager(this, activityScope)
+        activityScope.launch {
+            SettingsRepository.settings.collect { settings ->
+                screenWakeManager.onSettingsChanged(settings)
+            }
+        }
 
         checkAndRequestPermissions()
 
@@ -237,8 +254,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        screenWakeManager.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        screenWakeManager.onPause()
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        screenWakeManager.onUserInteraction()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        screenWakeManager.onDestroy()
         unbindHidService()
+        activityScope.cancel()
     }
 }

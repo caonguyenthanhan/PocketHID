@@ -5,7 +5,11 @@ import android.text.InputType
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
+import dev.aleian.pockethid.action.ActionDispatcher
+import dev.aleian.pockethid.action.ActionExecutionPlan
+import dev.aleian.pockethid.mapping.TextInputResolver
+import dev.aleian.pockethid.ui.components.ImeDiagnosticsHub
+import dev.aleian.pockethid.ui.components.PocketImeInputView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +31,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import dev.aleian.pockethid.ui.components.DedicatedNumberRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardHide
@@ -104,8 +109,8 @@ fun KeyboardScreen(
     var altState by remember { mutableStateOf(ModifierState.OFF) }
     var guiState by remember { mutableStateOf(ModifierState.OFF) } // Win / Cmd
 
-    var hiddenEditText by remember { mutableStateOf<EditText?>(null) }
-    var lastSentCharInfo by remember { mutableStateOf("Tap keyboard area to type") }
+    var imeInputView by remember { mutableStateOf<PocketImeInputView?>(null) }
+    var lastSentCharInfo by remember { mutableStateOf("Ready to type") }
     var terminalStreamText by remember { mutableStateOf("ready>") }
 
     var lastWarnTime by remember { mutableStateOf(0L) }
@@ -152,7 +157,9 @@ fun KeyboardScreen(
         val totalMods = (getActiveModifiers().toInt() or extraModifier.toInt()).toByte()
         triggerHaptic()
         scope.launch {
-            transport?.sendKeyClick(keyCode, totalMods)
+            if (transport != null) {
+                ActionDispatcher.execute(ActionExecutionPlan.KeyStroke(keyCode, totalMods), transport)
+            }
             consumeStickyModifiers()
         }
     }
@@ -162,7 +169,9 @@ fun KeyboardScreen(
         triggerHaptic()
         lastSentCharInfo = label
         scope.launch {
-            transport?.sendConsumerClick(usageCode)
+            if (transport != null) {
+                ActionDispatcher.execute(ActionExecutionPlan.ConsumerKey(usageCode), transport)
+            }
         }
     }
 
@@ -176,9 +185,8 @@ fun KeyboardScreen(
     }
 
     fun focusHiddenInput() {
-        hiddenEditText?.requestFocus()
-        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-        imm?.showSoftInput(hiddenEditText, InputMethodManager.SHOW_IMPLICIT)
+        if (!canSendInput()) return
+        imeInputView?.requestKeyboard()
     }
 
     val specialKeys = remember {
@@ -241,11 +249,29 @@ fun KeyboardScreen(
         // Dynamic Active Layer View
         when (selectedLayer) {
             0 -> {
-                // LAYER 0: TYPE (Special Keys + Quick Shortcuts + Keystroke Monitor + Tap to Type)
+                // LAYER 0: TYPE (Dedicated Number Row + Special Keys + Quick Shortcuts + Keystroke Monitor + Tap to Type)
                 Column(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Permanent Dedicated Number Row (` 1 2 3 4 5 6 7 8 9 0 - = BKSP)
+                    DedicatedNumberRow(
+                        isShiftActive = shiftState != ModifierState.OFF,
+                        onSendKey = { keyCode, extraMod, label ->
+                            lastSentCharInfo = "Sent: $label"
+                            terminalStreamText = label
+                            sendKey(keyCode, extraMod)
+                        },
+                        onBackspaceRepeat = {
+                            lastSentCharInfo = "Sent: ⌫"
+                            terminalStreamText = "BKSP"
+                            sendKey(HidConstants.KEY_BACKSPACE)
+                        },
+                        hapticsEnabled = settings.keyboardHaptics,
+                        fontSize = 11.sp,
+                        keyHeight = 34.dp
+                    )
+
                     // Special Keys Row (Horizontal Scroll)
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -404,14 +430,24 @@ fun KeyboardScreen(
                         }
                     }
 
-                    // IME Input Area (Transparent EditText inside)
+                    // IME Input Area (High-Reliability PocketImeInputView surface)
+                    val isConnected = connectionState is dev.aleian.pockethid.model.ConnectionState.Connected || transport?.isConnected == true
+                    val isConnecting = connectionState is dev.aleian.pockethid.model.ConnectionState.Connecting
+                    val hostName = if (connectionState is dev.aleian.pockethid.model.ConnectionState.Connected) {
+                        connectionState.device.name ?: connectionState.device.address
+                    } else "Host"
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                             .clip(RoundedCornerShape(16.dp))
                             .background(DarkSurface)
-                            .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
+                            .border(
+                                1.dp,
+                                if (isConnected) PrimaryBlue.copy(alpha = 0.5f) else DarkBorder,
+                                RoundedCornerShape(16.dp)
+                            )
                             .clickable { focusHiddenInput() }
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
@@ -420,65 +456,182 @@ fun KeyboardScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
+                            // Status Pill
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(DarkSurfaceVariant)
+                                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(
+                                            when {
+                                                isConnected -> AccentGreen
+                                                isConnecting -> PrimaryBlue
+                                                else -> Color(0xFFEF4444)
+                                            }
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = when {
+                                        isConnected -> "HID Connected • Typing to $hostName"
+                                        isConnecting -> "Connecting to host..."
+                                        else -> "Not Connected"
+                                    },
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = when {
+                                        isConnected -> AccentGreen
+                                        isConnecting -> PrimaryBlue
+                                        else -> Color(0xFFEF4444)
+                                    }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
                             Icon(
                                 imageVector = Icons.Default.Keyboard,
                                 contentDescription = null,
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(40.dp)
+                                tint = if (isConnected) PrimaryBlue else TextMuted,
+                                modifier = Modifier.size(38.dp)
                             )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
-                                text = "Tap to open phone keyboard",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                text = if (isConnected) "PHONE KEYBOARD READY" else "KEYBOARD OFFLINE",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                ),
                                 color = TextPrimary
                             )
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = if (isConnected) {
+                                    "Tap to open phone keyboard → Characters stream to PC"
+                                } else {
+                                    "Connect a host to start typing"
+                                },
+                                fontSize = 12.sp,
+                                color = TextSecondary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
                                 text = lastSentCharInfo,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = TextMuted
+                                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                                color = PrimaryBlue
                             )
 
-                            // Invisible Android EditText for capturing system IME
+                            // Dedicated IME Input View for reliable Android InputConnection
                             AndroidView(
                                 factory = { ctx ->
-                                    EditText(ctx).apply {
-                                        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-                                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                                        setTextColor(android.graphics.Color.TRANSPARENT)
-                                        alpha = 0.01f
-
-                                        setOnKeyListener { _, keyCode, event ->
-                                            if (event.action == KeyEvent.ACTION_DOWN) {
-                                                val stroke = KeyMapper.mapAndroidKeyEvent(keyCode)
-                                                if (stroke != null) {
-                                                    sendKey(stroke.keyCode, stroke.modifiers)
-                                                    lastSentCharInfo = "Key code: $keyCode"
-                                                    return@setOnKeyListener true
-                                                }
-                                            }
-                                            false
-                                        }
-
-                                        doAfterTextChanged { editable ->
-                                            val text = editable?.toString() ?: ""
-                                            if (text.isNotEmpty()) {
-                                                for (char in text) {
-                                                    val stroke = KeyMapper.mapCharToStroke(char)
-                                                    if (stroke != null) {
-                                                        sendKey(stroke.keyCode, stroke.modifiers)
-                                                        lastSentCharInfo = "Typed: '$char'"
+                                    PocketImeInputView(ctx).apply {
+                                        onCommitText = { text ->
+                                            if (canSendInput() && transport != null) {
+                                                triggerHaptic()
+                                                scope.launch {
+                                                    val strokes = TextInputResolver.resolveText(text)
+                                                    for (stroke in strokes) {
+                                                        ActionDispatcher.execute(
+                                                            ActionExecutionPlan.KeyStroke(stroke.keyCode, stroke.modifiers),
+                                                            transport
+                                                        )
+                                                        ImeDiagnosticsHub.record(
+                                                            "commitText",
+                                                            text,
+                                                            "KEY 0x${stroke.keyCode.toString(16)} (mod=0x${stroke.modifiers.toString(16)})",
+                                                            "Sent"
+                                                        )
+                                                        lastSentCharInfo = "Typed: '$text'"
+                                                        terminalStreamText = text
+                                                        if (settings.pasteDelayMs > 0) {
+                                                            kotlinx.coroutines.delay(settings.pasteDelayMs)
+                                                        }
                                                     }
                                                 }
-                                                editable?.clear()
                                             }
                                         }
 
-                                        hiddenEditText = this
+                                        onDeleteBack = { count ->
+                                            if (canSendInput() && transport != null) {
+                                                triggerHaptic()
+                                                scope.launch {
+                                                    repeat(count) {
+                                                        ActionDispatcher.execute(
+                                                            ActionExecutionPlan.KeyStroke(HidConstants.KEY_BACKSPACE),
+                                                            transport
+                                                        )
+                                                        lastSentCharInfo = "Sent: ⌫"
+                                                        terminalStreamText = "BKSP"
+                                                        if (it < count - 1) kotlinx.coroutines.delay(10)
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        onDeleteForward = { count ->
+                                            if (canSendInput() && transport != null) {
+                                                triggerHaptic()
+                                                scope.launch {
+                                                    repeat(count) {
+                                                        ActionDispatcher.execute(
+                                                            ActionExecutionPlan.KeyStroke(HidConstants.KEY_DELETE),
+                                                            transport
+                                                        )
+                                                        lastSentCharInfo = "Sent: Del"
+                                                        terminalStreamText = "DEL"
+                                                        if (it < count - 1) kotlinx.coroutines.delay(10)
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        onEditorAction = { actionCode ->
+                                            if (canSendInput() && transport != null) {
+                                                triggerHaptic()
+                                                scope.launch {
+                                                    ActionDispatcher.execute(
+                                                        ActionExecutionPlan.KeyStroke(HidConstants.KEY_ENTER),
+                                                        transport
+                                                    )
+                                                    lastSentCharInfo = "Sent: Enter"
+                                                    terminalStreamText = "ENTER"
+                                                }
+                                            }
+                                        }
+
+                                        onKeyEvent = { event ->
+                                            if (canSendInput() && transport != null) {
+                                                val stroke = TextInputResolver.resolveKeyEvent(event)
+                                                if (stroke != null) {
+                                                    triggerHaptic()
+                                                    scope.launch {
+                                                        ActionDispatcher.execute(
+                                                            ActionExecutionPlan.KeyStroke(stroke.keyCode, stroke.modifiers),
+                                                            transport
+                                                        )
+                                                        lastSentCharInfo = "Key: ${event.keyCode}"
+                                                        terminalStreamText = "KEY_${event.keyCode}"
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        imeInputView = this
                                     }
                                 },
                                 modifier = Modifier.size(1.dp)

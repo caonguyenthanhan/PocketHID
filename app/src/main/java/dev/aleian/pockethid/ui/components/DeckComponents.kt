@@ -204,15 +204,15 @@ fun TopCommandBar(
 }
 
 /**
- * Main 3-Mode Global Navigation Switcher: KEYBOARD | MOUSE | PRESENTER
+ * Main 4-Mode Global Navigation Switcher: KEYBOARD | MOUSE | GAMEPAD | PRESENTER
  */
 @Composable
 fun DeckModeSwitcher(
-    selectedMode: Int, // 0: Keyboard, 1: Mouse, 2: Presenter
+    selectedMode: Int, // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter
     onSelectMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val modes = listOf("KEYBOARD", "MOUSE", "PRESENTER")
+    val modes = listOf("KEYBOARD", "MOUSE", "GAMEPAD", "PRESENTER", "ONE-HAND")
 
     Row(
         modifier = modifier
@@ -445,10 +445,11 @@ private fun ArrowPadKey(
 ) {
     Box(
         modifier = Modifier
-            .size(24.dp)
-            .clip(RoundedCornerShape(3.dp))
+            .width(36.dp)
+            .height(28.dp)
+            .clip(RoundedCornerShape(4.dp))
             .background(SurfaceCard)
-            .border(1.dp, DarkBorder, RoundedCornerShape(3.dp))
+            .border(1.dp, DarkBorder, RoundedCornerShape(4.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -456,7 +457,7 @@ private fun ArrowPadKey(
             imageVector = icon,
             contentDescription = null,
             tint = TextPrimary,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(18.dp)
         )
     }
 }
