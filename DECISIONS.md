@@ -263,4 +263,43 @@ Tuân thủ luật quản trị 4 tầng theo `D:\An-tool-ecosystem\.claude\skil
   - 100% unit tests pass (`GamepadReportDescriptorTest`, `GamepadMathTest`, `ActionDispatcherTest`).
   - Toàn bộ tính năng Bàn phím, Chuột, Presenter, One-Hand tiếp tục hoạt động chuẩn xác không suy thoái.
 
+---
+
+## [D-011] 2026-09-27 — Tối Ưu Hóa Bố Cục Bàn Phím Landscape (Landscape Keyboard UX Rework) & Khắc Phục Lỗi Âm Lượng/Mute Media
+
+- **Trạng thái:** ACTIVE `[đã đo]`
+- **Bối cảnh:**
+  - Bàn phím chế độ nằm ngang (Landscape) bị chèn ép, phím nhỏ do 2 cụm panel hai bên (Left Deck, Right Deck) chiếm quá nhiều diện tích (~40% chiều ngang).
+  - Có sự trùng lặp phím không cần thiết: CTRL, ALT, SHIFT xuất hiện cả ở Left Panel và Bottom Row; ENTER và BACKSPACE xuất hiện ở cả Right Panel và bàn phím chính; PASTE chiếm diện tích lớn trên bàn phím chính.
+  - Phím âm lượng (Volume Up, Volume Down, Mute) trong lớp Media cần cơ chế giữ lặp mượt mà (hold-to-repeat cho Volume) và chống lặp bật tắt cho Mute.
+  - Nhãn "TOUCH OPTIMIZED" chiếm dụng diện tích không cần thiết trên thanh tiêu đề phím.
+- **Quyết định:**
+  - **1. Loại bỏ phím trùng lặp và tối ưu hóa diện tích phím chính:**
+    - Gỡ bỏ CTRL, ALT, SHIFT khỏi Left Deck; duy trì duy nhất một dải modifier canonical ở hàng dưới cùng (Bottom Row).
+    - Gỡ bỏ phím PASTE lớn khỏi bàn phím chính (duy trì qua Shortcut layer và Command Palette).
+    - Gỡ bỏ phím BKSP và ENTER khổng lồ khỏi Right Deck.
+    - Duy trì duy nhất phím Backspace tại góc phải hàng số cố định (Dedicated Number Row).
+    - Duy trì duy nhất phím Enter chính tại góc phải hàng dưới cùng (Bottom Row) với touch target lớn.
+    - Gỡ bỏ nhãn "TOUCH OPTIMIZED" khỏi thanh tiêu đề bàn phím.
+  - **2. Tái phân bổ tỷ lệ màn hình Landscape:**
+    - Left Thumb Zone: ~13% (`weight(1.3f)`) - Chứa cụm phím ngón cái gọn gàng (`ESC`, `TAB`, `SUPER`, `⌘ QUICK`).
+    - Primary Keyboard Bay: ~74% (`weight(7.4f)`) - Chiếm vị trí áp đảo, tăng kích thước touch target của tất cả các phím QWERTY, hàng số, Space (weight 3.8f) và Enter.
+    - Right Thumb Zone: ~13% (`weight(1.3f)`) - Chứa cụm điều hướng 4 chiều tự nhiên (`↑`, `←`, `↓`, `→`), `DEL`, và nút chuyển `123#`.
+  - **3. Khắc phục chức năng Media & Consumer Control:**
+    - Bàn phím Media thiết kế lại dạng 2 hàng tinh gọn:
+      - Hàng 1: `PREV` | `PLAY / PAUSE` | `NEXT`
+      - Hàng 2: `VOL −` | `MUTE` | `VOL ＋`
+    - Điều khiển âm lượng remote PC thông qua Bluetooth HID Consumer Control (Report ID 3), không tác động AudioManager điện thoại.
+    - Cơ chế `DeckRepeatKey`:
+      - Volume Up (`0x00E9`) & Volume Down (`0x00EA`): Chạm đơn gửi 1 bước (+2% trên host PC); giữ ngón tay lặp lại chu kỳ 100ms sau 350ms ban đầu.
+      - Mute (`0x00E2`): Kích hoạt 1 lần toggle duy nhất khi chạm, vô hiệu hóa lặp khi giữ (`enableRepeat = false`) để tránh bật tắt âm thanh mất kiểm soát.
+    - Bổ sung thanh trạng thái Telemetry thời gian thực hiển thị Action Name, Report ID 3, Usage Code HEX, và Transport Status (SUCCESS/ERROR).
+  - **4. Kiểm thử & Đo đạc:**
+    - Viết unit test `ConsumerControlMediaTest.kt` kiểm tra định dạng Report ID 3, các mã Usage chuẩn (0x00E9, 0x00EA, 0x00E2, 0x00CD), gói tin Release trung tính `[0x03, 0x00, 0x00]`, và cập nhật telemetry qua `ConsumerDiagnosticsHub`.
+    - Unit tests pass 100%, `assembleDebug` hoàn thành trơn tru không lỗi.
+- **Hệ quả:**
+  - Bàn phím Landscape rộng rãi, độ nảy và diện tích phím QWERTY tăng đáng kể, ngón cái chạm chính xác, không mỏi.
+  - Phím âm lượng máy tính phản hồi nhạy và êm ái trên host PC Windows/macOS.
+
+
 

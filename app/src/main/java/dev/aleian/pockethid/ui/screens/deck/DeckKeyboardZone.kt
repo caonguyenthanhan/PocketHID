@@ -11,10 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub
 import dev.aleian.pockethid.model.HidConstants
 import dev.aleian.pockethid.ui.components.DeckKey
+import dev.aleian.pockethid.ui.components.DeckRepeatKey
 import dev.aleian.pockethid.ui.components.DedicatedNumberRow
 import dev.aleian.pockethid.ui.components.ModifierToggleState
 import dev.aleian.pockethid.ui.components.SubModeSelector
@@ -47,22 +52,11 @@ fun DeckKeyboardZone(
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         // Sub-mode Header Selector
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SubModeSelector(
-                selectedSubMode = selectedSubMode,
-                onSelectSubMode = onSelectSubMode
-            )
-            Text(
-                text = "TOUCH OPTIMIZED",
-                fontSize = 8.sp,
-                fontFamily = FontFamily.Monospace,
-                color = TextMuted
-            )
-        }
+        SubModeSelector(
+            selectedSubMode = selectedSubMode,
+            onSelectSubMode = onSelectSubMode,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         // Dynamic Center Content based on Sub-mode
         when (selectedSubMode) {
@@ -163,7 +157,7 @@ fun DeckKeyboardZone(
                     ) {
                         DeckKey(
                             text = "CTRL",
-                            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.1f).fillMaxHeight(),
                             containerColor = if (ctrlState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
                             textColor = if (ctrlState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
                             fontSize = 11.sp
@@ -173,7 +167,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "ALT",
-                            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.1f).fillMaxHeight(),
                             containerColor = if (altState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
                             textColor = if (altState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
                             fontSize = 11.sp
@@ -183,7 +177,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "SPACE",
-                            modifier = Modifier.weight(3.6f).fillMaxHeight(),
+                            modifier = Modifier.weight(4.0f).fillMaxHeight(),
                             containerColor = SurfaceCard,
                             textColor = PrimaryBlue,
                             fontSize = 12.sp
@@ -203,10 +197,10 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "ENTER",
-                            modifier = Modifier.weight(1.6f).fillMaxHeight(),
-                            containerColor = PrimaryBlue.copy(alpha = 0.2f),
+                            modifier = Modifier.weight(2.0f).fillMaxHeight(),
+                            containerColor = PrimaryBlue.copy(alpha = 0.25f),
                             textColor = PrimaryBlue,
-                            fontSize = 11.sp
+                            fontSize = 12.sp
                         ) {
                             onSendRawKey(HidConstants.KEY_ENTER, 0, "ENTER")
                         }
@@ -280,51 +274,114 @@ fun DeckKeyboardZone(
             }
 
             2 -> {
-                // MEDIA MODE: Consumer Report Controller
+                // MEDIA MODE: Consumer Report Controller (Preferred 2-Row Compact Control Deck)
+                val consumerTelemetry by ConsumerDiagnosticsHub.telemetry.collectAsState()
+
                 Column(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Row 1: Volume & Mute
-                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        DeckKey(text = "MUTE", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
-                            onSendConsumerKey(HidConstants.CONSUMER_MUTE, "Mute")
-                        }
-                        DeckKey(text = "VOL −", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
-                            onSendConsumerKey(HidConstants.CONSUMER_VOLUME_DOWN, "Vol-")
-                        }
-                        DeckKey(text = "VOL ＋", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
-                            onSendConsumerKey(HidConstants.CONSUMER_VOLUME_UP, "Vol+")
-                        }
-                    }
-
-                    // Row 2: Playback Track Control
-                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        DeckKey(text = "⏮ PREV", modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    // Row 1: Track Playback (PREV | PLAY/PAUSE | NEXT)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1.1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        DeckKey(
+                            text = "⏮  PREV",
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            fontSize = 13.sp
+                        ) {
                             onSendConsumerKey(HidConstants.CONSUMER_SCAN_PREV, "Prev")
                         }
-                        DeckKey(text = "⏯ PLAY / PAUSE", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = PrimaryBlue) {
+
+                        DeckKey(
+                            text = "⏯  PLAY / PAUSE",
+                            modifier = Modifier.weight(1.4f).fillMaxHeight(),
+                            containerColor = PrimaryBlue.copy(alpha = 0.2f),
+                            textColor = PrimaryBlue,
+                            fontSize = 14.sp
+                        ) {
                             onSendConsumerKey(HidConstants.CONSUMER_PLAY_PAUSE, "Play/Pause")
                         }
-                        DeckKey(text = "NEXT ⏭", modifier = Modifier.weight(1f).fillMaxHeight()) {
+
+                        DeckKey(
+                            text = "NEXT  ⏭",
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            fontSize = 13.sp
+                        ) {
                             onSendConsumerKey(HidConstants.CONSUMER_SCAN_NEXT, "Next")
                         }
                     }
 
-                    // Row 3: YouTube & Video Player Shortcuts
-                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        DeckKey(text = "SEEK −5s (◀)", modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            onSendRawKey(HidConstants.KEY_LEFT, 0, "Seek-5s")
-                        }
-                        DeckKey(text = "SPACE (Pause)", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = PrimaryBlue) {
-                            onSendRawKey(HidConstants.KEY_SPACE, 0, "Space")
-                        }
-                        DeckKey(text = "FULLSCREEN (F)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
-                            onSendRawKey(HidConstants.KEY_F, 0, "Fullscreen")
-                        }
-                        DeckKey(text = "SEEK +5s (▶)", modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            onSendRawKey(HidConstants.KEY_RIGHT, 0, "Seek+5s")
-                        }
+                    // Row 2: Volume & Mute (VOL- | MUTE | VOL+)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1.1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        DeckRepeatKey(
+                            text = "VOL −",
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            textColor = PrimaryBlue,
+                            fontSize = 14.sp,
+                            hapticFeedback = hapticsEnabled,
+                            enableRepeat = true,
+                            repeatIntervalMs = 100L,
+                            onTrigger = {
+                                onSendConsumerKey(HidConstants.CONSUMER_VOLUME_DOWN, "Vol-")
+                            }
+                        )
+
+                        DeckRepeatKey(
+                            text = "MUTE 🔇",
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            containerColor = Color(0xFFEF4444).copy(alpha = 0.15f),
+                            textColor = Color(0xFFEF4444),
+                            fontSize = 14.sp,
+                            hapticFeedback = hapticsEnabled,
+                            enableRepeat = false, // Single tap only, no hold repeat!
+                            onTrigger = {
+                                onSendConsumerKey(HidConstants.CONSUMER_MUTE, "Mute")
+                            }
+                        )
+
+                        DeckRepeatKey(
+                            text = "VOL ＋",
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            textColor = PrimaryBlue,
+                            fontSize = 14.sp,
+                            hapticFeedback = hapticsEnabled,
+                            enableRepeat = true,
+                            repeatIntervalMs = 100L,
+                            onTrigger = {
+                                onSendConsumerKey(HidConstants.CONSUMER_VOLUME_UP, "Vol+")
+                            }
+                        )
+                    }
+
+                    // Compact Live Diagnostic Status Bar
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(DarkSurfaceVariant)
+                            .border(1.dp, DarkBorder, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "CONSUMER: ${consumerTelemetry.actionName} (${consumerTelemetry.usageHex})",
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
+                        Text(
+                            text = "Report ID 3 • ${consumerTelemetry.transportStatus}",
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (consumerTelemetry.transportStatus.contains("SUCCESS")) StatusConnected else TextMuted
+                        )
                     }
                 }
             }

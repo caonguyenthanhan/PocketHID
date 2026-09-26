@@ -204,22 +204,16 @@ fun LandscapeDeckScreen(
                         modifier = Modifier.fillMaxSize(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // ZONE 1: LEFT THUMB CLUSTER (Modifiers & Safe Paste)
+                        // ZONE 1: LEFT THUMB CLUSTER (ESC, TAB, SUPER, QUICK)
                         DeckMacroZone(
-                            ctrlState = ctrlState,
-                            altState = altState,
                             superState = superState,
-                            shiftState = shiftState,
-                            onCycleCtrl = { ctrlState = cycleModifier(ctrlState) },
-                            onCycleAlt = { altState = cycleModifier(altState) },
                             onCycleSuper = { superState = cycleModifier(superState) },
-                            onCycleShift = { shiftState = cycleModifier(shiftState) },
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
-                            onSendStringSafe = { sendStringSafe(it) },
-                            modifier = Modifier.weight(2.3f)
+                            onQuickAction = { showCommandPalette = true },
+                            modifier = Modifier.weight(1.3f)
                         )
 
-                        // ZONE 2: CENTRAL COMMAND BAY (Type QWERTY with Number Row, Shortcuts, Media, System, F-Keys, Numpad)
+                        // ZONE 2: CENTRAL DOMINANT KEYBOARD BAY (~74% Screen Width)
                         DeckKeyboardZone(
                             selectedSubMode = selectedKeyboardSubMode,
                             onSelectSubMode = { selectedKeyboardSubMode = it },
@@ -232,14 +226,15 @@ fun LandscapeDeckScreen(
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
                             onSendConsumerKey = { code, lbl -> sendConsumerKey(code, lbl) },
                             hapticsEnabled = settings.keyboardHaptics,
-                            modifier = Modifier.weight(5.4f)
+                            modifier = Modifier.weight(7.4f)
                         )
 
-                        // ZONE 3: RIGHT THUMB CLUSTER (Execution & Natural Directional Navigation)
+                        // ZONE 3: RIGHT THUMB CLUSTER (Natural 4-Way Arrows, DEL, 123#)
                         DeckUtilityZone(
                             hapticsEnabled = settings.keyboardHaptics,
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
-                            modifier = Modifier.weight(2.3f)
+                            onSwitchNumpad = { selectedKeyboardSubMode = 5 },
+                            modifier = Modifier.weight(1.3f)
                         )
                     }
                 }

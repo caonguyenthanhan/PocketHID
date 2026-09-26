@@ -90,5 +90,26 @@
 - [x] Viết bộ unit test toàn diện `GamepadReportDescriptorTest` kiểm tra Report ID 4, độ dài 13 byte, bitmask, hat, axes, triggers, neutral state, và latch transitions
 - [x] Chạy `./gradlew.bat testDebugUnitTest` pass 100% và `./gradlew.bat assembleDebug` thành công
 
+## Phase 11: Landscape Keyboard UX Rework & Media Volume/Mute Functional Fix
+- [x] Loại bỏ phím trùng lặp khỏi Landscape Deck:
+  - Gỡ bỏ CTRL, ALT, SHIFT khỏi Left Deck; duy trì duy nhất một dải modifier canonical ở hàng dưới cùng (Bottom Row)
+  - Gỡ bỏ phím PASTE lớn khỏi bàn phím chính (chuyển sang Shortcut layer & Command Palette)
+  - Gỡ bỏ phím BKSP và ENTER khổng lồ khỏi Right Deck
+  - Duy trì duy nhất phím Backspace tại góc phải hàng số cố định (Dedicated Number Row)
+  - Duy trì duy nhất phím Enter chính tại góc phải hàng dưới cùng (Bottom Row)
+  - Gỡ bỏ nhãn "TOUCH OPTIMIZED" khỏi thanh tiêu đề phím
+- [x] Tái phân bổ tỷ lệ màn hình Landscape:
+  - Left Thumb Zone: ~13% (`weight(1.3f)`) - Chứa cụm phím ngón cái gọn gàng (`ESC`, `TAB`, `SUPER`, `⌘ QUICK`)
+  - Primary Keyboard Bay: ~74% (`weight(7.4f)`) - Chiếm vị trí áp đảo, tăng kích thước touch target của tất cả các phím QWERTY, hàng số, Space (weight 3.8f) và Enter
+  - Right Thumb Zone: ~13% (`weight(1.3f)`) - Chứa cụm điều hướng 4 chiều tự nhiên (`↑`, `←`, `↓`, `→`), `DEL`, và nút chuyển `123#`
+- [x] Khắc phục chức năng Media & Consumer Control:
+  - Bàn phím Media thiết kế lại dạng 2 hàng tinh gọn: Row 1 (`PREV` | `PLAY / PAUSE` | `NEXT`), Row 2 (`VOL −` | `MUTE` | `VOL ＋`)
+  - Điều khiển âm lượng remote PC thông qua Bluetooth HID Consumer Control (Report ID 3), không tác động AudioManager điện thoại
+  - Cơ chế `DeckRepeatKey`:
+    - Volume Up (`0x00E9`) & Volume Down (`0x00EA`): Chạm đơn gửi 1 bước (+2% trên host PC); giữ ngón tay lặp lại chu kỳ 100ms sau 350ms ban đầu
+    - Mute (`0x00E2`): Kích hoạt 1 lần toggle duy nhất khi chạm, vô hiệu hóa lặp khi giữ (`enableRepeat = false`) để tránh bật tắt âm thanh mất kiểm soát
+  - Bổ sung thanh trạng thái Telemetry thời gian thực hiển thị Action Name, Report ID 3, Usage Code HEX, và Transport Status (SUCCESS/ERROR)
+- [x] Viết unit test `ConsumerControlMediaTest.kt` kiểm tra Report ID 3, Usage codes, gói tin release `[0x03, 0x00, 0x00]`, và telemetry
+- [x] Chạy `./gradlew.bat testDebugUnitTest` pass 100% và `./gradlew.bat assembleDebug` thành công
 
 

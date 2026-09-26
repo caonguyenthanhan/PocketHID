@@ -17,10 +17,16 @@ import dev.aleian.pockethid.ui.components.DeckKey
 import dev.aleian.pockethid.ui.components.NaturalThumbArrowPad
 import dev.aleian.pockethid.ui.theme.*
 
+/**
+ * Compact Right Thumb Navigation Zone (~12–14% screen width).
+ * Focused solely on natural thumb direction navigation and forward delete.
+ * Duplicate giant Enter and Backspace panels are removed.
+ */
 @Composable
 fun DeckUtilityZone(
     hapticsEnabled: Boolean,
     onSendRawKey: (keyCode: Byte, extraMod: Byte, label: String) -> Unit,
+    onSwitchNumpad: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -30,46 +36,55 @@ fun DeckUtilityZone(
             .background(DarkSurfaceVariant)
             .border(1.dp, DarkBorder, RoundedCornerShape(8.dp))
             .padding(4.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "ACTIONS",
+            text = "NAV",
             fontSize = 8.sp,
             fontFamily = FontFamily.Monospace,
             color = TextMuted
         )
 
-        // Backspace
+        // Forward Delete (DEL)
         DeckKey(
-            text = "BKSP",
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            text = "DEL",
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             textColor = Color(0xFFEF4444),
             fontSize = 11.sp
         ) {
-            onSendRawKey(HidConstants.KEY_BACKSPACE, 0, "BKSP")
+            onSendRawKey(HidConstants.KEY_DELETE, 0, "DEL")
         }
 
-        // Enter (Prominent Action Key)
-        DeckKey(
-            text = "ENTER",
-            modifier = Modifier.fillMaxWidth().weight(1.3f),
-            containerColor = PrimaryBlue.copy(alpha = 0.2f),
-            textColor = PrimaryBlue,
-            fontSize = 12.sp
+        // Compact Natural 4-Way Thumb Arrow Cluster
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(2f),
+            contentAlignment = androidx.compose.ui.Alignment.Center
         ) {
-            onSendRawKey(HidConstants.KEY_ENTER, 0, "ENTER")
+            NaturalThumbArrowPad(
+                modifier = Modifier.fillMaxWidth(),
+                hapticFeedback = hapticsEnabled,
+                onUp = { onSendRawKey(HidConstants.KEY_UP, 0, "UP") },
+                onDown = { onSendRawKey(HidConstants.KEY_DOWN, 0, "DOWN") },
+                onLeft = { onSendRawKey(HidConstants.KEY_LEFT, 0, "LEFT") },
+                onRight = { onSendRawKey(HidConstants.KEY_RIGHT, 0, "RIGHT") }
+            )
         }
 
-        Spacer(modifier = Modifier.height(2.dp))
-
-        // Natural 4-Way Thumb Arrow Cluster
-        NaturalThumbArrowPad(
-            modifier = Modifier.fillMaxWidth().weight(1.8f),
-            hapticFeedback = hapticsEnabled,
-            onUp = { onSendRawKey(HidConstants.KEY_UP, 0, "UP") },
-            onDown = { onSendRawKey(HidConstants.KEY_DOWN, 0, "DOWN") },
-            onLeft = { onSendRawKey(HidConstants.KEY_LEFT, 0, "LEFT") },
-            onRight = { onSendRawKey(HidConstants.KEY_RIGHT, 0, "RIGHT") }
-        )
+        // Quick Numpad / Utility Toggle
+        DeckKey(
+            text = "123#",
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            containerColor = DarkSurface,
+            textColor = PrimaryBlue,
+            fontSize = 11.sp
+        ) {
+            onSwitchNumpad()
+        }
     }
 }

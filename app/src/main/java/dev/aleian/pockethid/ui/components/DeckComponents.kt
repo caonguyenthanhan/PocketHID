@@ -37,14 +37,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
+import android.view.MotionEvent
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -343,6 +353,84 @@ fun DeckKey(
         )
     }
 }
+
+/**
+ * Ergonomic Touch Keycap Button with Tap + Hold-to-Repeat capability (ideal for Volume Up/Down, Backspace)
+ */
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+@Composable
+fun DeckRepeatKey(
+    text: String,
+    modifier: Modifier = Modifier,
+    containerColor: Color = SurfaceCard,
+    textColor: Color = TextPrimary,
+    fontSize: TextUnit = 11.sp,
+    hapticFeedback: Boolean = true,
+    repeatInitialDelayMs: Long = 350L,
+    repeatIntervalMs: Long = 100L,
+    enableRepeat: Boolean = true,
+    onTrigger: () -> Unit,
+    onRelease: () -> Unit = {}
+) {
+    val view = LocalView.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var isPressed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var repeatJob by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
+    val actualBg = if (isPressed) containerColor.copy(alpha = 0.7f) else containerColor
+    val actualBorder = if (isPressed) PrimaryBlue else DarkBorder
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(5.dp))
+            .background(actualBg)
+            .border(1.dp, actualBorder, RoundedCornerShape(5.dp))
+            .pointerInteropFilter { ev ->
+                when (ev.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        isPressed = true
+                        if (hapticFeedback) {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        }
+                        onTrigger()
+
+                        if (enableRepeat) {
+                            repeatJob?.cancel()
+                            repeatJob = scope.launch {
+                                delay(repeatInitialDelayMs)
+                                while (isActive) {
+                                    if (hapticFeedback) {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    }
+                                    onTrigger()
+                                    delay(repeatIntervalMs)
+                                }
+                            }
+                        }
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        isPressed = false
+                        repeatJob?.cancel()
+                        repeatJob = null
+                        onRelease()
+                        true
+                    }
+                    else -> true
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = fontSize,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = textColor
+        )
+    }
+}
+
 
 /**
  * Sticky Modifier Key for Thumb Zone (CTRL, ALT, SUPER, SHIFT)
