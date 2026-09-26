@@ -112,4 +112,17 @@
 - [x] Viết unit test `ConsumerControlMediaTest.kt` kiểm tra Report ID 3, Usage codes, gói tin release `[0x03, 0x00, 0x00]`, và telemetry
 - [x] Chạy `./gradlew.bat testDebugUnitTest` pass 100% và `./gradlew.bat assembleDebug` thành công
 
+## Phase 12: Virtual Keyboard Windows Key (⊞ Win) & Semantic Show Desktop (Win+D)
+- [x] Bổ sung phím `⊞ WIN` vào hàng dưới cùng (Bottom Row) theo chuẩn bàn phím Windows: `CTRL` | `⊞ WIN` | `ALT` | `SPACE` | `SHIFT` | `ENTER`
+- [x] Hỗ trợ chạm đơn `onCycleSuper()` (STICKY/LOCKED) và ấn giữ `onLongClick` gửi trực tiếp click Win mở Start Menu
+- [x] Chuẩn hóa dải Sticky Modifiers trên bàn phím xoay dọc `KeyboardScreen.kt`: `Ctrl` $\rightarrow$ `⊞ Win` $\rightarrow$ `Alt` $\rightarrow$ `Shift` và bổ sung `SpecialKey("⊞ Win")`
+- [x] Thay thế phím `SUPER` trùng lặp trên `DeckMacroZone` (Left Deck) bằng `CAPS` (Caps Lock)
+- [x] Chuẩn hóa định danh Semantic Action `PocketAction.SystemAction.ShowDesktop` với `id = "system.show_desktop"`
+- [x] Phân giải OS-aware trong `ActionResolver`: Windows -> `Win + D`, Linux -> `Super + D`, macOS -> `F11`
+- [x] Tầng SYSTEM trên Landscape & Portrait: Hàng 1 lưới 3 nút cân đối `[ SHOW DESKTOP (Win+D) ]  [ LOCK PC (Win+L) ]  [ TASK VIEW (Win+Tab) ]`
+- [x] Ghim thanh Pinned Quick Action `★ SHOW DESKTOP (Win+D)` ngay đầu `CommandPaletteSheet` (mở nhanh qua `⌘ QUICK`)
+- [x] Viết unit test `testShowDesktopSemanticActionRequirements` trong `ActionResolverTest.kt`
+- [x] Kiểm tra `./gradlew.bat testDebugUnitTest` pass 100% và `./gradlew.bat assembleDebug` thành công trong 11s
+
+
 

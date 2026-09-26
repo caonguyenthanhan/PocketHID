@@ -58,6 +58,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.aleian.pockethid.action.ActionDispatcher
+import dev.aleian.pockethid.action.PocketAction
 import dev.aleian.pockethid.model.HidConstants
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.theme.DarkBg
@@ -190,8 +192,8 @@ fun CommandPaletteSheet(
                 category = "System",
                 shortcutDisplay = "Win + D",
                 icon = Icons.Default.DesktopWindows,
-                keywords = listOf("desktop", "minimize", "hide", "all"),
-                action = { it.sendKeyClick(HidConstants.KEY_D, HidConstants.MOD_LEFT_GUI) }
+                keywords = listOf("desktop", "minimize", "hide", "all", "system.show_desktop"),
+                action = { ActionDispatcher.dispatch(PocketAction.SystemAction.ShowDesktop, it) }
             ),
             PaletteCommand(
                 id = "task_view",
@@ -200,7 +202,7 @@ fun CommandPaletteSheet(
                 shortcutDisplay = "Win + Tab",
                 icon = Icons.Default.DesktopWindows,
                 keywords = listOf("task", "view", "overview", "windows", "timeline"),
-                action = { it.sendKeyClick(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI) }
+                action = { ActionDispatcher.dispatch(PocketAction.SystemAction.TaskView, it) }
             ),
             PaletteCommand(
                 id = "screenshot",
@@ -223,7 +225,7 @@ fun CommandPaletteSheet(
                 shortcutDisplay = "Win + L",
                 icon = Icons.Default.PowerSettingsNew,
                 keywords = listOf("lock", "security", "screen", "sleep"),
-                action = { it.sendKeyClick(HidConstants.KEY_L, HidConstants.MOD_LEFT_GUI) }
+                action = { ActionDispatcher.dispatch(PocketAction.SystemAction.LockPC, it) }
             ),
             PaletteCommand(
                 id = "task_manager",
@@ -657,7 +659,71 @@ fun CommandPaletteSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Pinned Quick Actions Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(DarkSurfaceVariant)
+                        .border(1.dp, PrimaryBlue.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            scope.launch {
+                                if (transport != null) {
+                                    ActionDispatcher.dispatch(PocketAction.SystemAction.ShowDesktop, transport)
+                                    Toast.makeText(context, "Show Desktop triggered", Toast.LENGTH_SHORT).show()
+                                }
+                                onDismiss()
+                            }
+                        }
+                        .padding(vertical = 7.dp, horizontal = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "★ SHOW DESKTOP (Win+D)",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(DarkSurfaceVariant)
+                        .border(1.dp, DarkBorder, RoundedCornerShape(6.dp))
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            scope.launch {
+                                if (transport != null) {
+                                    ActionDispatcher.dispatch(PocketAction.SystemAction.LockPC, transport)
+                                    Toast.makeText(context, "Lock PC triggered", Toast.LENGTH_SHORT).show()
+                                }
+                                onDismiss()
+                            }
+                        }
+                        .padding(vertical = 7.dp, horizontal = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "LOCK PC (Win+L)",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFEF4444)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Command Items List
             if (filteredCommands.isEmpty()) {

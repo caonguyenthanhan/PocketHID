@@ -301,5 +301,39 @@ Tuân thủ luật quản trị 4 tầng theo `D:\An-tool-ecosystem\.claude\skil
   - Bàn phím Landscape rộng rãi, độ nảy và diện tích phím QWERTY tăng đáng kể, ngón cái chạm chính xác, không mỏi.
   - Phím âm lượng máy tính phản hồi nhạy và êm ái trên host PC Windows/macOS.
 
+---
+
+## [D-012] 2026-09-27 — Tích Hợp Phím Windows (⊞ Win) Hàng Dưới Cùng & Khôi Phục Lệnh Semantic "Show Desktop" (Win+D)
+
+- **Trạng thái:** ACTIVE `[đã đo]`
+- **Bối cảnh:**
+  - Bàn phím ảo trước đây thiếu phím Windows (`Win` / `⊞`) tại hàng phím bottom chuẩn của layout PC thực tế.
+  - Thao tác "Show Desktop" (Win+D) rất thường dùng trên Windows bị thiếu vắng khỏi các tầng phím chính hoặc bị gọi trực tiếp qua scancode thô thay vì thông qua Semantic Action Engine.
+- **Quyết định:**
+  - **1. Bổ sung phím ⊞ WIN vào Hàng Dưới Cùng (Bottom Row):**
+    - Sắp xếp chuẩn Windows PC bên trái phím Space: `CTRL` (weight 1.0f) | `⊞ WIN` (weight 1.0f) | `ALT` (weight 1.0f) | `SPACE` (weight 3.4f) | `SHIFT` (weight 1.1f) | `ENTER` (weight 1.6f).
+    - Các phím modifier có kích thước cân đối đồng nhất (~1.0f–1.1f), không chiếm diện tích quá mức.
+    - Chạm đơn (`onClick`): Kích hoạt `onCycleSuper()` chu kỳ STICKY/LOCKED/OFF để phối hợp với bất kỳ phím nào khác (`Win+E`, `Win+R`, `Win+L`, `Win+Tab`).
+    - Ấn giữ (`onLongClick` qua `combinedClickable`): Gửi trực tiếp click phím Win độc lập để mở Windows Start Menu.
+    - Cập nhật cả bàn phím xoay dọc (`KeyboardScreen.kt`): Chuẩn hóa dải Sticky Modifiers Bar theo thứ tự `Ctrl` $\rightarrow$ `⊞ Win` $\rightarrow$ `Alt` $\rightarrow$ `Shift` và bổ sung `SpecialKey("⊞ Win")`.
+    - Tinh chỉnh `DeckMacroZone` (Left Deck): Thay thế phím `SUPER` trùng lặp bằng phím `CAPS` (Caps Lock: `KEY_CAPSLOCK`), hoàn thiện cột trái `ESC` $\rightarrow$ `TAB` $\rightarrow$ `CAPS` $\rightarrow$ `⌘ QUICK`.
+  - **2. Khôi Phục Lệnh "Show Desktop" theo Kiến Trúc Semantic:**
+    - Định danh chuẩn: `PocketAction.SystemAction.ShowDesktop` với `id = "system.show_desktop"`.
+    - Phân giải đa nền tảng qua `ActionResolver`:
+      - Windows: `Win + D` (`KeyDown Win` $\rightarrow$ `KeyDown D` $\rightarrow$ `KeyUp D` $\rightarrow$ `KeyUp Win`).
+      - Linux: `Super + D`.
+      - macOS: `F11` (chuẩn Show Desktop của macOS).
+    - Điểm truy cập trực quan:
+      - Tầng `SYSTEM` của bàn phím: Hàng 1 thiết kế lưới 3 nút cân đối chuẩn `[ SHOW DESKTOP (Win+D) ]  [ LOCK PC (Win+L) ]  [ TASK VIEW (Win+Tab) ]`.
+      - Tầng `SHORTCUTS`: Nút `SHOW DESKTOP (Win+D)`.
+      - `CommandPaletteSheet`: Ghim sẵn thanh Pinned Quick Action `★ SHOW DESKTOP (Win+D)` ngay đầu danh sách, kích hoạt 1 chạm tức thì từ nút `⌘ QUICK`.
+  - **3. An Toàn Kết Nối & Kiểm Thử:**
+    - Kiểm tra trạng thái kết nối Bluetooth HID trước khi gửi, ngăn chặn lỗi và thông báo sai.
+    - Viết unit test `testShowDesktopSemanticActionRequirements` trong `ActionResolverTest.kt` kiểm tra định danh `system.show_desktop`, scancode Windows, Linux, macOS.
+    - 100% unit tests pass, `assembleDebug` hoàn thành thành công trong 11s.
+- **Hệ quả:**
+  - Layout bàn phím mô phỏng hoàn hảo bàn phím Windows thực tế, trực quan và tiện dụng.
+  - Lệnh Show Desktop được khôi phục chuẩn xác theo mô hình semantic action thống nhất.
+
 
 

@@ -220,4 +220,32 @@ class ActionResolverTest {
         assertTrue(seekBack is ActionExecutionPlan.KeyStroke)
         assertEquals(HidConstants.KEY_LEFT, (seekBack as ActionExecutionPlan.KeyStroke).keyCode)
     }
+
+    @Test
+    fun testShowDesktopSemanticActionRequirements() {
+        // 1. Semantic Action ID must match specification
+        assertEquals("system.show_desktop", PocketAction.SystemAction.ShowDesktop.id)
+        assertEquals("Show Desktop", PocketAction.SystemAction.ShowDesktop.displayName)
+
+        // 2. Windows Resolution: KeyDown Win, KeyDown D -> Win + D
+        val winPlan = ActionResolver.resolve(PocketAction.SystemAction.ShowDesktop, HostOs.WINDOWS)
+        assertTrue(winPlan is ActionExecutionPlan.KeyStroke)
+        val winKeyStroke = winPlan as ActionExecutionPlan.KeyStroke
+        assertEquals(HidConstants.KEY_D, winKeyStroke.keyCode)
+        assertEquals(HidConstants.MOD_LEFT_GUI, winKeyStroke.modifiers)
+
+        // 3. Linux Resolution: Win + D / Super + D
+        val linuxPlan = ActionResolver.resolve(PocketAction.SystemAction.ShowDesktop, HostOs.LINUX)
+        assertTrue(linuxPlan is ActionExecutionPlan.KeyStroke)
+        val linuxKeyStroke = linuxPlan as ActionExecutionPlan.KeyStroke
+        assertEquals(HidConstants.KEY_D, linuxKeyStroke.keyCode)
+        assertEquals(HidConstants.MOD_LEFT_GUI, linuxKeyStroke.modifiers)
+
+        // 4. macOS Resolution: F11 (Show Desktop)
+        val macPlan = ActionResolver.resolve(PocketAction.SystemAction.ShowDesktop, HostOs.MACOS)
+        assertTrue(macPlan is ActionExecutionPlan.KeyStroke)
+        val macKeyStroke = macPlan as ActionExecutionPlan.KeyStroke
+        assertEquals(HidConstants.KEY_F11, macKeyStroke.keyCode)
+        assertEquals(0.toByte(), macKeyStroke.modifiers)
+    }
 }

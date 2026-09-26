@@ -11,7 +11,7 @@ sealed interface PocketAction {
     // --- System Actions ---
     sealed class SystemAction(override val id: String, override val displayName: String) : PocketAction {
         data object TaskView : SystemAction("sys.task_view", "Task View / Mission Control")
-        data object ShowDesktop : SystemAction("sys.show_desktop", "Show Desktop")
+        data object ShowDesktop : SystemAction("system.show_desktop", "Show Desktop")
         data object LockPC : SystemAction("sys.lock_pc", "Lock Computer")
         data object AppSwitcherNext : SystemAction("sys.app_switcher_next", "Next Application (Alt+Tab / Cmd+Tab)")
         data object AppSwitcherPrev : SystemAction("sys.app_switcher_prev", "Previous Application")

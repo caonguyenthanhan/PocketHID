@@ -20,13 +20,11 @@ import dev.aleian.pockethid.ui.theme.*
 
 /**
  * Compact Left Thumb Zone (~12–14% screen width).
- * Focused solely on high-value non-duplicated thumb controls (ESC, TAB, SUPER, Quick Macro).
- * Duplicated modifiers (CTRL, ALT, SHIFT) and PASTE are removed from this primary column.
+ * Focused solely on high-value non-duplicated thumb controls (ESC, TAB, CAPS, Quick Macro).
+ * Canonical modifiers (CTRL, ⊞ WIN, ALT, SHIFT) reside in the keyboard bottom row.
  */
 @Composable
 fun DeckMacroZone(
-    superState: ModifierToggleState,
-    onCycleSuper: () -> Unit,
     onSendRawKey: (keyCode: Byte, extraMod: Byte, label: String) -> Unit,
     onQuickAction: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -70,15 +68,15 @@ fun DeckMacroZone(
             onSendRawKey(HidConstants.KEY_TAB, 0, "TAB")
         }
 
-        // Super / Win / Cmd Key
-        ThumbModifierKey(
-            label = "SUPER",
-            state = superState,
+        // Caps Lock Key
+        DeckKey(
+            text = "CAPS",
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.1f)
+                .weight(1.1f),
+            fontSize = 11.sp
         ) {
-            onCycleSuper()
+            onSendRawKey(HidConstants.KEY_CAPSLOCK, 0, "CAPS")
         }
 
         // Quick Shortcuts / Command Palette Trigger Key

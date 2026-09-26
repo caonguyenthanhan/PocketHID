@@ -204,10 +204,8 @@ fun LandscapeDeckScreen(
                         modifier = Modifier.fillMaxSize(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // ZONE 1: LEFT THUMB CLUSTER (ESC, TAB, SUPER, QUICK)
+                        // ZONE 1: LEFT THUMB CLUSTER (ESC, TAB, CAPS, QUICK)
                         DeckMacroZone(
-                            superState = superState,
-                            onCycleSuper = { superState = cycleModifier(superState) },
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
                             onQuickAction = { showCommandPalette = true },
                             modifier = Modifier.weight(1.3f)
@@ -220,11 +218,24 @@ fun LandscapeDeckScreen(
                             ctrlState = ctrlState,
                             altState = altState,
                             shiftState = shiftState,
+                            superState = superState,
                             onCycleCtrl = { ctrlState = cycleModifier(ctrlState) },
                             onCycleAlt = { altState = cycleModifier(altState) },
                             onCycleShift = { shiftState = cycleModifier(shiftState) },
+                            onCycleSuper = { superState = cycleModifier(superState) },
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
                             onSendConsumerKey = { code, lbl -> sendConsumerKey(code, lbl) },
+                            onDispatchAction = { action ->
+                                if (!canSendInput()) return@DeckKeyboardZone
+                                triggerHaptic()
+                                lastInputLabel = action.displayName
+                                scope.launch {
+                                    transport?.let {
+                                        dev.aleian.pockethid.action.ActionDispatcher.dispatch(action, it, settings.hostOs)
+                                    }
+                                    consumeStickyModifiers()
+                                }
+                            },
                             hapticsEnabled = settings.keyboardHaptics,
                             modifier = Modifier.weight(7.4f)
                         )

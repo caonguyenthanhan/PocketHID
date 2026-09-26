@@ -7,6 +7,7 @@ import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
 import dev.aleian.pockethid.action.ActionDispatcher
 import dev.aleian.pockethid.action.ActionExecutionPlan
+import dev.aleian.pockethid.action.PocketAction
 import dev.aleian.pockethid.mapping.TextInputResolver
 import dev.aleian.pockethid.ui.components.ImeDiagnosticsHub
 import dev.aleian.pockethid.ui.components.PocketImeInputView
@@ -193,6 +194,7 @@ fun KeyboardScreen(
         listOf(
             SpecialKey("Esc", HidConstants.KEY_ESC),
             SpecialKey("Tab", HidConstants.KEY_TAB),
+            SpecialKey("⊞ Win", HidConstants.KEY_NONE, HidConstants.MOD_LEFT_GUI),
             SpecialKey("Enter", HidConstants.KEY_ENTER),
             SpecialKey("Bksp", HidConstants.KEY_BACKSPACE),
             SpecialKey("Del", HidConstants.KEY_DELETE),
@@ -228,15 +230,15 @@ fun KeyboardScreen(
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Sticky Modifiers Bar
+        // Sticky Modifiers Bar (Canonical Windows Order: Ctrl ⊞ Win Alt Shift)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             ModifierButton("Ctrl", ctrlState, Modifier.weight(1f)) { ctrlState = cycleModifier(ctrlState) }
-            ModifierButton("Shift", shiftState, Modifier.weight(1f)) { shiftState = cycleModifier(shiftState) }
+            ModifierButton("⊞ Win", guiState, Modifier.weight(1f)) { guiState = cycleModifier(guiState) }
             ModifierButton("Alt", altState, Modifier.weight(1f)) { altState = cycleModifier(altState) }
-            ModifierButton("Win/Cmd", guiState, Modifier.weight(1.2f)) { guiState = cycleModifier(guiState) }
+            ModifierButton("Shift", shiftState, Modifier.weight(1f)) { shiftState = cycleModifier(shiftState) }
         }
 
         // SubMode Layer Selector (TYPE | SHORTCUTS | MEDIA | SYSTEM | F-KEYS | NUMPAD)
@@ -684,8 +686,12 @@ fun KeyboardScreen(
                         DeckKey(text = "ALT+TAB", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
                             sendKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_ALT)
                         }
-                        DeckKey(text = "DESKTOP (Win+D)", modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            sendKey(HidConstants.KEY_D, HidConstants.MOD_LEFT_GUI)
+                        DeckKey(text = "DESKTOP (Win+D)", modifier = Modifier.weight(1f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            scope.launch {
+                                if (transport != null) {
+                                    ActionDispatcher.dispatch(PocketAction.SystemAction.ShowDesktop, transport, settings.hostOs)
+                                }
+                            }
                         }
                         DeckKey(text = "TASK MGR", modifier = Modifier.weight(1f).fillMaxHeight()) {
                             sendKey(
@@ -787,7 +793,32 @@ fun KeyboardScreen(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Row 1: Virtual Desktops
+                    // Row 1: Primary System Commands (OS-Aware Semantic Actions)
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DeckKey(text = "SHOW DESKTOP\n(Win+D)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            scope.launch {
+                                if (transport != null) {
+                                    ActionDispatcher.dispatch(PocketAction.SystemAction.ShowDesktop, transport, settings.hostOs)
+                                }
+                            }
+                        }
+                        DeckKey(text = "LOCK PC\n(Win+L)", modifier = Modifier.weight(1.1f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
+                            scope.launch {
+                                if (transport != null) {
+                                    ActionDispatcher.dispatch(PocketAction.SystemAction.LockPC, transport, settings.hostOs)
+                                }
+                            }
+                        }
+                        DeckKey(text = "TASK VIEW\n(Win+Tab)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            scope.launch {
+                                if (transport != null) {
+                                    ActionDispatcher.dispatch(PocketAction.SystemAction.TaskView, transport, settings.hostOs)
+                                }
+                            }
+                        }
+                    }
+
+                    // Row 2: Virtual Desktops
                     Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DeckKey(text = "◀ DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
                             sendKey(
@@ -815,11 +846,8 @@ fun KeyboardScreen(
                         }
                     }
 
-                    // Row 2: Windows System Shell
+                    // Row 3: Windows System Shell & Snapping
                     Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DeckKey(text = "TASK VIEW (Win+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
-                            sendKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI)
-                        }
                         DeckKey(text = "SNIP TOOL (Win+⇧+S)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
                             sendKey(
                                 HidConstants.KEY_S,

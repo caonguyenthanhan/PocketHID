@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import dev.aleian.pockethid.action.PocketAction
 import dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub
 import dev.aleian.pockethid.model.HidConstants
 import dev.aleian.pockethid.ui.components.DeckKey
@@ -32,11 +33,14 @@ fun DeckKeyboardZone(
     ctrlState: ModifierToggleState,
     altState: ModifierToggleState,
     shiftState: ModifierToggleState,
+    superState: ModifierToggleState = ModifierToggleState.OFF,
     onCycleCtrl: () -> Unit,
     onCycleAlt: () -> Unit,
     onCycleShift: () -> Unit,
+    onCycleSuper: () -> Unit = {},
     onSendRawKey: (keyCode: Byte, extraMod: Byte, label: String) -> Unit,
     onSendConsumerKey: (usageCode: Int, label: String) -> Unit,
+    onDispatchAction: (action: PocketAction) -> Unit = {},
     hapticsEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -150,14 +154,14 @@ fun DeckKeyboardZone(
                         }
                     }
 
-                    // ROW 5: BOTTOM MODIFIER + SPACEBAR DECK (CTRL ALT SPACE SHIFT ENTER)
+                    // ROW 5: BOTTOM MODIFIER + SPACEBAR DECK (CTRL ⊞ WIN ALT SPACE SHIFT ENTER)
                     Row(
                         modifier = Modifier.fillMaxWidth().weight(1.1f),
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         DeckKey(
                             text = "CTRL",
-                            modifier = Modifier.weight(1.1f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.0f).fillMaxHeight(),
                             containerColor = if (ctrlState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
                             textColor = if (ctrlState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
                             fontSize = 11.sp
@@ -166,8 +170,21 @@ fun DeckKeyboardZone(
                         }
 
                         DeckKey(
+                            text = "⊞ WIN",
+                            modifier = Modifier.weight(1.0f).fillMaxHeight(),
+                            containerColor = if (superState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
+                            textColor = if (superState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
+                            fontSize = 11.sp,
+                            onLongClick = {
+                                onSendRawKey(HidConstants.KEY_NONE, HidConstants.MOD_LEFT_GUI, "Win")
+                            }
+                        ) {
+                            onCycleSuper()
+                        }
+
+                        DeckKey(
                             text = "ALT",
-                            modifier = Modifier.weight(1.1f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.0f).fillMaxHeight(),
                             containerColor = if (altState != ModifierToggleState.OFF) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
                             textColor = if (altState != ModifierToggleState.OFF) PrimaryBlue else TextPrimary,
                             fontSize = 11.sp
@@ -177,7 +194,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "SPACE",
-                            modifier = Modifier.weight(4.0f).fillMaxHeight(),
+                            modifier = Modifier.weight(3.4f).fillMaxHeight(),
                             containerColor = SurfaceCard,
                             textColor = PrimaryBlue,
                             fontSize = 12.sp
@@ -187,7 +204,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "SHIFT",
-                            modifier = Modifier.weight(1.3f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.1f).fillMaxHeight(),
                             containerColor = if (isShiftActive) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
                             textColor = if (isShiftActive) PrimaryBlue else TextPrimary,
                             fontSize = 11.sp
@@ -197,7 +214,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "ENTER",
-                            modifier = Modifier.weight(2.0f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.6f).fillMaxHeight(),
                             containerColor = PrimaryBlue.copy(alpha = 0.25f),
                             textColor = PrimaryBlue,
                             fontSize = 12.sp
@@ -247,8 +264,8 @@ fun DeckKeyboardZone(
                         DeckKey(text = "SWITCH (Alt+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
                             onSendRawKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_ALT, "Alt+Tab")
                         }
-                        DeckKey(text = "DESKTOP (Win+D)", modifier = Modifier.weight(1.3f).fillMaxHeight()) {
-                            onSendRawKey(HidConstants.KEY_D, HidConstants.MOD_LEFT_GUI, "Win+D")
+                        DeckKey(text = "SHOW DESKTOP (Win+D)", modifier = Modifier.weight(1.5f).fillMaxHeight(), textColor = PrimaryBlue) {
+                            onDispatchAction(PocketAction.SystemAction.ShowDesktop)
                         }
                     }
 
@@ -392,7 +409,32 @@ fun DeckKeyboardZone(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Row 1: Virtual Desktops Management
+                    // Row 1: Primary System Shell (OS-Aware Semantic Actions)
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeckKey(
+                            text = "SHOW DESKTOP\n(Win + D)",
+                            modifier = Modifier.weight(1.3f).fillMaxHeight(),
+                            textColor = PrimaryBlue
+                        ) {
+                            onDispatchAction(PocketAction.SystemAction.ShowDesktop)
+                        }
+                        DeckKey(
+                            text = "LOCK PC\n(Win + L)",
+                            modifier = Modifier.weight(1.2f).fillMaxHeight(),
+                            textColor = Color(0xFFEF4444)
+                        ) {
+                            onDispatchAction(PocketAction.SystemAction.LockPC)
+                        }
+                        DeckKey(
+                            text = "TASK VIEW\n(Win + Tab)",
+                            modifier = Modifier.weight(1.3f).fillMaxHeight(),
+                            textColor = PrimaryBlue
+                        ) {
+                            onDispatchAction(PocketAction.SystemAction.TaskView)
+                        }
+                    }
+
+                    // Row 2: Virtual Desktops Management
                     Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         DeckKey(text = "◀ DESKTOP", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = PrimaryBlue) {
                             val mods = (HidConstants.MOD_LEFT_CTRL.toInt() or HidConstants.MOD_LEFT_GUI.toInt()).toByte()
@@ -412,11 +454,8 @@ fun DeckKeyboardZone(
                         }
                     }
 
-                    // Row 2: Windows System Shell
+                    // Row 3: Windows Shell Tools & Snapping
                     Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        DeckKey(text = "TASK VIEW (Win+Tab)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = PrimaryBlue) {
-                            onSendRawKey(HidConstants.KEY_TAB, HidConstants.MOD_LEFT_GUI, "TaskView")
-                        }
                         DeckKey(text = "SNIP TOOL (Win+⇧+S)", modifier = Modifier.weight(1.3f).fillMaxHeight(), textColor = Color(0xFFF59E0B)) {
                             val mods = (HidConstants.MOD_LEFT_GUI.toInt() or HidConstants.MOD_LEFT_SHIFT.toInt()).toByte()
                             onSendRawKey(HidConstants.KEY_S, mods, "SnipTool")
@@ -427,10 +466,6 @@ fun DeckKeyboardZone(
                         DeckKey(text = "RUN (Win+R)", modifier = Modifier.weight(1f).fillMaxHeight()) {
                             onSendRawKey(HidConstants.KEY_R, HidConstants.MOD_LEFT_GUI, "Run")
                         }
-                    }
-
-                    // Row 3: Window Snap & Actions
-                    Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         DeckKey(text = "SNAP ◀", modifier = Modifier.weight(1f).fillMaxHeight()) {
                             onSendRawKey(HidConstants.KEY_LEFT, HidConstants.MOD_LEFT_GUI, "SnapLeft")
                         }
@@ -439,12 +474,6 @@ fun DeckKeyboardZone(
                         }
                         DeckKey(text = "SNAP ▶", modifier = Modifier.weight(1f).fillMaxHeight()) {
                             onSendRawKey(HidConstants.KEY_RIGHT, HidConstants.MOD_LEFT_GUI, "SnapRight")
-                        }
-                        DeckKey(text = "ACTION CTR (Win+A)", modifier = Modifier.weight(1.2f).fillMaxHeight()) {
-                            onSendRawKey(HidConstants.KEY_A, HidConstants.MOD_LEFT_GUI, "ActionCenter")
-                        }
-                        DeckKey(text = "CLOSE (Alt+F4)", modifier = Modifier.weight(1.2f).fillMaxHeight(), textColor = Color(0xFFEF4444)) {
-                            onSendRawKey(HidConstants.KEY_F4, HidConstants.MOD_LEFT_ALT, "CloseWindow")
                         }
                     }
                 }
