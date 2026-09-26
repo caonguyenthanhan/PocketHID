@@ -1,0 +1,1 @@
+# PocketHID Proguard Rules

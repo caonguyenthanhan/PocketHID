@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">PocketHID</string>
+    <string name="tab_mouse">Mouse</string>
+    <string name="tab_keyboard">Keyboard</string>
+    <string name="status_connected">Connected</string>
+    <string name="status_connecting">Connecting</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="status_unsupported">HID Role Unsupported</string>
+    <string name="notification_channel_name">PocketHID Service</string>
+    <string name="notification_channel_desc">Maintains Bluetooth HID connection in the background</string>
+</resources>

@@ -1,0 +1,12 @@
+.git/**
+.idea/**
+.next/**
+.venv/**
+.venv_mineru/**
+.vscode/**
+Archived/
+__pycache__/**
+build/**
+dist/**
+node_modules/**
+venv/**

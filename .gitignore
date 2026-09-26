@@ -1,0 +1,21 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+*/build
+.cxx
+*.hprof
+
+# Scans & temp caches
+classify_result.json
+tree_scan_result.json
+tree_scan_result.txt
+stitch_new_build_project.zip
+stitch_new_build_project/
