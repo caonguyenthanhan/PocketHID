@@ -8,9 +8,11 @@ interface InputTransport {
     val connectionState: StateFlow<ConnectionState>
     val isSupported: Boolean
     val connectedDevice: BluetoothDevice?
+    val isConnected: Boolean
 
     fun register()
     fun unregister()
+    fun syncConnectionState()
     fun connect(device: BluetoothDevice): Boolean
     fun disconnect(): Boolean
 

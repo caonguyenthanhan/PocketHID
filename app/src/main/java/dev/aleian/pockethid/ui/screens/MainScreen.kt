@@ -109,23 +109,24 @@ fun MainScreen(
             when (val current = connectionState) {
                 is ConnectionState.Connected -> {
                     val name = current.device.name ?: current.device.address
-                    snackbarHostState.showSnackbar("Đã kết nối với $name. Sẵn sàng điều khiển!")
+                    snackbarHostState.showSnackbar("Connected to $name. Ready to control.")
                 }
                 is ConnectionState.Error -> {
-                    snackbarHostState.showSnackbar("Lỗi: ${current.message}", duration = SnackbarDuration.Long)
+                    snackbarHostState.showSnackbar("Error: ${current.message}", duration = SnackbarDuration.Long)
                 }
                 is ConnectionState.Disconnected -> {
                     if (prev is ConnectionState.Connected) {
-                        val name = (prev as ConnectionState.Connected).device.name ?: "máy tính"
-                        snackbarHostState.showSnackbar("Đã ngắt kết nối với $name.")
+                        val name = (prev as ConnectionState.Connected).device.name ?: "Host"
+                        snackbarHostState.showSnackbar("Disconnected from $name.")
                     } else if (prev is ConnectionState.Connecting) {
-                        snackbarHostState.showSnackbar("Không thể kết nối. Vui lòng kiểm tra Bluetooth máy tính.")
+                        snackbarHostState.showSnackbar("Could not connect. Please check host Bluetooth.")
                     }
                 }
                 is ConnectionState.Connecting -> {
-                    val name = current.device?.name ?: "máy tính"
-                    snackbarHostState.showSnackbar("Đang kết nối tới $name...")
+                    val name = current.device?.name ?: "Host"
+                    snackbarHostState.showSnackbar("Connecting to $name…")
                 }
+                is ConnectionState.Disconnecting -> {}
             }
         }
     }
@@ -212,13 +213,13 @@ fun MainScreen(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "Chưa kết nối máy tính. Chạm để chọn máy ghép đôi.",
+                                            text = "No host connected. Tap to select a host.",
                                             fontSize = 11.sp,
                                             color = TextSecondary
                                         )
                                     }
                                     Text(
-                                        text = "Kết nối",
+                                        text = "Connect",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = PrimaryBlue
@@ -246,7 +247,7 @@ fun MainScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Đang kết nối tới ${state.device?.name ?: "máy tính"}...",
+                                        text = "Connecting to ${state.device?.name ?: "Host"}…",
                                         fontSize = 11.sp,
                                         color = PrimaryBlue
                                     )
@@ -288,7 +289,7 @@ fun MainScreen(
                                         )
                                     }
                                     Text(
-                                        text = "Thử lại",
+                                        text = "Retry",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = TextPrimary
@@ -310,8 +311,8 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
-                    label = { Text("Keyboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
+                    label = { Text("Mouse", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -323,8 +324,8 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
-                    label = { Text("Mouse", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
+                    label = { Text("Keyboard", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
@@ -355,8 +356,17 @@ fun MainScreen(
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> KeyboardScreen(transport = transport)
-                1 -> MouseScreen(transport = transport)
+                0 -> MouseScreen(
+                    transport = transport,
+                    connectionState = connectionState,
+                    onPairClick = { showPairingSheet = true },
+                    onHostInfoClick = { showDiagnosticsSheet = true },
+                    onSettingsClick = { showSettingsScreen = true }
+                )
+                1 -> KeyboardScreen(
+                    transport = transport,
+                    connectionState = connectionState
+                )
                 2 -> PresenterScreen(transport = transport)
             }
         }

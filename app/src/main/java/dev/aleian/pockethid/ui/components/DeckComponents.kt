@@ -108,7 +108,8 @@ fun TopCommandBar(
         // Center: Connection Status Pill
         val (statusDotColor, hostTitle) = when (connectionState) {
             is ConnectionState.Connected -> Pair(StatusConnected, connectionState.device.name ?: "Connected Host")
-            is ConnectionState.Connecting -> Pair(StatusConnecting, "Connecting...")
+            is ConnectionState.Connecting -> Pair(StatusConnecting, "Connecting…")
+            is ConnectionState.Disconnecting -> Pair(StatusConnecting, "Disconnecting…")
             is ConnectionState.Error -> Pair(Color(0xFFEF4444), "Connection Error")
             is ConnectionState.Disconnected -> Pair(StatusDisconnected, "Disconnected (Tap to Connect)")
         }

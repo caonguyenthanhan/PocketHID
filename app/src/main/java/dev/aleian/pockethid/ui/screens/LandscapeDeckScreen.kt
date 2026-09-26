@@ -147,7 +147,25 @@ fun LandscapeDeckScreen(
         if (superState == ModifierToggleState.STICKY) superState = ModifierToggleState.OFF
     }
 
+    var lastWarnTime by remember { mutableStateOf(0L) }
+
+    fun canSendInput(): Boolean {
+        if (connState is ConnectionState.Connected || transport?.isConnected == true) {
+            return true
+        }
+        if (connState is ConnectionState.Connecting) {
+            return false
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastWarnTime > 3000) {
+            lastWarnTime = now
+            Toast.makeText(context, "Connect to a host first.", Toast.LENGTH_SHORT).show()
+        }
+        return false
+    }
+
     fun sendRawKey(keyCode: Byte, extraModifier: Byte = 0, label: String = "") {
+        if (!canSendInput()) return
         val totalMods = (getActiveModifiers().toInt() or extraModifier.toInt()).toByte()
         triggerHaptic()
         lastScancode = "0x" + Integer.toHexString(keyCode.toInt() and 0xFF).uppercase()

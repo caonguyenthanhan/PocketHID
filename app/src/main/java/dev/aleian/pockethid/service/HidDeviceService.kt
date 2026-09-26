@@ -138,6 +138,10 @@ class HidDeviceService : Service() {
                         updateNotification("Ready for Bluetooth connection")
                         releaseWakeLock()
                     }
+                    is ConnectionState.Disconnecting -> {
+                        updateNotification("Disconnecting…")
+                        releaseWakeLock()
+                    }
                     is ConnectionState.Error -> {
                         updateNotification("Error: ${state.message}")
                         releaseWakeLock()

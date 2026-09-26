@@ -122,13 +122,15 @@ fun DiagnosticsSheet(
                     label = "Connection Status",
                     value = when (connectionState) {
                         is ConnectionState.Connected -> "CONNECTED (${connectionState.device.name ?: connectionState.device.address})"
-                        is ConnectionState.Connecting -> "CONNECTING..."
+                        is ConnectionState.Connecting -> "CONNECTING…"
+                        is ConnectionState.Disconnecting -> "DISCONNECTING…"
                         is ConnectionState.Error -> "ERROR: ${connectionState.message}"
                         is ConnectionState.Disconnected -> "DISCONNECTED"
                     },
                     valueColor = when (connectionState) {
                         is ConnectionState.Connected -> StatusConnected
                         is ConnectionState.Connecting -> PrimaryBlue
+                        is ConnectionState.Disconnecting -> PrimaryBlue
                         else -> StatusDisconnected
                     }
                 )

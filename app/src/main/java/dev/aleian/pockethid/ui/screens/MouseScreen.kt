@@ -2,22 +2,33 @@ package dev.aleian.pockethid.ui.screens
 
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,19 +41,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.mapping.GestureInterpreter
+import dev.aleian.pockethid.model.ConnectionState
 import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
-import dev.aleian.pockethid.ui.theme.AccentGreen
-import dev.aleian.pockethid.ui.theme.DarkBg
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurface
 import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
+import dev.aleian.pockethid.ui.theme.PrimaryBlue
+import dev.aleian.pockethid.ui.theme.StatusConnected
+import dev.aleian.pockethid.ui.theme.StatusConnecting
+import dev.aleian.pockethid.ui.theme.StatusDisconnected
+import dev.aleian.pockethid.ui.theme.SurfaceCard
 import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
@@ -54,25 +73,19 @@ import kotlin.math.abs
 @Composable
 fun MouseScreen(
     transport: InputTransport?,
+    connectionState: ConnectionState,
+    onPairClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
+    onHostInfoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
-    val settings by dev.aleian.pockethid.model.SettingsRepository.settings.collectAsState()
-    val connState by (transport?.connectionState?.collectAsState()
-        ?: remember { mutableStateOf(dev.aleian.pockethid.model.ConnectionState.Disconnected) })
-    var lastWarnTime by remember { mutableStateOf(0L) }
+    val settings by SettingsRepository.settings.collectAsState()
 
-    fun checkConnectionWarn() {
-        if (connState !is dev.aleian.pockethid.model.ConnectionState.Connected) {
-            val now = System.currentTimeMillis()
-            if (now - lastWarnTime > 3000) {
-                lastWarnTime = now
-                android.widget.Toast.makeText(context, "Chưa kết nối máy tính! Vui lòng kết nối Bluetooth trước.", android.widget.Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    var isDragLocked by remember { mutableStateOf(false) }
+    var lastWarnTime by remember { mutableStateOf(0L) }
 
     val gestureInterpreter = remember(settings) {
         GestureInterpreter(
@@ -81,29 +94,40 @@ fun MouseScreen(
         )
     }
 
-    var isLeftButtonHeld by remember { mutableStateOf(false) }
-    var isRightButtonHeld by remember { mutableStateOf(false) }
-    var isMiddleButtonHeld by remember { mutableStateOf(false) }
-
     fun triggerHaptic() {
         if (settings.hapticsTrackpad) {
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
         }
     }
 
+    /**
+     * Validate action against real HID session.
+     * Only displays notification if actually DISCONNECTED and user performed an HID action.
+     */
+    fun canSendInput(): Boolean {
+        if (connectionState is ConnectionState.Connected || transport?.isConnected == true) {
+            return true
+        }
+        if (connectionState is ConnectionState.Connecting) {
+            // Subtle no-op, do not spam error toast
+            return false
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastWarnTime > 3000) {
+            lastWarnTime = now
+            Toast.makeText(context, "Connect to a host first.", Toast.LENGTH_SHORT).show()
+        }
+        return false
+    }
+
     fun sendClick(buttonMask: Byte) {
-        checkConnectionWarn()
+        if (!canSendInput()) return
         scope.launch {
             triggerHaptic()
             transport?.sendMouseMove(0, 0, buttonMask, 0)
             delay(16)
-            val remainingButtons: Byte = when {
-                isLeftButtonHeld -> HidConstants.MOUSE_BUTTON_LEFT
-                isRightButtonHeld -> HidConstants.MOUSE_BUTTON_RIGHT
-                isMiddleButtonHeld -> HidConstants.MOUSE_BUTTON_MIDDLE
-                else -> HidConstants.MOUSE_BUTTON_NONE
-            }
-            transport?.sendMouseMove(0, 0, remainingButtons, 0)
+            val remaining: Byte = if (isDragLocked) HidConstants.MOUSE_BUTTON_LEFT else HidConstants.MOUSE_BUTTON_NONE
+            transport?.sendMouseMove(0, 0, remaining, 0)
         }
     }
 
@@ -117,22 +141,30 @@ fun MouseScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Trackpad surface
+        // TOP: Connection Status Card
+        MouseConnectionStatusCard(
+            connectionState = connectionState,
+            onPairClick = onPairClick,
+            onHostInfoClick = onHostInfoClick,
+            onSettingsClick = onSettingsClick
+        )
+
+        // MAIN: Large Precision Trackpad
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(DarkSurface)
-                .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
+                .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
                 .pointerInteropFilter { event ->
                     pointerCount = event.pointerCount
 
                     when (event.actionMasked) {
                         MotionEvent.ACTION_DOWN -> {
-                            checkConnectionWarn()
                             lastTouchX = event.x
                             lastTouchY = event.y
                             touchDownTime = System.currentTimeMillis()
@@ -146,6 +178,8 @@ fun MouseScreen(
                         }
 
                         MotionEvent.ACTION_MOVE -> {
+                            if (!canSendInput()) return@pointerInteropFilter true
+
                             val elapsed = System.currentTimeMillis() - touchDownTime
                             val currentX = event.x
                             val currentY = event.y
@@ -154,7 +188,6 @@ fun MouseScreen(
                                 val rawDx = currentX - lastTouchX
                                 val rawDy = currentY - lastTouchY
 
-                                // Deadzone check: discard < deadZonePx within first 30ms to prevent tap jitter
                                 if (!hasMovedBeyondDeadzone) {
                                     val dz = settings.deadZonePx.toFloat()
                                     if (abs(rawDx) < dz && abs(rawDy) < dz && elapsed < 30) {
@@ -163,13 +196,12 @@ fun MouseScreen(
                                     hasMovedBeyondDeadzone = true
                                 }
 
-                                val action = gestureInterpreter.processOneFingerMove(rawDx, rawDy, isLeftButtonHeld)
+                                val action = gestureInterpreter.processOneFingerMove(rawDx, rawDy, isDragLocked)
                                 transport?.sendMouseMove(action.dx, action.dy, action.buttons, 0)
 
                                 lastTouchX = currentX
                                 lastTouchY = currentY
                             } else if (pointerCount >= 2) {
-                                // 2-finger scroll
                                 val rawDy = currentY - lastTouchY
                                 val scrollAction = gestureInterpreter.processTwoFingerScroll(rawDy)
                                 if (scrollAction != null) {
@@ -183,7 +215,6 @@ fun MouseScreen(
                         MotionEvent.ACTION_UP -> {
                             val duration = System.currentTimeMillis() - touchDownTime
                             if (!hasMovedBeyondDeadzone && duration < 250) {
-                                // Single tap = left click
                                 sendClick(HidConstants.MOUSE_BUTTON_LEFT)
                             }
                             gestureInterpreter.setDragging(false)
@@ -193,7 +224,6 @@ fun MouseScreen(
                         MotionEvent.ACTION_POINTER_UP -> {
                             val duration = System.currentTimeMillis() - touchDownTime
                             if (pointerCount == 2 && duration < 300 && !hasMovedBeyondDeadzone) {
-                                // 2-finger tap = right click
                                 sendClick(HidConstants.MOUSE_BUTTON_RIGHT)
                             }
                             true
@@ -215,84 +245,248 @@ fun MouseScreen(
             ) {
                 Text(
                     text = "Trackpad",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 18.sp
-                    ),
+                    fontSize = 15.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
                     color = TextMuted
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "1 finger: move / tap click  •  2 fingers: scroll / right-click",
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
-                    color = TextMuted
+                    text = "1 finger: move / tap click  •  2 fingers: scroll / right click",
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = TextMuted.copy(alpha = 0.7f)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Physical mouse buttons row
+        // BOTTOM: Mouse Buttons Bar (LEFT, MIDDLE, RIGHT, DRAG LOCK)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                .height(60.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Left Button
-            Button(
-                onClick = {
-                    sendClick(HidConstants.MOUSE_BUTTON_LEFT)
-                },
-                modifier = Modifier
-                    .weight(1.2f)
-                    .fillMaxSize(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLeftButtonHeld) AccentGreen else DarkSurfaceVariant,
-                    contentColor = TextPrimary
-                )
-            ) {
-                Text(
-                    text = if (isLeftButtonHeld) "L-Hold" else "Left",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp
-                )
-            }
-
-            // Middle Button (Scroll Click)
-            Button(
-                onClick = {
-                    sendClick(HidConstants.MOUSE_BUTTON_MIDDLE)
-                },
+            // Drag Lock Toggle
+            Box(
                 modifier = Modifier
                     .weight(0.9f)
-                    .fillMaxSize(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkSurfaceVariant,
-                    contentColor = TextSecondary
-                )
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isDragLocked) PrimaryBlue.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                    .border(1.dp, if (isDragLocked) PrimaryBlue else DarkBorder, RoundedCornerShape(8.dp))
+                    .clickable {
+                        isDragLocked = !isDragLocked
+                        triggerHaptic()
+                        if (isDragLocked) {
+                            transport?.sendMouseMove(0, 0, HidConstants.MOUSE_BUTTON_LEFT, 0)
+                        } else {
+                            transport?.sendMouseMove(0, 0, HidConstants.MOUSE_BUTTON_NONE, 0)
+                        }
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Text("Middle", fontSize = 13.sp)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = if (isDragLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                        contentDescription = "Drag Lock",
+                        tint = if (isDragLocked) PrimaryBlue else TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "LOCK",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDragLocked) PrimaryBlue else TextSecondary
+                    )
+                }
             }
 
-            // Right Button
-            Button(
-                onClick = {
-                    sendClick(HidConstants.MOUSE_BUTTON_RIGHT)
-                },
-                modifier = Modifier
-                    .weight(1.2f)
-                    .fillMaxSize(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkSurfaceVariant,
-                    contentColor = TextPrimary
+            // Left Click
+            TouchMouseButton(
+                label = "LEFT",
+                modifier = Modifier.weight(2f),
+                isPrimary = true,
+                onClick = { sendClick(HidConstants.MOUSE_BUTTON_LEFT) }
+            )
+
+            // Middle Click
+            TouchMouseButton(
+                label = "MIDDLE",
+                modifier = Modifier.weight(1.3f),
+                onClick = { sendClick(HidConstants.MOUSE_BUTTON_MIDDLE) }
+            )
+
+            // Right Click
+            TouchMouseButton(
+                label = "RIGHT",
+                modifier = Modifier.weight(2f),
+                onClick = { sendClick(HidConstants.MOUSE_BUTTON_RIGHT) }
+            )
+        }
+    }
+}
+
+/**
+ * Top Connection Status Card
+ */
+@Composable
+private fun MouseConnectionStatusCard(
+    connectionState: ConnectionState,
+    onPairClick: () -> Unit,
+    onHostInfoClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    val (statusDot, statusText, hostName) = when (connectionState) {
+        is ConnectionState.Connected -> Triple(
+            StatusConnected,
+            "Connected",
+            connectionState.device.name ?: connectionState.device.address
+        )
+        is ConnectionState.Connecting -> Triple(
+            StatusConnecting,
+            "Connecting…",
+            connectionState.device?.name ?: "Searching for Host…"
+        )
+        is ConnectionState.Disconnecting -> Triple(
+            StatusConnecting,
+            "Disconnecting…",
+            "Terminating session"
+        )
+        is ConnectionState.Error -> Triple(
+            Color(0xFFEF4444),
+            "Connection Error",
+            connectionState.message
+        )
+        is ConnectionState.Disconnected -> Triple(
+            StatusDisconnected,
+            "Disconnected",
+            "No active host"
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(DarkSurfaceVariant)
+            .border(1.dp, DarkBorder, RoundedCornerShape(10.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left Status
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(statusDot)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = statusText,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = hostName,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (connectionState is ConnectionState.Connected) PrimaryBlue else TextSecondary,
+                    maxLines = 1
                 )
-            ) {
-                Text("Right", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            }
+
+            // Right Actions: Pair / Host Info / Settings
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(SurfaceCard)
+                        .border(1.dp, DarkBorder, RoundedCornerShape(6.dp))
+                        .clickable(onClick = onPairClick)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (connectionState is ConnectionState.Connected) "Switch" else "Pair",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                }
+
+                IconButton(onClick = onHostInfoClick, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Host Info",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                IconButton(onClick = onSettingsClick, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = "Settings",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun TouchMouseButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    isPrimary: Boolean = false,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val bgColor = when {
+        isPressed -> PrimaryBlue.copy(alpha = 0.3f)
+        isPrimary -> SurfaceCard
+        else -> DarkSurfaceVariant
+    }
+    val borderColor = if (isPressed || isPrimary) PrimaryBlue.copy(alpha = 0.5f) else DarkBorder
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = if (isPrimary) PrimaryBlue else TextPrimary
+        )
     }
 }

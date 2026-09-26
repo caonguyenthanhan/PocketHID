@@ -84,6 +84,7 @@ data class SpecialKey(
 @Composable
 fun KeyboardScreen(
     transport: InputTransport?,
+    connectionState: dev.aleian.pockethid.model.ConnectionState = dev.aleian.pockethid.model.ConnectionState.Disconnected,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -100,18 +101,21 @@ fun KeyboardScreen(
     var lastSentCharInfo by remember { mutableStateOf("Tap keyboard area to type") }
     var terminalStreamText by remember { mutableStateOf("ready>") }
 
-    val connState by (transport?.connectionState?.collectAsState()
-        ?: remember { mutableStateOf(dev.aleian.pockethid.model.ConnectionState.Disconnected) })
     var lastWarnTime by remember { mutableStateOf(0L) }
 
-    fun checkConnectionWarn() {
-        if (connState !is dev.aleian.pockethid.model.ConnectionState.Connected) {
-            val now = System.currentTimeMillis()
-            if (now - lastWarnTime > 3000) {
-                lastWarnTime = now
-                android.widget.Toast.makeText(context, "Chưa kết nối máy tính! Vui lòng kết nối Bluetooth trước.", android.widget.Toast.LENGTH_SHORT).show()
-            }
+    fun canSendInput(): Boolean {
+        if (connectionState is dev.aleian.pockethid.model.ConnectionState.Connected || transport?.isConnected == true) {
+            return true
         }
+        if (connectionState is dev.aleian.pockethid.model.ConnectionState.Connecting) {
+            return false
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastWarnTime > 3000) {
+            lastWarnTime = now
+            android.widget.Toast.makeText(context, "Connect to a host first.", android.widget.Toast.LENGTH_SHORT).show()
+        }
+        return false
     }
 
     fun triggerHaptic() {
@@ -137,7 +141,7 @@ fun KeyboardScreen(
     }
 
     fun sendKey(keyCode: Byte, extraModifier: Byte = 0) {
-        checkConnectionWarn()
+        if (!canSendInput()) return
         val totalMods = (getActiveModifiers().toInt() or extraModifier.toInt()).toByte()
         triggerHaptic()
         scope.launch {

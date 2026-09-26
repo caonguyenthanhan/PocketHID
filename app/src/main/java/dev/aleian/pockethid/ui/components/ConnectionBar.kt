@@ -71,6 +71,9 @@ fun ConnectionBar(
         is ConnectionState.Disconnected -> {
             Triple(TextMuted, "Disconnected", "No Host")
         }
+        is ConnectionState.Disconnecting -> {
+            Triple(AccentAmber, "Disconnecting…", "Host")
+        }
         is ConnectionState.Error -> {
             Triple(AccentRed, "Error", state.message)
         }
