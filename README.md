@@ -16,13 +16,14 @@
 
 ## 💡 Giới thiệu (Overview)
 
-**PocketHID** biến smartphone Android của bạn thành một bộ điều khiển **Universal Bluetooth HID Controller & Command Deck** đa năng 5-trong-1 độ trễ cực thấp:
+**PocketHID** biến smartphone Android của bạn thành một bộ điều khiển **Universal Bluetooth HID Controller & Command Deck** đa năng 6-trong-1 độ trễ cực thấp:
 
 1. **⌨️ Smart Landscape Command Deck & Typing Engine**: Bàn phím cơ ảo công thái học 3 vùng với hàng phím số chuyên dụng, phím Windows độc lập, hệ thống ký tự shifted hai tầng và 6 layer chức năng chuyên sâu.
 2. **🖱️ Precision Multi-Touch Trackpad**: Bàn rê chuột cảm ứng đa điểm hỗ trợ cử chỉ 1–4 ngón, dải cuộn nhanh siêu tốc mép phải (Fast Scroll Zone) và cụm nút chuột vật lý độc lập.
 3. **🎮 Driverless Bluetooth HID Gamepad**: Tay cầm chơi game chuẩn USB HID nhận diện trực tiếp trong Windows `joy.cpl` mà không cần cài thêm driver hay phần mềm trung gian.
 4. **📽️ Presenter & Laser Remote**: Điều khiển thuyết trình chuyên nghiệp hỗ trợ cả 2 chiều cầm ngang/dọc, tích hợp các phím chức năng F5, Esc, màn hình đen/trắng và con trỏ.
 5. **📱 One-Hand Web & Video Touch Remote**: Điều khiển lướt web và xem video chỉ bằng một ngón cái, tùy biến tay thuận Trái/Phải thông minh.
+6. **🎨 Electronic Drawing Board & 🔒 Focus Mode**: Bảng vẽ / phác thảo annotation điện tử độc lập nội suy Bezier siêu mượt, kèm nút khóa chế độ `FOCUS` chống chạm nhầm khi thao tác.
 
 ---
 
@@ -37,7 +38,7 @@ PocketHID đăng ký trực tiếp **Bluetooth HID Device Profile** tiêu chuẩ
 
 ---
 
-## 🕹️ 5 Chế Độ Điều Khiển Cốt Lõi (Core Modes)
+## 🕹️ 6 Chế Độ Điều Khiển Cốt Lõi (Core Modes)
 
 ---
 
@@ -158,6 +159,30 @@ Chuyên dụng cho các buổi báo cáo, hội thảo, giảng dạy trên Powe
 
 ---
 
+### 6. 🎨 Electronic Drawing Board & 🔒 Focus Mode Lock
+
+#### 🎨 Electronic Drawing Board (Chế độ Bảng Vẽ `DRAW`)
+Bảng vẽ và phác thảo annotation điện tử độc lập chạy trực tiếp trên thiết bị Android, tối ưu cho nhu cầu ghi chú ý tưởng, minh họa trong các buổi thuyết trình và họp trực tuyến:
+- **Nội suy Bezier bậc 2 (Quadratic Curve Smoothing):** Nét vẽ mượt mà, tự nhiên theo tốc độ di ngón tay, loại bỏ hoàn toàn hiện tượng gấp khúc hay giật lag.
+- **Lưới tọa độ Millimeter Grid:** Lưới chấm căn chỉnh 32dp tinh tế, hỗ trợ căn chỉnh bố cục, sơ đồ và ghi chú thẳng hàng.
+- **Bộ công cụ Command Deck Drawing Toolbar:**
+  - `PEN`: Bút vẽ kỹ thuật số với 4 kích thước nét linh hoạt (`2dp`, `4dp`, `8dp`, `12dp`).
+  - `ERASER`: Tẩy nét thông minh dựa trên thuật toán hình học tính khoảng cách điểm - đoạn thẳng (`distanceToSegment`) và bounding-box filtering.
+  - `UNDO / REDO`: Hoàn tác và phục hồi nét vẽ với giới hạn trần an toàn bộ nhớ chuẩn hóa `MAX_HISTORY = 50` chống tràn RAM (OOM).
+  - `CLEAR`: Xóa nhanh toàn bộ bảng vẽ với hộp thoại cảnh báo `AlertDialog` xác nhận, bảo vệ bản vẽ trước thao tác vô tình bấm nhầm.
+  - `COLOR PALETTE`: 5 mã màu tương phản cao tuyển chọn theo phong cách Command Deck: Trắng (`#FFFFFF`), Cyan (`#00E5FF`), Vàng (`#FFEA00`), Đỏ (`#FF3D00`), Xanh dương (`#2979FF`).
+- **Chống chạm nhầm đa điểm (Multi-touch Rejection):** Nhận diện nét vẽ duy nhất bằng 1 ngón tay; khi phát hiện từ 2 ngón tay trở lên chạm vào màn hình, hệ thống lập tức hủy nét vẽ nháp để không tạo vệt vẽ thừa.
+- **Hoạt động cục bộ 100%:** Xử lý render hoàn toàn tại chỗ trên Android, không cần server/companion app trên máy tính, không gửi byte vẽ thừa thãi qua Bluetooth HID.
+
+#### 🔒 Focus Mode / Mode Lock (`FOCUS`)
+Cơ chế bảo vệ trạng thái làm việc dành cho người dùng chuyên nghiệp khi đang gõ phím, rê chuột hoặc chơi game:
+- **Nút điều khiển trực quan trên Top Command Bar:** Hiển thị `○ FOCUS` khi tắt, chuyển sang `● FOCUS` với viền sáng Cyan (`#00E5FF`) khi kích hoạt.
+- **Khóa chuyển đổi giao diện:** Khi bật, toàn bộ thanh chuyển chế độ (`DeckModeSwitcher` và `NavigationBar`) bị khóa, ngăn chặn triệt để việc vô tình chạm hoặc vuốt đổi nhầm tab.
+- **Bảo toàn tương tác con:** Mọi thao tác bên trong chế độ đang chọn (gõ bàn phím, rê chuột, nhấn nút gamepad, vẽ nét) vẫn hoạt động 100% mượt mà.
+- **Tự động mở khóa an toàn:** Tự động reset về OFF khi ngắt kết nối Bluetooth hoặc khi khởi động lại ứng dụng.
+
+---
+
 ## 🔍 Kiến Trúc Kỹ Thuật & Khả Năng Tương Thích Host
 
 ### 1. Báo Cáo HID Composite Đa Tầng (Multi-Report Architecture)
@@ -196,7 +221,7 @@ Tích hợp bảng kiểm thử nội bộ và tự kiểm tra 6 bước cho Med
 | **Giao diện (UI)** | Jetpack Compose BOM 2024.12.01, Material Design 3 |
 | **Kiến trúc** | Clean Modular Architecture, MVI StateFlow, Semantic Action Engine |
 | **Bluetooth HID** | Android Bluetooth HID Device API (`BluetoothHidDevice`, Composite SDP `0xC8`) |
-| **Kiểm thử tự động** | JUnit 4 (100% Pass: 80 unit tests bao gồm `ConsumerControlMediaTest`, `GamepadReportDescriptorTest`, `GamepadMathTest`, `ActionResolverTest`, v.v.) |
+| **Kiểm thử tự động** | JUnit 4 (100% Pass: 22 test suites / 86+ unit test cases bao gồm `FocusLockTest`, `DrawingControllerTest`, `ConsumerControlMediaTest`, `GamepadReportDescriptorTest`, `GamepadMathTest`, `ActionResolverTest`, `GestureInterpreterTest`, `KeyMapperTest`, v.v.) |
 | **Yêu cầu hệ thống** | Android 9.0 (API 28) trở lên |
 
 ---
