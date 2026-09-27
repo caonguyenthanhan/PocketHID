@@ -100,6 +100,8 @@ fun TopCommandBar(
     onDiagnosticsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit = {},
+    isFocusLocked: Boolean = false,
+    onToggleFocusLock: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -112,16 +114,25 @@ fun TopCommandBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Left: Clean Rotate Icon (Compact, professional, non-text)
-        IconButton(
-            onClick = onRotateClick,
-            modifier = Modifier.size(32.dp)
+        // Left: Clean Rotate Icon + Focus Lock Control
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.RotateRight,
-                contentDescription = "Rotate Layout",
-                tint = TextSecondary,
-                modifier = Modifier.size(18.dp)
+            IconButton(
+                onClick = onRotateClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.RotateRight,
+                    contentDescription = "Rotate Layout",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            FocusLockButton(
+                isLocked = isFocusLocked,
+                onToggle = onToggleFocusLock
             )
         }
 
@@ -220,15 +231,63 @@ fun TopCommandBar(
 }
 
 /**
- * Main 4-Mode Global Navigation Switcher: KEYBOARD | MOUSE | GAMEPAD | PRESENTER
+ * Focus Mode Lock Button:
+ * FOCUS OFF: ○ FOCUS (subtle state)
+ * FOCUS ON:  ● FOCUS (cyan accent / lock indicator)
+ */
+@Composable
+fun FocusLockButton(
+    isLocked: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cyanAccent = Color(0xFF00E5FF)
+    val borderColor = if (isLocked) cyanAccent else DarkBorder
+    val bgColor = if (isLocked) cyanAccent.copy(alpha = 0.15f) else DarkSurfaceVariant
+    val textColor = if (isLocked) cyanAccent else TextMuted
+    val dotSymbol = if (isLocked) "●" else "○"
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 7.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = dotSymbol,
+                fontSize = 9.sp,
+                color = textColor
+            )
+            Text(
+                text = "FOCUS",
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = if (isLocked) FontWeight.Bold else FontWeight.Medium,
+                color = textColor,
+                letterSpacing = 0.5.sp
+            )
+        }
+    }
+}
+
+/**
+ * Main Global Navigation Switcher: KEYBOARD | MOUSE | GAMEPAD | PRESENTER | ONE-HAND
  */
 @Composable
 fun DeckModeSwitcher(
-    selectedMode: Int, // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter
+    selectedMode: Int,
     onSelectMode: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isFocusLocked: Boolean = false
 ) {
-    val modes = listOf("KEYBOARD", "MOUSE", "GAMEPAD", "PRESENTER", "ONE-HAND")
+    val modes = listOf("KEYBOARD", "MOUSE", "GAMEPAD", "PRESENTER", "ONE-HAND", "DRAW")
 
     Row(
         modifier = modifier
@@ -246,7 +305,7 @@ fun DeckModeSwitcher(
                 label = "ModeBgAnim"
             )
             val textColor by animateColorAsState(
-                targetValue = if (isSelected) PrimaryBlue else TextMuted,
+                targetValue = if (isSelected) PrimaryBlue else if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                 label = "ModeTextAnim"
             )
 
@@ -256,7 +315,11 @@ fun DeckModeSwitcher(
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(4.dp))
                     .background(animBg)
-                    .clickable { onSelectMode(index) },
+                    .clickable {
+                        if (!isFocusLocked) {
+                            onSelectMode(index)
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Text(

@@ -124,5 +124,14 @@
 - [x] Viết unit test `testShowDesktopSemanticActionRequirements` trong `ActionResolverTest.kt`
 - [x] Kiểm tra `./gradlew.bat testDebugUnitTest` pass 100% và `./gradlew.bat assembleDebug` thành công trong 11s
 
+## Phase 13: Focus Mode (Lock) & Electronic Drawing Board (Wave 1 — Hoàn thành)
+- [x] Khảo sát kiến trúc hiện tại, cập nhật code-map và review Wave 0 (CHỈ ĐỌC)
+- [x] Task W1-01: Focus Lock — Single source of truth (`FocusLockController`), khóa mode switcher, explicit unlock, auto-reset on disconnect, unit tests (`FocusLockTest`) PASS 100%
+- [x] Task W1-02: Drawing Engine — `DrawingState`, `DrawingController`, `DrawingStroke`/`DrawingPoint` models, Undo/Redo bounded stack (chuẩn hóa `MAX_HISTORY = 50`), hit-test eraser, multi-touch isolation, pure unit tests (`DrawingControllerTest`) PASS 100%
+- [x] Task W1-03: Drawing UI & Deck Integration — `DrawingScreen`, `DrawingCanvas` (smooth bezier), `DrawingToolbar` (tools, 5 colors, 4 sizes, clear confirmation dialog), mode `DRAW` (Portrait & Landscape), Safe insets
+- [x] Audit nhất quán MAX_HISTORY: Chuẩn hóa duy nhất `MAX_HISTORY = 50` trên production code, unit test fixture (`DrawingControllerTest`), và tài liệu bàn giao; loại bỏ triệt để giá trị 10 cục bộ
+- [x] Verification: Unit tests pass 100% (`testDebugUnitTest` 22/22) + Build APK (`assembleDebug` BUILD SUCCESSFUL)
+
+
 
 

@@ -335,5 +335,52 @@ Tuân thủ luật quản trị 4 tầng theo `D:\An-tool-ecosystem\.claude\skil
   - Layout bàn phím mô phỏng hoàn hảo bàn phím Windows thực tế, trực quan và tiện dụng.
   - Lệnh Show Desktop được khôi phục chuẩn xác theo mô hình semantic action thống nhất.
 
+---
+
+## [D-013] 2026-09-27 — Khởi Tạo Wave 0: Focus Mode (Lock) & Electronic Drawing Board
+
+- **Trạng thái:** ACTIVE `[đã đo]`
+- **Bối cảnh:** Nhận yêu cầu mở rộng 2 tính năng trọng yếu cho PocketHID:
+  1. Feature 1: Focus Mode / Mode Lock — Khóa chế độ hiện tại chống chạm nhầm khi đang thao tác (Keyboard, Mouse, Gamepad, Presenter, One-Hand, Draw). Chỉ mở khóa khi tap lại Focus.
+  2. Feature 2: Electronic Drawing Board (`DRAW`) — Chế độ bảng vẽ / phác thảo annotation độc lập, chạy cục bộ trên Android (không phụ thuộc PC/companion app, không gửi raw draw byte qua HID), hỗ trợ Pen (2/4/8/12dp), Eraser, Undo/Redo (bounded history), Clear (có xác nhận), 5 màu (White, Cyan, Yellow, Red, Blue), lọc multi-touch chống chạm nhầm.
+- **Quyết định kiến trúc:**
+  1. Phân vai và luật chơi: Master ghế T7, tuân thủ `multi-agent-workflow` v1.4 và `session-handoff`. Wave 0 ở chế độ CHỈ ĐỌC (không sửa code sản phẩm).
+  2. Focus Lock: Tạo Single Source of Truth (`FocusLockState` / `isFocusModeLocked: Boolean`). Mode Switcher (`DeckModeSwitcher` & `NavigationBar`) tôn trọng trạng thái khóa; các tương tác con bên trong mode đang khóa vẫn hoạt động 100%. Tự động reset khi phiên kết nối Bluetooth bị hủy hoặc khởi động lại app.
+  3. Drawing Board: Tách rời tuyệt đối UI và Business Logic theo mô hình `DrawingController` -> `DrawingState` -> `Canvas Renderer`. Data model `Stroke` / `Point` thuần túy, không chứa tham chiếu Android View / Compose.
+  4. Lập kế hoạch phân rã Wave 1 thành 3 envelopes độc lập, RÀO rời nhau (W1-01: Focus Lock; W1-02: Drawing Engine; W1-03: Drawing UI & Integration). Toàn bộ plan là 🛑 — trình Owner duyệt trước khi phát envelope.
+- **Hệ quả:**
+  - Giữ nguyên 100% các tính năng hiện có (Keyboard, Mouse, Gamepad, Presenter, One-Hand, Action Engine).
+  - Không phá vỡ kiến trúc Clean Architecture & Command Deck Design Language.
+
+---
+
+## [D-014] 2026-09-27 — Triển Khai Hoàn Tất Wave 1: Focus Lock & Electronic Drawing Board
+
+- **Trạng thái:** ACTIVE `[đã đo]`
+- **Bối cảnh:** Owner đã phê duyệt kế hoạch Wave 1 ("OWNER APPROVAL GRANTED. Proceed with Wave 1"). Cần thi công hoàn thiện theo đúng trình tự dispatch: ENV-W1-01 -> ENV-W1-02 -> ENV-W1-03, tuân thủ nghiêm ngặt RÀO phạm vi.
+- **Quyết định thi công:**
+  1. **ENV-W1-01 (Focus Lock):**
+     - Xây dựng `FocusLockController`: StateFlow `isLocked`, `toggle()`, `setLocked()`, `reset()`, `canSwitchMode()`, `resolveModeSwitch()`.
+     - Nút điều khiển `FocusLockButton` (`○ FOCUS` / `● FOCUS` viền/accent Cyan `0xFF00E5FF`) tích hợp vào `TopCommandBar`.
+     - Chặn thao tác chuyển mode khi locked trên `DeckModeSwitcher` và `NavigationBar`. Các tương tác bên trong mode vẫn hoạt động bình thường.
+     - Tự động mở khóa khi ngắt kết nối Bluetooth (`ConnectionState.Disconnected`).
+     - Viết bộ unit test `FocusLockTest.kt` đạt 100% PASS.
+  2. **ENV-W1-02 (Drawing Engine Core):**
+     - Module `dev.aleian.pockethid.drawing.model`: `DrawingPoint`, `DrawingTool` (PEN, ERASER), `DrawingColor` (White, Cyan, Yellow, Red, Blue), `DrawingStroke` (tích hợp thuật toán hình học phát hiện giao điểm `intersects`), `DrawingState`.
+     - Module `DrawingController`: Máy trạng thái quản lý nét vẽ, Undo/Redo stack có giới hạn trần cứng chuẩn hóa duy nhất (`MAX_HISTORY = 50`) chống OOM, đồng bộ 100% giữa production code (`DrawingController.MAX_HISTORY = 50`), unit tests (`DrawingControllerTest`) và tài liệu kiến trúc (loại bỏ giá trị 10 ở test fixture). Clear có bước xác nhận, thuật toán tẩy nét `eraseAt`, và xử lý đa điểm (hủy/kết thúc nét vẽ khi có $\ge 2$ ngón tay).
+     - Hoàn toàn độc lập với Android View/Compose.
+     - Viết 12 unit test cases `DrawingControllerTest.kt` kiểm chứng trọn vẹn mọi yêu cầu kỹ thuật, đạt 100% PASS.
+  3. **ENV-W1-03 (Drawing UI & Deck Integration):**
+     - Xây dựng `DrawingToolbar.kt`: Toolbar tinh gọn chuẩn Command Deck (Pen/Eraser switcher, Undo/Redo, Clear có confirmation AlertDialog, 4 size chips 2/4/8/12dp, 5 color chips, subtle haptics).
+     - Xây dựng `DrawingScreen.kt`: Compose Canvas với thuật toán nội suy đường cong Bezier bậc 2 (`quadraticTo`) cho nét vẽ mượt mà, lưới tọa độ millimeter chấm subtle (32dp), chặn lọc đa điểm 1-finger.
+     - Tích hợp chế độ `DRAW` (mode index 5) đồng bộ vào `MainScreen.kt` (Portrait NavigationBar) và `DeckModeSwitcher` / `LandscapeDeckScreen.kt` (Landscape).
+     - Tôn trọng WindowInsets, display cutout, không gửi raw draw byte qua Bluetooth HID.
+- **Hệ quả & Đo lường:**
+  - `./gradlew.bat testDebugUnitTest`: 22/22 test suites PASS 100% `[đã đo]`.
+  - `./gradlew.bat assembleDebug`: BUILD SUCCESSFUL in 27s `[đã đo]`.
+  - Giữ nguyên 100% tính năng hiện có của Keyboard, Mouse, Gamepad, Presenter, One-Hand. Không chạm vào các Composable God-functions.
+
+
+
 
 

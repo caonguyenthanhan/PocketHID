@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import dev.aleian.pockethid.mapping.KeyMapper
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.FocusLockController
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.components.DeckModeSwitcher
@@ -40,6 +41,7 @@ fun LandscapeDeckScreen(
     onMakeDiscoverable: () -> Unit,
     onExitLandscape: () -> Unit,
     onToggleOrientation: () -> Unit,
+    drawingController: dev.aleian.pockethid.drawing.DrawingController = remember { dev.aleian.pockethid.drawing.DrawingController() },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -49,6 +51,14 @@ fun LandscapeDeckScreen(
 
     val connState by (transport?.connectionState?.collectAsState()
         ?: remember { mutableStateOf(ConnectionState.Disconnected) })
+
+    val isFocusLocked by FocusLockController.isLocked.collectAsState()
+
+    LaunchedEffect(connState) {
+        if (connState is ConnectionState.Disconnected) {
+            FocusLockController.reset()
+        }
+    }
 
     var selectedTopMode by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter
     var selectedKeyboardSubMode by rememberSaveable { mutableIntStateOf(0) } // 0: Type, 1: Shortcuts, 2: Media, 3: System, 4: F-Keys, 5: Numpad
@@ -191,13 +201,20 @@ fun LandscapeDeckScreen(
             },
             onDiagnosticsClick = { showDiagnostics = true },
             onSettingsClick = { showSettingsScreen = true },
-            onSearchClick = { showCommandPalette = true }
+            onSearchClick = { showCommandPalette = true },
+            isFocusLocked = isFocusLocked,
+            onToggleFocusLock = { FocusLockController.toggle() }
         )
 
         // GLOBAL 3-MODE SWITCHER (KEYBOARD | MOUSE | PRESENTER)
         DeckModeSwitcher(
             selectedMode = selectedTopMode,
-            onSelectMode = { selectedTopMode = it }
+            onSelectMode = {
+                if (!isFocusLocked) {
+                    selectedTopMode = it
+                }
+            },
+            isFocusLocked = isFocusLocked
         )
 
         // ACTIVE DECK CONTENT
@@ -298,6 +315,14 @@ fun LandscapeDeckScreen(
                     OneHandScreen(
                         transport = transport,
                         connectionState = connState,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                5 -> {
+                    // ELECTRONIC DRAWING BOARD
+                    DrawingScreen(
+                        controller = drawingController,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

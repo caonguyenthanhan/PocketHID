@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.Slideshow
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.FocusLockController
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.components.TopCommandBar
@@ -83,6 +85,7 @@ fun MainScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val settings by SettingsRepository.settings.collectAsState()
+    val drawingController = remember { dev.aleian.pockethid.drawing.DrawingController() }
 
     // When the phone is turned horizontally, launch the Landscape Command Deck
     if (isLandscape) {
@@ -92,7 +95,8 @@ fun MainScreen(
             onConnectToDevice = onConnectToDevice,
             onMakeDiscoverable = onMakeDiscoverable,
             onExitLandscape = onToggleOrientation,
-            onToggleOrientation = onToggleOrientation
+            onToggleOrientation = onToggleOrientation,
+            drawingController = drawingController
         )
         return
     }
@@ -118,6 +122,7 @@ fun MainScreen(
                     snackbarHostState.showSnackbar("Error: ${current.message}", duration = SnackbarDuration.Long)
                 }
                 is ConnectionState.Disconnected -> {
+                    FocusLockController.reset()
                     if (prev is ConnectionState.Connected) {
                         val name = (prev as ConnectionState.Connected).device.name ?: "Host"
                         snackbarHostState.showSnackbar("Disconnected from $name.")
@@ -134,7 +139,8 @@ fun MainScreen(
         }
     }
 
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter, 4: One-Hand
+    val isFocusLocked by FocusLockController.isLocked.collectAsState()
     var showPairingSheet by rememberSaveable { mutableStateOf(false) }
     var showSettingsScreen by rememberSaveable { mutableStateOf(false) }
     var showDiagnosticsSheet by rememberSaveable { mutableStateOf(false) }
@@ -180,7 +186,9 @@ fun MainScreen(
                     },
                     onDiagnosticsClick = { showDiagnosticsSheet = true },
                     onSettingsClick = { showSettingsScreen = true },
-                    onSearchClick = { showCommandPalette = true }
+                    onSearchClick = { showCommandPalette = true },
+                    isFocusLocked = isFocusLocked,
+                    onToggleFocusLock = { FocusLockController.toggle() }
                 )
 
                 // Inline Contextual Alert Banners
@@ -315,66 +323,103 @@ fun MainScreen(
             ) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
+                    onClick = {
+                        if (!isFocusLocked) {
+                            selectedTab = 0
+                        }
+                    },
                     icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
                     label = { Text("Keyboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = TextMuted,
-                        unselectedTextColor = TextMuted,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                         indicatorColor = DarkSurface
                     )
                 )
                 NavigationBarItem(
                     selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
+                    onClick = {
+                        if (!isFocusLocked) {
+                            selectedTab = 1
+                        }
+                    },
                     icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
                     label = { Text("Mouse", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = TextMuted,
-                        unselectedTextColor = TextMuted,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                         indicatorColor = DarkSurface
                     )
                 )
                 NavigationBarItem(
                     selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
+                    onClick = {
+                        if (!isFocusLocked) {
+                            selectedTab = 2
+                        }
+                    },
                     icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Gamepad") },
                     label = { Text("Gamepad", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = TextMuted,
-                        unselectedTextColor = TextMuted,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                         indicatorColor = DarkSurface
                     )
                 )
                 NavigationBarItem(
                     selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
+                    onClick = {
+                        if (!isFocusLocked) {
+                            selectedTab = 3
+                        }
+                    },
                     icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
                     label = { Text("Presenter", fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = TextMuted,
-                        unselectedTextColor = TextMuted,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                         indicatorColor = DarkSurface
                     )
                 )
                 NavigationBarItem(
                     selected = selectedTab == 4,
-                    onClick = { selectedTab = 4 },
+                    onClick = {
+                        if (!isFocusLocked) {
+                            selectedTab = 4
+                        }
+                    },
                     icon = { Icon(Icons.Default.TouchApp, contentDescription = "One-Hand") },
                     label = { Text("One-Hand", fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = PrimaryBlue,
                         selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = TextMuted,
-                        unselectedTextColor = TextMuted,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        indicatorColor = DarkSurface
+                    )
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 5,
+                    onClick = {
+                        if (!isFocusLocked) {
+                            selectedTab = 5
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Gesture, contentDescription = "Draw") },
+                    label = { Text("Draw", fontWeight = if (selectedTab == 5) FontWeight.Bold else FontWeight.Normal) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = PrimaryBlue,
+                        selectedTextColor = PrimaryBlue,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                         indicatorColor = DarkSurface
                     )
                 )
@@ -407,6 +452,9 @@ fun MainScreen(
                 4 -> OneHandScreen(
                     transport = transport,
                     connectionState = connectionState
+                )
+                5 -> DrawingScreen(
+                    controller = drawingController
                 )
             }
         }
