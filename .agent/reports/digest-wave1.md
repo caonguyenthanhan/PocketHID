@@ -7,11 +7,12 @@ Tổng kết nghiệm thu Wave 1 triển khai 2 tính năng trọng yếu: Focus
 
 ## 1. Kết Quả Đo Lường & Trạng Thái Thực Thi
 
-- **Commit gốc:** `1d2cee8b6efcb4c006dd43e46f75671c1d44e22f` `[đo lúc 2026-09-27 @ 1d2cee8]`.
-- **Thực thi Unit Tests:** 22/22 test suites PASS 100% qua `./gradlew.bat testDebugUnitTest` `[đo lúc 2026-09-27 @ 1d2cee8]`.
+- **Commit gốc Wave 0:** `1d2cee8b6efcb4c006dd43e46f75671c1d44e22f` `[đo lúc 2026-09-27 @ 1d2cee8]`.
+- **Commit baseline Wave 1:** `4e0c339d6e46954ae705ca627192a3fe7a77e77d` `[đo lúc 2026-09-28 @ 4e0c339]`.
+- **Thực thi Unit Tests:** 22/22 test suites PASS 100% qua `./gradlew.bat testDebugUnitTest` `[đo lúc 2026-09-28 @ 4e0c339]`.
   - Bao gồm `FocusLockTest.kt`: 6/6 test cases PASS `[đã đo]`.
-  - Bao gồm `DrawingControllerTest.kt`: 12/12 test cases PASS `[đã đo]`.
-- **Biên dịch APK Debug:** `./gradlew.bat assembleDebug` $\rightarrow$ **BUILD SUCCESSFUL in 27s** (`app-debug.apk` 9.8MB) `[đo lúc 2026-09-27 @ 1d2cee8]`.
+  - Bao gồm `DrawingControllerTest.kt`: 12/12 test cases PASS (xác nhận canonical `MAX_HISTORY = 50`) `[đã đo]`.
+- **Biên dịch APK Debug:** `./gradlew.bat assembleDebug` $\rightarrow$ **BUILD SUCCESSFUL in 2s** (`app-debug.apk`) `[đo lúc 2026-09-28 @ 4e0c339]`.
 - **Kiểm soát RÀO phạm vi (Scope Fence):** 0 vi phạm `[đã xác minh]`. Không sửa bất kỳ file nào ngoài phạm vi của 3 envelopes ENV-W1-01, ENV-W1-02, ENV-W1-03. Không chạm vào các God-composables (`KeyboardScreen.kt`, `MouseScreen.kt`, `GamepadScreen.kt`, `PresenterScreen.kt`, `OneHandScreen.kt`).
 - **Phân định kiểm thử thiết bị vật lý:** Đã xác nhận trên máy giả lập/compile pipeline. Xác minh trên thiết bị Android vật lý thực tế cần thực hiện khi kết nối điện thoại và máy tính thật (Physical-device validation: PENDING PHYSICAL TEST).
 
