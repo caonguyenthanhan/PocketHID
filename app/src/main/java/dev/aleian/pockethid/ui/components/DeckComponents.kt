@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import dev.aleian.pockethid.model.KeyLegend
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
@@ -51,6 +53,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import android.view.MotionEvent
 import kotlinx.coroutines.Job
@@ -515,9 +519,173 @@ fun ThumbModifierKey(
 }
 
 /**
- * Natural 4-Way Thumb Arrow Pad:
- *       [ ▲ ]
- * [ ◀ ] [ ▼ ] [ ▶ ]
+ * Ergonomic Touch Keycap Button with dual primary and shifted character legend.
+ * Shifted character is positioned above primary character in standard physical keyboard layout.
+ */
+@Composable
+fun DeckLegendKey(
+    legend: KeyLegend,
+    isShiftActive: Boolean,
+    isCapsLockActive: Boolean,
+    modifier: Modifier = Modifier,
+    containerColor: Color = SurfaceCard,
+    hapticFeedback: Boolean = true,
+    onClick: () -> Unit
+) {
+    val view = LocalView.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val actualBg = if (isPressed) PrimaryBlue.copy(alpha = 0.25f) else containerColor
+    val actualBorder = if (isPressed) PrimaryBlue else DarkBorder
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(actualBg)
+            .border(1.dp, actualBorder, RoundedCornerShape(6.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    if (hapticFeedback) {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    }
+                    onClick()
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (legend.shifted != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 1.dp, vertical = 2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Secondary / Shifted Symbol (e.g. !) in upper cell
+                Box(
+                    modifier = Modifier
+                        .weight(0.9f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = legend.shifted,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            lineHeight = 11.sp
+                        ),
+                        fontSize = if (isShiftActive) 10.sp else 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isShiftActive) FontWeight.ExtraBold else FontWeight.Medium,
+                        color = if (isShiftActive) PrimaryBlue else TextMuted
+                    )
+                }
+
+                // Primary Symbol / Digit (e.g. 1) in lower cell
+                Box(
+                    modifier = Modifier
+                        .weight(1.1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = legend.primary,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            lineHeight = 14.sp
+                        ),
+                        fontSize = if (isShiftActive) 11.sp else 13.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isShiftActive) FontWeight.Normal else FontWeight.Bold,
+                        color = if (isShiftActive) TextMuted else TextPrimary
+                    )
+                }
+            }
+        } else {
+            // Alphabetic key: Single character centered, case governed by Caps Lock & Shift
+            val activeLabel = legend.resolveActiveLabel(isShiftActive, isCapsLockActive)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = activeLabel,
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        lineHeight = 14.sp
+                    ),
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Professional Hardware-style Caps Lock key with status LED indicator dot.
+ * Reflects real Caps Lock state: subtle cyan background + illuminated cyan LED when ON;
+ * dark background + dim LED when OFF.
+ */
+@Composable
+fun CapsLockKey(
+    isCapsLockActive: Boolean,
+    modifier: Modifier = Modifier,
+    hapticFeedback: Boolean = true,
+    onClick: () -> Unit
+) {
+    val view = LocalView.current
+    val containerBg = if (isCapsLockActive) PrimaryBlue.copy(alpha = 0.2f) else DarkSurface
+    val borderColor = if (isCapsLockActive) PrimaryBlue.copy(alpha = 0.6f) else DarkBorder
+    val textColor = if (isCapsLockActive) PrimaryBlue else TextSecondary
+    val ledColor = if (isCapsLockActive) PrimaryBlue else Color(0xFF334155) // dim slate when OFF
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(containerBg)
+            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+            .clickable {
+                if (hapticFeedback) {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                }
+                onClick()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.padding(vertical = 2.dp)
+        ) {
+            Text(
+                text = "CAPS",
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = if (isCapsLockActive) FontWeight.Bold else FontWeight.Medium,
+                color = textColor
+            )
+            // Hardware-style LED indicator dot
+            Box(
+                modifier = Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(ledColor)
+            )
+        }
+    }
+}
+
+/**
+ * Natural 4-Way Thumb Arrow Pad (Inverted-T cluster):
+ *            [ ▲ ]
+ *      [ ◀ ] [ ▼ ] [ ▶ ]
+ * All keys adapt to container width using weights with zero overflow.
  */
 @Composable
 fun NaturalThumbArrowPad(
@@ -535,18 +703,54 @@ fun NaturalThumbArrowPad(
     }
 
     Column(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        // UP
-        ArrowPadKey(icon = Icons.Default.ArrowDropUp) { tap(onUp) }
+        // UP: centered in a 3-column row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Spacer(modifier = Modifier.weight(1f))
+            ArrowPadKey(
+                icon = Icons.Default.ArrowDropUp,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) { tap(onUp) }
+            Spacer(modifier = Modifier.weight(1f))
+        }
 
-        // LEFT, DOWN, RIGHT
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            ArrowPadKey(icon = Icons.Default.ArrowLeft) { tap(onLeft) }
-            ArrowPadKey(icon = Icons.Default.ArrowDropDown) { tap(onDown) }
-            ArrowPadKey(icon = Icons.Default.ArrowRight) { tap(onRight) }
+        // LEFT, DOWN, RIGHT: 3 equal-width columns
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            ArrowPadKey(
+                icon = Icons.Default.ArrowLeft,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) { tap(onLeft) }
+
+            ArrowPadKey(
+                icon = Icons.Default.ArrowDropDown,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) { tap(onDown) }
+
+            ArrowPadKey(
+                icon = Icons.Default.ArrowRight,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) { tap(onRight) }
         }
     }
 }
@@ -554,12 +758,11 @@ fun NaturalThumbArrowPad(
 @Composable
 private fun ArrowPadKey(
     icon: ImageVector,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .width(36.dp)
-            .height(28.dp)
+        modifier = modifier
             .clip(RoundedCornerShape(4.dp))
             .background(SurfaceCard)
             .border(1.dp, DarkBorder, RoundedCornerShape(4.dp))

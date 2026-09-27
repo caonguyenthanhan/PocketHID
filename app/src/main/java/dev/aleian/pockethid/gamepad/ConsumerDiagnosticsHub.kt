@@ -15,6 +15,10 @@ data class ConsumerTelemetry(
     val pressSent: Boolean = false,
     val releaseSent: Boolean = false,
     val transportStatus: String = "IDLE",
+    val pulseDurationMs: Long = 85L,
+    val payloadHex: String = "00 00",
+    val releaseHex: String = "00 00",
+    val deviceInfo: String = "None",
     val timestamp: Long = 0L
 ) {
     val usageHex: String get() = "0x" + usageCode.toString(16).padStart(4, '0').uppercase()
@@ -32,7 +36,11 @@ object ConsumerDiagnosticsHub {
         usageCode: Int,
         pressSent: Boolean,
         releaseSent: Boolean,
-        status: String
+        status: String,
+        pulseDurationMs: Long = 85L,
+        payloadHex: String = "00 00",
+        releaseHex: String = "00 00",
+        deviceInfo: String = "None"
     ) {
         _telemetry.value = ConsumerTelemetry(
             actionName = actionName,
@@ -41,20 +49,24 @@ object ConsumerDiagnosticsHub {
             pressSent = pressSent,
             releaseSent = releaseSent,
             transportStatus = status,
+            pulseDurationMs = pulseDurationMs,
+            payloadHex = payloadHex,
+            releaseHex = releaseHex,
+            deviceInfo = deviceInfo,
             timestamp = System.currentTimeMillis()
         )
     }
 
     fun resolveActionName(usageCode: Int): String {
         return when (usageCode) {
-            HidConstants.CONSUMER_PLAY_PAUSE -> "PLAY_PAUSE"
-            HidConstants.CONSUMER_STOP -> "STOP"
-            HidConstants.CONSUMER_SCAN_NEXT -> "NEXT"
-            HidConstants.CONSUMER_SCAN_PREV -> "PREV"
-            HidConstants.CONSUMER_VOLUME_UP -> "VOLUME_UP"
-            HidConstants.CONSUMER_VOLUME_DOWN -> "VOLUME_DOWN"
-            HidConstants.CONSUMER_MUTE -> "MUTE"
-            else -> "USAGE_0x" + usageCode.toString(16).uppercase()
+            HidConstants.CONSUMER_PLAY_PAUSE -> "PlayPause"
+            HidConstants.CONSUMER_STOP -> "Stop"
+            HidConstants.CONSUMER_SCAN_NEXT -> "NextTrack"
+            HidConstants.CONSUMER_SCAN_PREV -> "PreviousTrack"
+            HidConstants.CONSUMER_VOLUME_UP -> "VolumeUp"
+            HidConstants.CONSUMER_VOLUME_DOWN -> "VolumeDown"
+            HidConstants.CONSUMER_MUTE -> "Mute"
+            else -> "Usage_0x" + usageCode.toString(16).uppercase()
         }
     }
 

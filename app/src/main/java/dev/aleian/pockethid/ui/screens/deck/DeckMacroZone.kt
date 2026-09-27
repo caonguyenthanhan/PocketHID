@@ -13,18 +13,21 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.ui.components.CapsLockKey
 import dev.aleian.pockethid.ui.components.DeckKey
 import dev.aleian.pockethid.ui.components.ModifierToggleState
 import dev.aleian.pockethid.ui.components.ThumbModifierKey
 import dev.aleian.pockethid.ui.theme.*
 
 /**
- * Compact Left Thumb Zone (~12–14% screen width).
- * Focused solely on high-value non-duplicated thumb controls (ESC, TAB, CAPS, Quick Macro).
+ * Compact Left Thumb Zone (~11% screen width).
+ * Focused solely on high-value non-duplicated thumb controls (ESC, TAB, CAPS with hardware LED, Quick Macro).
  * Canonical modifiers (CTRL, ⊞ WIN, ALT, SHIFT) reside in the keyboard bottom row.
  */
 @Composable
 fun DeckMacroZone(
+    isCapsLockActive: Boolean = false,
+    onToggleCapsLock: () -> Unit = {},
     onSendRawKey: (keyCode: Byte, extraMod: Byte, label: String) -> Unit,
     onQuickAction: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -35,8 +38,8 @@ fun DeckMacroZone(
             .clip(RoundedCornerShape(8.dp))
             .background(DarkSurfaceVariant)
             .border(1.dp, DarkBorder, RoundedCornerShape(8.dp))
-            .padding(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(3.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         Text(
             text = "DECK",
@@ -68,15 +71,14 @@ fun DeckMacroZone(
             onSendRawKey(HidConstants.KEY_TAB, 0, "TAB")
         }
 
-        // Caps Lock Key
-        DeckKey(
-            text = "CAPS",
+        // Caps Lock Key with hardware LED state indicator
+        CapsLockKey(
+            isCapsLockActive = isCapsLockActive,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.1f),
-            fontSize = 11.sp
+                .weight(1.1f)
         ) {
-            onSendRawKey(HidConstants.KEY_CAPSLOCK, 0, "CAPS")
+            onToggleCapsLock()
         }
 
         // Quick Shortcuts / Command Palette Trigger Key

@@ -19,7 +19,10 @@ import androidx.compose.runtime.getValue
 import dev.aleian.pockethid.action.PocketAction
 import dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub
 import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.model.KeyLegend
+import dev.aleian.pockethid.model.KeyLegends
 import dev.aleian.pockethid.ui.components.DeckKey
+import dev.aleian.pockethid.ui.components.DeckLegendKey
 import dev.aleian.pockethid.ui.components.DeckRepeatKey
 import dev.aleian.pockethid.ui.components.DedicatedNumberRow
 import dev.aleian.pockethid.ui.components.ModifierToggleState
@@ -34,6 +37,7 @@ fun DeckKeyboardZone(
     altState: ModifierToggleState,
     shiftState: ModifierToggleState,
     superState: ModifierToggleState = ModifierToggleState.OFF,
+    isCapsLockActive: Boolean = false,
     onCycleCtrl: () -> Unit,
     onCycleAlt: () -> Unit,
     onCycleShift: () -> Unit,
@@ -52,8 +56,8 @@ fun DeckKeyboardZone(
             .clip(RoundedCornerShape(8.dp))
             .background(DarkSurface)
             .border(1.dp, DarkBorder, RoundedCornerShape(8.dp))
-            .padding(4.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+            .padding(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         // Sub-mode Header Selector
         SubModeSelector(
@@ -65,7 +69,7 @@ fun DeckKeyboardZone(
         // Dynamic Center Content based on Sub-mode
         when (selectedSubMode) {
             0 -> {
-                // TYPE MODE: Dedicated Number Row + Generous Touch QWERTY
+                // TYPE MODE: Dedicated Number Row + Maximum Touch Width QWERTY
                 Column(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -80,76 +84,63 @@ fun DeckKeyboardZone(
                             onSendRawKey(HidConstants.KEY_BACKSPACE, 0, "BKSP")
                         },
                         hapticsEnabled = hapticsEnabled,
-                        fontSize = 11.sp,
-                        keyHeight = 32.dp
+                        fontSize = 12.sp,
+                        keyHeight = 36.dp
                     )
 
-                    // ROW 2: Q W E R T Y U I O P [ ] \
-                    val row1Labels = if (isShiftActive) {
-                        listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|")
-                    } else {
-                        listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\")
-                    }
-                    val row1Codes = listOf(
-                        HidConstants.KEY_Q, HidConstants.KEY_W, HidConstants.KEY_E,
-                        HidConstants.KEY_R, HidConstants.KEY_T, HidConstants.KEY_Y,
-                        HidConstants.KEY_U, HidConstants.KEY_I, HidConstants.KEY_O,
-                        HidConstants.KEY_P, HidConstants.KEY_LEFTBRACE, HidConstants.KEY_RIGHTBRACE,
-                        HidConstants.KEY_BACKSLASH
-                    )
+                    // ROW 2: Q W E R T Y U I O P [ ] \ (with Dual Legend on brackets/backslash)
                     Row(
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        row1Labels.forEachIndexed { i, l ->
-                            DeckKey(text = l, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 12.sp) {
-                                onSendRawKey(row1Codes[i], 0, l)
+                        KeyLegends.ROW_2.forEach { legend ->
+                            DeckLegendKey(
+                                legend = legend,
+                                isShiftActive = isShiftActive,
+                                isCapsLockActive = isCapsLockActive,
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            ) {
+                                val activeLabel = legend.resolveActiveLabel(isShiftActive, isCapsLockActive)
+                                val extraMod = if (isShiftActive && legend.shifted != null) HidConstants.MOD_LEFT_SHIFT else 0.toByte()
+                                onSendRawKey(legend.keyCode, extraMod, activeLabel)
                             }
                         }
                     }
 
-                    // ROW 3: A S D F G H J K L ; '
-                    val row2Labels = if (isShiftActive) {
-                        listOf("A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\"")
-                    } else {
-                        listOf("A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'")
-                    }
-                    val row2Codes = listOf(
-                        HidConstants.KEY_A, HidConstants.KEY_S, HidConstants.KEY_D,
-                        HidConstants.KEY_F, HidConstants.KEY_G, HidConstants.KEY_H,
-                        HidConstants.KEY_J, HidConstants.KEY_K, HidConstants.KEY_L,
-                        HidConstants.KEY_SEMICOLON, HidConstants.KEY_APOSTROPHE
-                    )
+                    // ROW 3: A S D F G H J K L ; ' (Maximized horizontal touch target with Dual Legend on ; and ')
                     Row(
-                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 6.dp),
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 2.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        row2Labels.forEachIndexed { i, l ->
-                            DeckKey(text = l, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 12.sp) {
-                                onSendRawKey(row2Codes[i], 0, l)
+                        KeyLegends.ROW_3.forEach { legend ->
+                            DeckLegendKey(
+                                legend = legend,
+                                isShiftActive = isShiftActive,
+                                isCapsLockActive = isCapsLockActive,
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            ) {
+                                val activeLabel = legend.resolveActiveLabel(isShiftActive, isCapsLockActive)
+                                val extraMod = if (isShiftActive && legend.shifted != null) HidConstants.MOD_LEFT_SHIFT else 0.toByte()
+                                onSendRawKey(legend.keyCode, extraMod, activeLabel)
                             }
                         }
                     }
 
-                    // ROW 4: Z X C V B N M , . /
-                    val row3Labels = if (isShiftActive) {
-                        listOf("Z", "X", "C", "V", "B", "N", "M", "<", ">", "?")
-                    } else {
-                        listOf("Z", "X", "C", "V", "B", "N", "M", ",", ".", "/")
-                    }
-                    val row3Codes = listOf(
-                        HidConstants.KEY_Z, HidConstants.KEY_X, HidConstants.KEY_C,
-                        HidConstants.KEY_V, HidConstants.KEY_B, HidConstants.KEY_N,
-                        HidConstants.KEY_M, HidConstants.KEY_COMMA, HidConstants.KEY_DOT,
-                        HidConstants.KEY_SLASH
-                    )
+                    // ROW 4: Z X C V B N M , . / (Maximized horizontal touch target with Dual Legend on , . /)
                     Row(
-                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        row3Labels.forEachIndexed { i, l ->
-                            DeckKey(text = l, modifier = Modifier.weight(1f).fillMaxHeight(), fontSize = 12.sp) {
-                                onSendRawKey(row3Codes[i], 0, l)
+                        KeyLegends.ROW_4.forEach { legend ->
+                            DeckLegendKey(
+                                legend = legend,
+                                isShiftActive = isShiftActive,
+                                isCapsLockActive = isCapsLockActive,
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            ) {
+                                val activeLabel = legend.resolveActiveLabel(isShiftActive, isCapsLockActive)
+                                val extraMod = if (isShiftActive && legend.shifted != null) HidConstants.MOD_LEFT_SHIFT else 0.toByte()
+                                onSendRawKey(legend.keyCode, extraMod, activeLabel)
                             }
                         }
                     }
@@ -194,7 +185,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "SPACE",
-                            modifier = Modifier.weight(3.4f).fillMaxHeight(),
+                            modifier = Modifier.weight(3.6f).fillMaxHeight(),
                             containerColor = SurfaceCard,
                             textColor = PrimaryBlue,
                             fontSize = 12.sp
@@ -203,9 +194,9 @@ fun DeckKeyboardZone(
                         }
 
                         DeckKey(
-                            text = "SHIFT",
+                            text = if (shiftState == ModifierToggleState.LOCKED) "SHIFT 🔒" else "SHIFT",
                             modifier = Modifier.weight(1.1f).fillMaxHeight(),
-                            containerColor = if (isShiftActive) PrimaryBlue.copy(alpha = 0.3f) else DarkSurfaceVariant,
+                            containerColor = if (isShiftActive) PrimaryBlue.copy(alpha = 0.35f) else DarkSurfaceVariant,
                             textColor = if (isShiftActive) PrimaryBlue else TextPrimary,
                             fontSize = 11.sp
                         ) {
@@ -214,7 +205,7 @@ fun DeckKeyboardZone(
 
                         DeckKey(
                             text = "ENTER",
-                            modifier = Modifier.weight(1.6f).fillMaxHeight(),
+                            modifier = Modifier.weight(1.7f).fillMaxHeight(),
                             containerColor = PrimaryBlue.copy(alpha = 0.25f),
                             textColor = PrimaryBlue,
                             fontSize = 12.sp
@@ -308,7 +299,7 @@ fun DeckKeyboardZone(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                             fontSize = 13.sp
                         ) {
-                            onSendConsumerKey(HidConstants.CONSUMER_SCAN_PREV, "Prev")
+                            onDispatchAction(PocketAction.MediaAction.PrevTrack)
                         }
 
                         DeckKey(
@@ -318,7 +309,7 @@ fun DeckKeyboardZone(
                             textColor = PrimaryBlue,
                             fontSize = 14.sp
                         ) {
-                            onSendConsumerKey(HidConstants.CONSUMER_PLAY_PAUSE, "Play/Pause")
+                            onDispatchAction(PocketAction.MediaAction.PlayPause)
                         }
 
                         DeckKey(
@@ -326,7 +317,7 @@ fun DeckKeyboardZone(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                             fontSize = 13.sp
                         ) {
-                            onSendConsumerKey(HidConstants.CONSUMER_SCAN_NEXT, "Next")
+                            onDispatchAction(PocketAction.MediaAction.NextTrack)
                         }
                     }
 
@@ -344,7 +335,7 @@ fun DeckKeyboardZone(
                             enableRepeat = true,
                             repeatIntervalMs = 100L,
                             onTrigger = {
-                                onSendConsumerKey(HidConstants.CONSUMER_VOLUME_DOWN, "Vol-")
+                                onDispatchAction(PocketAction.MediaAction.VolumeDown)
                             }
                         )
 
@@ -357,7 +348,7 @@ fun DeckKeyboardZone(
                             hapticFeedback = hapticsEnabled,
                             enableRepeat = false, // Single tap only, no hold repeat!
                             onTrigger = {
-                                onSendConsumerKey(HidConstants.CONSUMER_MUTE, "Mute")
+                                onDispatchAction(PocketAction.MediaAction.Mute)
                             }
                         )
 
@@ -370,7 +361,7 @@ fun DeckKeyboardZone(
                             enableRepeat = true,
                             repeatIntervalMs = 100L,
                             onTrigger = {
-                                onSendConsumerKey(HidConstants.CONSUMER_VOLUME_UP, "Vol+")
+                                onDispatchAction(PocketAction.MediaAction.VolumeUp)
                             }
                         )
                     }

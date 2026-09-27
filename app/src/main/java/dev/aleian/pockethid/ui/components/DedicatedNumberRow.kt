@@ -15,6 +15,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -22,21 +24,17 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.model.KeyLegend
+import dev.aleian.pockethid.model.KeyLegends
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
 import dev.aleian.pockethid.ui.theme.PrimaryBlue
+import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-
-data class NumberKeyItem(
-    val normalLabel: String,
-    val shiftedLabel: String,
-    val keyCode: Byte,
-    val forceShift: Boolean = false
-)
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -60,23 +58,7 @@ fun DedicatedNumberRow(
         }
     }
 
-    val numberKeys = remember {
-        listOf(
-            NumberKeyItem("`", "~", HidConstants.KEY_GRAVE),
-            NumberKeyItem("1", "!", HidConstants.KEY_1),
-            NumberKeyItem("2", "@", HidConstants.KEY_2),
-            NumberKeyItem("3", "#", HidConstants.KEY_3),
-            NumberKeyItem("4", "$", HidConstants.KEY_4),
-            NumberKeyItem("5", "%", HidConstants.KEY_5),
-            NumberKeyItem("6", "^", HidConstants.KEY_6),
-            NumberKeyItem("7", "&", HidConstants.KEY_7),
-            NumberKeyItem("8", "*", HidConstants.KEY_8),
-            NumberKeyItem("9", "(", HidConstants.KEY_9),
-            NumberKeyItem("0", ")", HidConstants.KEY_0),
-            NumberKeyItem("-", "_", HidConstants.KEY_MINUS),
-            NumberKeyItem("=", "+", HidConstants.KEY_EQUAL)
-        )
-    }
+    val numberKeys = remember { KeyLegends.NUMBER_ROW }
 
     Row(
         modifier = modifier
@@ -85,43 +67,21 @@ fun DedicatedNumberRow(
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Number Keys
+        // Number Keys with Dual Primary / Shifted Character Legends via DeckLegendKey
         numberKeys.forEach { item ->
-            val displayLabel = if (isShiftActive) item.shiftedLabel else item.normalLabel
-            var isPressed by remember { mutableStateOf(false) }
-
-            Box(
+            DeckLegendKey(
+                legend = item,
+                isShiftActive = isShiftActive,
+                isCapsLockActive = false,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(if (isPressed) PrimaryBlue.copy(alpha = 0.25f) else DarkSurfaceVariant)
-                    .border(1.dp, if (isPressed) PrimaryBlue else DarkBorder, RoundedCornerShape(6.dp))
-                    .pointerInteropFilter { ev ->
-                        when (ev.actionMasked) {
-                            MotionEvent.ACTION_DOWN -> {
-                                isPressed = true
-                                triggerHaptic()
-                                val extraMod = if (isShiftActive) HidConstants.MOD_LEFT_SHIFT else 0.toByte()
-                                onSendKey(item.keyCode, extraMod, displayLabel)
-                                true
-                            }
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                isPressed = false
-                                true
-                            }
-                            else -> true
-                        }
-                    },
-                contentAlignment = Alignment.Center
+                    .fillMaxHeight(),
+                containerColor = DarkSurfaceVariant,
+                hapticFeedback = hapticsEnabled
             ) {
-                Text(
-                    text = displayLabel,
-                    fontSize = fontSize,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    color = if (isShiftActive) PrimaryBlue else TextPrimary
-                )
+                val extraMod = if (isShiftActive) HidConstants.MOD_LEFT_SHIFT else 0.toByte()
+                val label = if (isShiftActive) (item.shifted ?: item.primary) else item.primary
+                onSendKey(item.keyCode, extraMod, label)
             }
         }
 
@@ -165,6 +125,10 @@ fun DedicatedNumberRow(
         ) {
             Text(
                 text = "⌫",
+                style = TextStyle(
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    lineHeight = 14.sp
+                ),
                 fontSize = fontSize,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFFEF4444)

@@ -14,12 +14,14 @@ import dev.aleian.pockethid.model.ConnectionState
 import dev.aleian.pockethid.model.HidConstants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.Executors
 
 class BtHidTransport(
@@ -29,11 +31,13 @@ class BtHidTransport(
     companion object {
         private const val TAG = "BtHidTransport"
         private const val KEY_PRESS_DELAY_MS = 12L
-        private const val CONSUMER_PRESS_DELAY_MS = 75L
+        private const val CONSUMER_PRESS_DELAY_MS = 85L
+        private const val CONSUMER_RELEASE_SETTLE_MS = 20L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val executor = Executors.newSingleThreadExecutor()
+    private val consumerMutex = kotlinx.coroutines.sync.Mutex()
 
     private val bluetoothManager: BluetoothManager? =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -427,72 +431,135 @@ class BtHidTransport(
         delay(KEY_PRESS_DELAY_MS)
     }
 
+    private fun formatConsumerPayload(usageCode: Int): String {
+        return String.format("%02X %02X", usageCode and 0xFF, (usageCode shr 8) and 0xFF)
+    }
+
     @SuppressLint("MissingPermission")
     override fun sendConsumerClick(usageCode: Int): Boolean {
         val hid = hidDevice ?: run {
             dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
-                usageCode, pressSent = false, releaseSent = false, status = "FAILED (no hidDevice)"
+                actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
+                usageCode = usageCode,
+                pressSent = false,
+                releaseSent = false,
+                status = "FAILED (no hidDevice)",
+                pulseDurationMs = CONSUMER_PRESS_DELAY_MS,
+                payloadHex = formatConsumerPayload(usageCode),
+                releaseHex = "00 00",
+                deviceInfo = "None"
             )
             return false
         }
         val device = resolveActiveDevice() ?: run {
             dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
-                usageCode, pressSent = false, releaseSent = false, status = "FAILED (no active device)"
+                actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
+                usageCode = usageCode,
+                pressSent = false,
+                releaseSent = false,
+                status = "FAILED (no active device)",
+                pulseDurationMs = CONSUMER_PRESS_DELAY_MS,
+                payloadHex = formatConsumerPayload(usageCode),
+                releaseHex = "00 00",
+                deviceInfo = "None"
             )
             return false
         }
         if (!isAppRegistered) {
             dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
-                usageCode, pressSent = false, releaseSent = false, status = "FAILED (not registered)"
+                actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode),
+                usageCode = usageCode,
+                pressSent = false,
+                releaseSent = false,
+                status = "FAILED (not registered)",
+                pulseDurationMs = CONSUMER_PRESS_DELAY_MS,
+                payloadHex = formatConsumerPayload(usageCode),
+                releaseHex = "00 00",
+                deviceInfo = device.name ?: device.address
             )
             return false
         }
 
         val actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode)
+        val payloadHex = formatConsumerPayload(usageCode)
+        val deviceDesc = "${device.name ?: "Bluetooth Device"} (${device.address})"
+
+        Log.d(TAG, """
+            |--- CONSUMER CONTROL DISPATCH ---
+            |ACTION:    $actionName
+            |USAGE:     0x${usageCode.toString(16).padStart(4, '0').uppercase()}
+            |REPORT ID: 3
+            |PAYLOAD:   $payloadHex
+            |RELEASE:   00 00
+            |TIMING:    ${CONSUMER_PRESS_DELAY_MS} ms
+            |DEVICE:    $deviceDesc
+            |---------------------------------
+        """.trimMargin())
+
         val report = byteArrayOf(
             (usageCode and 0xFF).toByte(),
             ((usageCode shr 8) and 0xFF).toByte()
         )
         val emptyReport = ByteArray(2)
 
-        return try {
-            val sent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), report)
-            if (sent && _connectionState.value !is ConnectionState.Connected) {
-                _connectionState.value = ConnectionState.Connected(device)
-            }
-            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                actionName, usageCode, pressSent = sent, releaseSent = false,
-                status = if (sent) "SUCCESS" else "FAILED"
-            )
-
-            scope.launch {
-                delay(CONSUMER_PRESS_DELAY_MS)
+        scope.launch {
+            consumerMutex.withLock {
                 try {
-                    val released = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
+                    // Step 1: Send PRESS
+                    val pressSent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), report)
+                    if (pressSent && _connectionState.value !is ConnectionState.Connected) {
+                        _connectionState.value = ConnectionState.Connected(device)
+                    }
+
                     dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                        actionName, usageCode, pressSent = sent, releaseSent = released,
-                        status = if (released) "SUCCESS" else "RELEASE_FAILED"
+                        actionName = actionName,
+                        usageCode = usageCode,
+                        pressSent = pressSent,
+                        releaseSent = false,
+                        status = if (pressSent) "PRESS_SENT" else "PRESS_FAILED",
+                        pulseDurationMs = CONSUMER_PRESS_DELAY_MS,
+                        payloadHex = payloadHex,
+                        releaseHex = "00 00",
+                        deviceInfo = deviceDesc
                     )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to release consumer key", e)
+
+                    // Step 2: Hold for pulse duration
+                    delay(CONSUMER_PRESS_DELAY_MS)
+
+                    // Step 3: Send RELEASE
+                    val releaseSent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
+
                     dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                        actionName, usageCode, pressSent = sent, releaseSent = false,
-                        status = "RELEASE_EXCEPTION: ${e.message}"
+                        actionName = actionName,
+                        usageCode = usageCode,
+                        pressSent = pressSent,
+                        releaseSent = releaseSent,
+                        status = if (pressSent && releaseSent) "SUCCESS" else if (releaseSent) "PRESS_FAILED" else "RELEASE_FAILED",
+                        pulseDurationMs = CONSUMER_PRESS_DELAY_MS,
+                        payloadHex = payloadHex,
+                        releaseHex = "00 00",
+                        deviceInfo = deviceDesc
+                    )
+
+                    // Step 4: Settle delay to ensure host processes release before any subsequent press
+                    delay(CONSUMER_RELEASE_SETTLE_MS)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Consumer dispatch sequence failed", e)
+                    dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
+                        actionName = actionName,
+                        usageCode = usageCode,
+                        pressSent = false,
+                        releaseSent = false,
+                        status = "EXCEPTION: ${e.message}",
+                        pulseDurationMs = CONSUMER_PRESS_DELAY_MS,
+                        payloadHex = payloadHex,
+                        releaseHex = "00 00",
+                        deviceInfo = deviceDesc
                     )
                 }
             }
-            sent
-        } catch (e: Exception) {
-            Log.e(TAG, "sendConsumerClick failed", e)
-            dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                actionName, usageCode, pressSent = false, releaseSent = false,
-                status = "EXCEPTION: ${e.message}"
-            )
-            false
         }
+        return true
     }
 
     @SuppressLint("MissingPermission")
@@ -502,6 +569,9 @@ class BtHidTransport(
         if (!isAppRegistered) return false
 
         val actionName = dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.resolveActionName(usageCode)
+        val payloadHex = formatConsumerPayload(usageCode)
+        val deviceDesc = "${device.name ?: "Bluetooth Device"} (${device.address})"
+
         val report = byteArrayOf(
             (usageCode and 0xFF).toByte(),
             ((usageCode shr 8) and 0xFF).toByte()
@@ -512,8 +582,15 @@ class BtHidTransport(
                 _connectionState.value = ConnectionState.Connected(device)
             }
             dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                actionName, usageCode, pressSent = sent, releaseSent = false,
-                status = if (sent) "SUCCESS" else "FAILED"
+                actionName = actionName,
+                usageCode = usageCode,
+                pressSent = sent,
+                releaseSent = false,
+                status = if (sent) "HELD_DOWN" else "FAILED",
+                pulseDurationMs = 0L,
+                payloadHex = payloadHex,
+                releaseHex = "00 00",
+                deviceInfo = deviceDesc
             )
             sent
         } catch (e: Exception) {
@@ -529,11 +606,19 @@ class BtHidTransport(
         if (!isAppRegistered) return false
 
         val emptyReport = ByteArray(2)
+        val deviceDesc = "${device.name ?: "Bluetooth Device"} (${device.address})"
         return try {
             val sent = hid.sendReport(device, HidConstants.REPORT_ID_CONSUMER.toInt(), emptyReport)
             dev.aleian.pockethid.gamepad.ConsumerDiagnosticsHub.onEvent(
-                "RELEASE", 0, pressSent = false, releaseSent = sent,
-                status = if (sent) "SUCCESS" else "FAILED"
+                actionName = "RELEASE",
+                usageCode = 0,
+                pressSent = false,
+                releaseSent = sent,
+                status = if (sent) "RELEASE_OK" else "FAILED",
+                pulseDurationMs = 0L,
+                payloadHex = "00 00",
+                releaseHex = "00 00",
+                deviceInfo = deviceDesc
             )
             sent
         } catch (e: Exception) {

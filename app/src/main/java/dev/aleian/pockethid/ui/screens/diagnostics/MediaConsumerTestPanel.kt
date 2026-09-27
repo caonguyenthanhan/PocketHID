@@ -18,7 +18,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -75,7 +81,7 @@ fun MediaConsumerTestPanel(
         }
 
         Text(
-            text = "Tap buttons below to send standard HID Consumer reports with a 75ms hold cycle. This directly controls PC system volume/media without altering phone volume.",
+            text = "Tap buttons below to send standard HID Consumer reports (Report ID 3) with an 85ms hold cycle. This directly controls PC system volume/media without altering phone volume.",
             fontSize = 11.sp,
             color = TextMuted,
             lineHeight = 15.sp
@@ -110,7 +116,54 @@ fun MediaConsumerTestPanel(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        // Section 13: Developer-Only Automated Self-Test Sequence Button
+        var isRunningSelfTest by remember { mutableStateOf(false) }
+        val testScope = rememberCoroutineScope()
+
+        Button(
+            onClick = {
+                if (isRunningSelfTest || transport == null) return@Button
+                isRunningSelfTest = true
+                testScope.launch {
+                    try {
+                        // TEST 1: Volume Up
+                        transport.sendConsumerClick(HidConstants.CONSUMER_VOLUME_UP)
+                        delay(600)
+                        // TEST 2: Volume Down
+                        transport.sendConsumerClick(HidConstants.CONSUMER_VOLUME_DOWN)
+                        delay(600)
+                        // TEST 3: Mute
+                        transport.sendConsumerClick(HidConstants.CONSUMER_MUTE)
+                        delay(600)
+                        // TEST 4: Play/Pause
+                        transport.sendConsumerClick(HidConstants.CONSUMER_PLAY_PAUSE)
+                        delay(600)
+                        // TEST 5: Next Track
+                        transport.sendConsumerClick(HidConstants.CONSUMER_SCAN_NEXT)
+                        delay(600)
+                        // TEST 6: Previous Track
+                        transport.sendConsumerClick(HidConstants.CONSUMER_SCAN_PREV)
+                    } finally {
+                        isRunningSelfTest = false
+                    }
+                }
+            },
+            shape = RoundedCornerShape(6.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isRunningSelfTest) PrimaryBlue.copy(alpha = 0.3f) else Color(0xFF1E293B),
+                contentColor = if (isRunningSelfTest) PrimaryBlue else TextPrimary
+            ),
+            modifier = Modifier.fillMaxWidth().height(36.dp)
+        ) {
+            Text(
+                text = if (isRunningSelfTest) "RUNNING SELF-TEST (1→6)..." else "▶ RUN CONSUMER SELF-TEST (TEST 1-6)",
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(2.dp))
 
         // Live Telemetry Readout
         Column(
@@ -131,37 +184,49 @@ fun MediaConsumerTestPanel(
             )
 
             DiagnosticItem(
-                label = "Action",
+                label = "ACTION",
                 value = telemetry.actionName,
                 valueColor = if (telemetry.actionName != "IDLE") PrimaryBlue else TextPrimary
             )
 
             DiagnosticItem(
-                label = "Report ID",
+                label = "USAGE",
+                value = "${telemetry.usageHex} (${telemetry.usageCode})",
+                valueColor = StatusConnected
+            )
+
+            DiagnosticItem(
+                label = "REPORT ID",
                 value = "${telemetry.reportId}",
                 valueColor = TextPrimary
             )
 
             DiagnosticItem(
-                label = "Usage Code",
-                value = telemetry.usageHex,
-                valueColor = StatusConnected
+                label = "PAYLOAD",
+                value = telemetry.payloadHex,
+                valueColor = PrimaryBlue
             )
 
             DiagnosticItem(
-                label = "Press SENT",
-                value = if (telemetry.pressSent) "YES" else "NO",
-                valueColor = if (telemetry.pressSent) StatusConnected else StatusDisconnected
+                label = "RELEASE",
+                value = telemetry.releaseHex,
+                valueColor = TextMuted
             )
 
             DiagnosticItem(
-                label = "Release SENT",
-                value = if (telemetry.releaseSent) "YES" else "NO",
-                valueColor = if (telemetry.releaseSent) StatusConnected else TextMuted
+                label = "TIMING",
+                value = "${telemetry.pulseDurationMs} ms",
+                valueColor = TextPrimary
             )
 
             DiagnosticItem(
-                label = "Transport Status",
+                label = "DEVICE",
+                value = telemetry.deviceInfo,
+                valueColor = TextPrimary
+            )
+
+            DiagnosticItem(
+                label = "STATUS",
                 value = telemetry.transportStatus,
                 valueColor = when {
                     telemetry.transportStatus.contains("SUCCESS") -> StatusConnected

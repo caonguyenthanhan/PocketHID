@@ -58,6 +58,7 @@ fun LandscapeDeckScreen(
     var altState by remember { mutableStateOf(ModifierToggleState.OFF) }
     var superState by remember { mutableStateOf(ModifierToggleState.OFF) }
     var shiftState by remember { mutableStateOf(ModifierToggleState.OFF) }
+    var capsLockState by remember { mutableStateOf(false) }
 
     // Telemetry & Diagnostics info
     var lastScancode by remember { mutableStateOf("0x00") }
@@ -139,6 +140,16 @@ fun LandscapeDeckScreen(
         }
     }
 
+    fun toggleCapsLock() {
+        capsLockState = !capsLockState
+        triggerHaptic()
+        lastScancode = "0x" + Integer.toHexString(dev.aleian.pockethid.model.HidConstants.KEY_CAPSLOCK.toInt() and 0xFF).uppercase()
+        lastInputLabel = if (capsLockState) "CAPS ON" else "CAPS OFF"
+        scope.launch {
+            transport?.sendKeyClick(dev.aleian.pockethid.model.HidConstants.KEY_CAPSLOCK, 0)
+        }
+    }
+
     fun sendStringSafe(text: String) {
         scope.launch {
             lastInputLabel = "PASTE"
@@ -195,23 +206,25 @@ fun LandscapeDeckScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .background(SurfaceContainerLowest)
-                .padding(3.dp)
+                .padding(2.dp)
         ) {
             when (selectedTopMode) {
                 0 -> {
                     // KEYBOARD COMMAND DECK (Thumb-first 3-Zone Architecture)
                     Row(
                         modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        // ZONE 1: LEFT THUMB CLUSTER (ESC, TAB, CAPS, QUICK)
+                        // ZONE 1: LEFT THUMB CLUSTER (ESC, TAB, CAPS with hardware LED, QUICK - 11% width)
                         DeckMacroZone(
+                            isCapsLockActive = capsLockState,
+                            onToggleCapsLock = { toggleCapsLock() },
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
                             onQuickAction = { showCommandPalette = true },
-                            modifier = Modifier.weight(1.3f)
+                            modifier = Modifier.weight(1.1f)
                         )
 
-                        // ZONE 2: CENTRAL DOMINANT KEYBOARD BAY (~74% Screen Width)
+                        // ZONE 2: CENTRAL DOMINANT KEYBOARD BAY (~78% Screen Width)
                         DeckKeyboardZone(
                             selectedSubMode = selectedKeyboardSubMode,
                             onSelectSubMode = { selectedKeyboardSubMode = it },
@@ -219,6 +232,7 @@ fun LandscapeDeckScreen(
                             altState = altState,
                             shiftState = shiftState,
                             superState = superState,
+                            isCapsLockActive = capsLockState,
                             onCycleCtrl = { ctrlState = cycleModifier(ctrlState) },
                             onCycleAlt = { altState = cycleModifier(altState) },
                             onCycleShift = { shiftState = cycleModifier(shiftState) },
@@ -237,15 +251,15 @@ fun LandscapeDeckScreen(
                                 }
                             },
                             hapticsEnabled = settings.keyboardHaptics,
-                            modifier = Modifier.weight(7.4f)
+                            modifier = Modifier.weight(7.8f)
                         )
 
-                        // ZONE 3: RIGHT THUMB CLUSTER (Natural 4-Way Arrows, DEL, 123#)
+                        // ZONE 3: RIGHT THUMB CLUSTER (Natural 4-Way Arrows, DEL, 123# - 11% width)
                         DeckUtilityZone(
                             hapticsEnabled = settings.keyboardHaptics,
                             onSendRawKey = { code, mod, lbl -> sendRawKey(code, mod, lbl) },
                             onSwitchNumpad = { selectedKeyboardSubMode = 5 },
-                            modifier = Modifier.weight(1.3f)
+                            modifier = Modifier.weight(1.1f)
                         )
                     }
                 }
