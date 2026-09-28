@@ -1,36 +1,57 @@
 # PocketHID iOS Status
 
-## Implemented
-- **Native SwiftUI Shell**: `MainView`, `TopCommandBarView`, `ModeNavigationBar`, `DeckModeSwitcherView`
-- **Domain Action Architecture**: `PocketAction`, `ActionResolver`, `ActionDispatcher`, `HostOs`
-- **Global Focus Lock**: `FocusLockController` (single source of truth for global mode lock across all 6 modes)
-- **Keyboard UI**: Dedicated dual-legend number row, full QWERTY, modifier states, persistent LED CapsLock
-- **Mouse UI**: Precision trackpad, multi-touch gestures, physical buttons, fast scroll
-- **Gamepad UI**: Symmetrical lower-half thumb cluster, dual sticks, ABXY, D-Pad, bumpers, triggers
-- **Presenter UI**: Large PREV/NEXT navigation targets, `PresenterSafeExitButtonView` (1.5s press safety)
-- **One-Hand UI**: WEB & VIDEO segmented modes, Left/Right hand reachability orientation
-- **Graphics Tablet Local Canvas**: Full-bleed `Canvas` (90–95%), collapsed floating toolbar (5–10%), smooth Bezier rendering, undo/redo (max 50), eraser, 4 sizes, 5 colors
-- **Coordinate Pipeline**: Canonical 8-stage `DrawingCoordinatePipeline` (raw touch to 16-bit 0...32767)
-- **Localization**: Centralized dictionary in `PocketStrings` supporting English and Vietnamese
-- **Transport Abstraction**: `HIDTransport` protocol, `TransportCapability` descriptor, `iOSTransport` implementation
-- **Project Structure**: SPM `Package.swift` and native `PocketHID.xcodeproj` referencing all 32 source files and 5 test suites
+## Current Transport Decision
 
-## Transport
-**Direct iPhone → PC Bluetooth HID:**  
-`NOT AVAILABLE THROUGH CURRENT PUBLIC IOS API BASELINE`
-- Public iOS APIs do not support registering an iPhone as a standard driverless Bluetooth HID peripheral to a PC.
-- `iOSTransport` status is set to `.unavailable`.
-- Telemetry explicitly measures local UI action dispatch only; no network or HID transmission to a host is falsely reported.
-- No unapproved proprietary network protocols (WebSocket/TCP/UDP) or companion bridges have been introduced.
+NO TRANSPORT APPROVED YET
 
-## Verified
-- **Source-Level Implementation**: PASS (clean Swift types, decoupled domain, SwiftUI views)
-- **Project Structure & Target Membership**: PASS (all 32 source files + 5 test suites referenced in `project.pbxproj` and `Package.swift`)
-- **API Availability & Deployment Target**: PASS (iOS 15.0+ baseline compatibility verified)
-- **Honest Status & Telemetry Audit**: PASS (zero false "Connected" claims; decoupled capability from connection state)
+## Verified Platform Constraints
 
-## Not Verified
-- **Xcode Build / XCTest Execution**: NOT RUN — Current development environment is Windows 10 (macOS & Xcode CLI unavailable)
-- **Physical iPhone**: PENDING (No physical iPhone paired or tested)
-- **Windows HID Enumeration**: NOT APPLICABLE / PENDING (Direct Bluetooth HID peripheral role not exposed by iOS)
-- **PC Application Delivery**: NOT APPLICABLE / PENDING (Microsoft Paint, OneNote, PowerPoint, Whiteboard input delivery pending an approved future transport backend)
+- **Direct Bluetooth HID:** NOT AVAILABLE THROUGH PUBLIC API. Apple's CoreBluetooth (`CBPeripheralManager`) forbids advertising or publishing standard Bluetooth SIG-reserved 16-bit Service UUIDs, specifically `0x1812` (Human Interface Device Service).
+- **Classic Bluetooth HID Device Role:** Public iOS SDK exposes zero APIs for Classic Bluetooth HID peripheral (slave) operation. Private entitlement `com.apple.developer.bluetooth.hid` is required for direct Bluetooth HID emulation and will result in immediate App Store rejection.
+- **GameController Framework:** Provides only Central/Client capabilities (querying external MFi, Xbox, DualShock/DualSense controllers). Cannot emulate a virtual controller peripheral outward to a PC.
+- **IOHIDFamily / CoreHID:** Private / internal framework on iOS; no public virtual HID creation API (`HIDVirtualDevice` exists only on macOS 10.15+ / DriverKit).
+- **ExternalAccessory / MFi:** Requires physical Apple MFi cryptographic coprocessor / MFi license. Does not expose standard USB composite HID descriptors to a generic Windows PC.
+- **App Store & Background Limits:** CoreBluetooth peripheral advertising in background is severely throttled (omits local name, places service UUID in overflow area). Background execution for real-time input transmission requires active UI foreground or designated background audio/VoIP sessions.
+
+## Research Complete
+
+- **ADR-004 Generated:** Comprehensive analysis documented in [`ADR-004-ios-pc-transport-research.md`](file:///d:/desktop/PocketHID/docs/adr/ADR-004-ios-pc-transport-research.md).
+- **Candidate Transports Evaluated:**
+  - Option A: Direct Bluetooth HID (Status: `NOT AVAILABLE THROUGH PUBLIC API`)
+  - Option B: Custom BLE GATT (Status: `REQUIRES PC SOFTWARE`)
+  - Option C: Local Wi-Fi LAN - UDP/WebSocket (Status: `REQUIRES PC SOFTWARE` / `AVAILABLE`)
+  - Option D: Direct USB Cable (Status: `NOT AVAILABLE THROUGH PUBLIC API` directly / `REQUIRES PC SOFTWARE` via usbmuxd)
+  - Option E: External Hardware HID Bridge - ESP32-S3/RP2040 (Status: `REQUIRES EXTERNAL HARDWARE` / `AVAILABLE`)
+- **Key Distinctions Documented:**
+  - Driverless ≠ No companion software ≠ Native OS HID enumeration ≠ Bluetooth transport ≠ BLE transport ≠ Custom network transport.
+- **Physical POC Protocol Created:** 20-step standardized verification sequence documented in [`IOS-TRANSPORT-POC-PROTOCOL.md`](file:///d:/desktop/PocketHID/docs/spikes/IOS-TRANSPORT-POC-PROTOCOL.md).
+
+## Implementation Status
+
+No alternative PC transport implemented.
+
+- The repository remains strictly at the research gate.
+- No WebSocket, TCP, UDP, BLE GATT protocol, USB tunnel, or PC companion software has been added.
+- `iOSTransport` maintains `.unavailable` capability and `.notConnected` state.
+- Local action telemetry tracks UI interactions without fabricating network or HID host transmission.
+- Domain action architecture (`PocketAction`, `ActionResolver`, `ActionDispatcher`, `FocusLockController`) remains 100% decoupled and ready for any future transport adapter.
+
+## Physical Verification
+
+PENDING
+
+- Physical iPhone device testing: PENDING
+- Real host PC input injection verification: PENDING
+- Candidate transport physical spike verification: PENDING USER APPROVAL of transport architecture.
+
+---
+
+## Implemented Components Summary
+
+- **Native SwiftUI Shell:** `MainView`, `TopCommandBarView`, `ModeNavigationBar`, `DeckModeSwitcherView`
+- **Domain Action Architecture:** `PocketAction`, `ActionResolver`, `ActionDispatcher`, `HostOs`
+- **Global Focus Lock:** `FocusLockController` (single source of truth across all 6 modes)
+- **UI Modes (6):** Keyboard, Mouse, Gamepad, Presenter (with 1.5s safe exit), One-Hand (Web & Video), Drawing Tablet (full-bleed canvas & 8-stage pipeline)
+- **Localization:** English & Vietnamese via `PocketStrings`
+- **Project Structure:** Validated `Package.swift` and `PocketHID.xcodeproj` (32 source files + 5 test suites)
+- **Platform Compatibility:** iOS 15.0+ deployment target
