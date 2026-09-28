@@ -1,0 +1,25 @@
+idf_component_register(
+    SRCS
+        "app_main.c"
+        "protocol/packet_parser.c"
+        "safety/safety_manager.c"
+        "hid/hid_descriptors.c"
+        "hid/hid_reports.c"
+        "hid/usb_hid.c"
+        "ble/ble_transport.c"
+        "diagnostics/diagnostics.c"
+        "tests/poc_test_mode.c"
+    INCLUDE_DIRS
+        "."
+        "protocol"
+        "safety"
+        "hid"
+        "ble"
+        "diagnostics"
+        "tests"
+    REQUIRES
+        tinyusb
+        bt
+        nvs_flash
+        esp_timer
+)

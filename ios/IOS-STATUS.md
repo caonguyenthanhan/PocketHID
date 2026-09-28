@@ -45,21 +45,24 @@ POC direction approved for engineering investigation (Subject to physical valida
 
 ## Implementation Status
 
-No alternative PC transport implemented.
-
-- The repository remains strictly at the research gate.
-- No WebSocket, TCP, UDP, BLE GATT protocol, USB tunnel, or PC companion software has been added.
-- `iOSTransport` maintains `.unavailable` capability and `.notConnected` state.
-- Local action telemetry tracks UI interactions without fabricating network or HID host transmission.
-- Domain action architecture (`PocketAction`, `ActionResolver`, `ActionDispatcher`, `FocusLockController`) remains 100% decoupled and ready for any future transport adapter.
+- **iOS Transport Implementation:** NOT IMPLEMENTED IN THIS WAVE. `iOSTransport` maintains `.unavailable` capability and `.notConnected` state.
+- **ESP32-S3 Bridge Firmware POC:** IMPLEMENTED in `firmware/esp32s3-bridge/`.
+  - Wire protocol parser (`packet_parser.c`) and sequence validator: UNIT-TESTED (PASS).
+  - Safety watchdog & auto-neutralization (`safety_manager.c`): UNIT-TESTED (PASS).
+  - Composite USB HID report builders (`hid_reports.c`): UNIT-TESTED (PASS).
+  - Descriptor definition matching Android contract byte-for-byte: VERIFIED.
+  - TinyUSB and NimBLE integration stubs / driver code: IMPLEMENTED.
+  - Host unit tests (`tools/host_tests.c`): 46 / 46 PASSED.
+- **Domain Action Architecture:** `PocketAction`, `ActionResolver`, `ActionDispatcher`, `FocusLockController` remain 100% decoupled and ready for a future `BridgeTransport` adapter.
 
 ## Physical Verification
 
 PENDING
 
 - Physical iPhone device testing: PENDING
+- Physical ESP32-S3 hardware bridge USB enumeration: PENDING
 - Real host PC input injection verification: PENDING
-- Candidate transport physical spike verification: PENDING USER APPROVAL of transport architecture.
+
 
 ---
 
