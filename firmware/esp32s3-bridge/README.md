@@ -24,20 +24,32 @@ iPhone (PocketHID iOS)
 ---
 
 ## 3. Toolchain & Build Environment
-- **Framework:** ESP-IDF v5.1+ (Recommended v5.2 / v5.3)
+- **Target Microcontroller:** ESP32-S3 (Xtensa Dual-core LX7)
+- **Approved Version Policy:**
+  - **ESP-IDF:** `v5.2.2 LTS` (Supported stable release)
+  - **Compiler:** `xtensa-esp-elf-gcc` (gcc 13.2.0 esp-2023r2)
+  - **Build System:** CMake 3.24+ & Ninja 1.11+
+  - **Python:** Python 3.10 – 3.11
 - **Host Unit Testing:** MSYS2 / GCC 16+ or Clang + Python 3.11+
-- **Build Commands:**
+- **Local Workstation Build Status:** `BLOCKED` (ESP-IDF absent locally; host tests 59/59 PASS)
+- **Clean Reproducible Build Commands:**
   ```bash
-  # Set target
+  # 1. Activate ESP-IDF environment
+  . $HOME/esp/esp-idf/export.ps1
+
+  # 2. Clean build directory
+  idf.py fullclean
+
+  # 3. Set target
   idf.py set-target esp32s3
 
-  # Build firmware
+  # 4. Build bootloader, partition table, and application binaries
   idf.py build
 
-  # Flash to device (replace COMx with your port)
+  # 5. Flash to device (replace COMx with your port)
   idf.py -p COMx flash
 
-  # Monitor serial logs
+  # 6. Monitor serial logs
   idf.py -p COMx monitor
   ```
 

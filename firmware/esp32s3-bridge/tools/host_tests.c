@@ -211,6 +211,72 @@ static void test_hid_report_builders_match_android(void) {
     TEST_ASSERT(ty == 16384, "Tablet Y remains 16384");
 }
 
+static void test_golden_vector_packets(void) {
+    printf("Running test_golden_vector_packets...\n");
+    parsed_packet_t parsed;
+
+    // 1. Keyboard A (seq 1): 5AA50110010008000004000000000028AD
+    const uint8_t golden_kb_a[] = {
+        0x5A, 0xA5, 0x01, 0x10, 0x01, 0x00, 0x08,
+        0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x28, 0xAD
+    };
+    TEST_ASSERT(parse_packet(golden_kb_a, sizeof(golden_kb_a), &parsed) == PARSE_OK, "Golden KB A parses cleanly");
+    TEST_ASSERT(parsed.header.msg_type == MSG_KB_REPORT && parsed.header.sequence_no == 1, "Golden KB A header correct");
+    payload_kb_report_t *kb = (payload_kb_report_t*)parsed.payload;
+    TEST_ASSERT(kb->modifiers == 0 && kb->keycodes[0] == 0x04, "Golden KB A payload matches key A");
+
+    // 2. Shift+A (seq 2): 5AA501100200080200040000000000745A
+    const uint8_t golden_shift_a[] = {
+        0x5A, 0xA5, 0x01, 0x10, 0x02, 0x00, 0x08,
+        0x02, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x74, 0x5A
+    };
+    TEST_ASSERT(parse_packet(golden_shift_a, sizeof(golden_shift_a), &parsed) == PARSE_OK, "Golden Shift+A parses cleanly");
+    payload_kb_report_t *shift_kb = (payload_kb_report_t*)parsed.payload;
+    TEST_ASSERT(shift_kb->modifiers == 0x02 && shift_kb->keycodes[0] == 0x04, "Golden Shift+A payload matches");
+
+    // 3. Mouse Click (seq 3): 5AA501200300040100000009AF
+    const uint8_t golden_mouse_click[] = {
+        0x5A, 0xA5, 0x01, 0x20, 0x03, 0x00, 0x04,
+        0x01, 0x00, 0x00, 0x00,
+        0x09, 0xAF
+    };
+    TEST_ASSERT(parse_packet(golden_mouse_click, sizeof(golden_mouse_click), &parsed) == PARSE_OK, "Golden Mouse click parses cleanly");
+    payload_mouse_report_t *mouse = (payload_mouse_report_t*)parsed.payload;
+    TEST_ASSERT(mouse->buttons == 0x01 && mouse->dx == 0 && mouse->dy == 0, "Golden Mouse Left Click matches");
+
+    // 4. Volume + (seq 4): 5AA50130040002E9006F2B
+    const uint8_t golden_vol_up[] = {
+        0x5A, 0xA5, 0x01, 0x30, 0x04, 0x00, 0x02,
+        0xE9, 0x00,
+        0x6F, 0x2B
+    };
+    TEST_ASSERT(parse_packet(golden_vol_up, sizeof(golden_vol_up), &parsed) == PARSE_OK, "Golden Vol+ parses cleanly");
+    payload_consumer_click_t *cons = (payload_consumer_click_t*)parsed.payload;
+    TEST_ASSERT(cons->usage_code == 0x00E9, "Golden Vol+ usage code 0x00E9 matches");
+
+    // 5. Gamepad A (seq 5): 5AA5014005000D01000000000000000000000000A4CD
+    const uint8_t golden_gamepad_a[] = {
+        0x5A, 0xA5, 0x01, 0x40, 0x05, 0x00, 0x0D,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xA4, 0xCD
+    };
+    TEST_ASSERT(parse_packet(golden_gamepad_a, sizeof(golden_gamepad_a), &parsed) == PARSE_OK, "Golden Gamepad A parses cleanly");
+    payload_gamepad_report_t *gp = (payload_gamepad_report_t*)parsed.payload;
+    TEST_ASSERT(gp->buttons == 0x0001 && gp->hat_switch == 0, "Golden Gamepad A buttons match");
+
+    // 6. Tablet Center (seq 6): 5AA5015006000503004000402AFA
+    const uint8_t golden_tablet_center[] = {
+        0x5A, 0xA5, 0x01, 0x50, 0x06, 0x00, 0x05,
+        0x03, 0x00, 0x40, 0x00, 0x40,
+        0x2A, 0xFA
+    };
+    TEST_ASSERT(parse_packet(golden_tablet_center, sizeof(golden_tablet_center), &parsed) == PARSE_OK, "Golden Tablet Center parses cleanly");
+    payload_tablet_report_t *tab = (payload_tablet_report_t*)parsed.payload;
+    TEST_ASSERT(tab->status == 0x03 && tab->x == 16384 && tab->y == 16384, "Golden Tablet Center coordinates match");
+}
+
 int main(void) {
     printf("==================================================\n");
     printf("POCKETHID BRIDGE FIRMWARE HOST UNIT TESTS\n");
@@ -224,6 +290,7 @@ int main(void) {
     test_safety_manager_watchdog_timeout();
     test_safety_manager_disconnect();
     test_hid_report_builders_match_android();
+    test_golden_vector_packets();
 
     printf("==================================================\n");
     printf("TEST RESULTS: %d / %d PASSED\n", s_tests_passed, s_tests_run);
