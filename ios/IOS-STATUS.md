@@ -1,8 +1,25 @@
 # PocketHID iOS Status
 
+## Current iOS Transport Direction
+
+EXTERNAL HID BRIDGE — POC INVESTIGATION
+
+## Current Implementation
+
+NOT IMPLEMENTED
+
+## Physical Validation
+
+PENDING
+
+## Direct iPhone Bluetooth HID
+
+NOT AVAILABLE THROUGH DOCUMENTED PUBLIC IOS API BASELINE
+
 ## Current Transport Decision
 
-NO TRANSPORT APPROVED YET
+POC direction approved for engineering investigation (Subject to physical validation).
+
 
 ## Verified Platform Constraints
 

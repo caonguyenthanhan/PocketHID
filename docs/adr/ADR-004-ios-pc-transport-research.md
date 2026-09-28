@@ -189,6 +189,17 @@ Before any candidate transport is designated as verified, it must execute the st
 
 ---
 
+## Current Direction
+
+External HID Bridge is selected as the working POC architecture, subject to physical validation.
+
+This is NOT product-final approval.
+
+Status:
+"POC direction approved for engineering investigation" (not "production transport approved").
+
+---
+
 ## Decision
 **PENDING USER APPROVAL**
 
