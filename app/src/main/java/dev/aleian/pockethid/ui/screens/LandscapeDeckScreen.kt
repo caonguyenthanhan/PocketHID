@@ -209,9 +209,10 @@ fun LandscapeDeckScreen(
         // GLOBAL 3-MODE SWITCHER (KEYBOARD | MOUSE | PRESENTER)
         DeckModeSwitcher(
             selectedMode = selectedTopMode,
-            onSelectMode = {
-                if (!isFocusLocked) {
-                    selectedTopMode = it
+            onSelectMode = { targetIndex ->
+                val resolved = FocusLockController.resolveModeSwitch(selectedTopMode, targetIndex)
+                if (resolved != selectedTopMode) {
+                    selectedTopMode = resolved
                 }
             },
             isFocusLocked = isFocusLocked
@@ -320,9 +321,12 @@ fun LandscapeDeckScreen(
                 }
 
                 5 -> {
-                    // ELECTRONIC DRAWING BOARD
+                    // ELECTRONIC GRAPHICS TABLET
                     DrawingScreen(
                         controller = drawingController,
+                        transport = transport,
+                        hostOs = settings.hostOs,
+                        isFocusLocked = isFocusLocked,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

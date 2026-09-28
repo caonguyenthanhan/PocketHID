@@ -72,6 +72,7 @@ import dev.aleian.pockethid.action.ActionDispatcher
 import dev.aleian.pockethid.action.PocketAction
 import dev.aleian.pockethid.model.ConnectionState
 import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.model.PocketStrings
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.theme.AccentAmber
@@ -135,7 +136,7 @@ fun OneHandScreen(
 
     fun dispatchAction(action: PocketAction, feedback: String = "") {
         if (connectionState !is ConnectionState.Connected && transport?.isConnected != true) {
-            triggerFeedback("Chưa kết nối Host!", isLightHaptic = true)
+            triggerFeedback(PocketStrings.noHostConnectedPrompt(settings.language), isLightHaptic = true)
             return
         }
         if (feedback.isNotEmpty()) {
@@ -184,7 +185,7 @@ fun OneHandScreen(
                             .background(if (subMode == OneHandSubMode.WEB) PrimaryContainer else Color.Transparent)
                             .clickable {
                                 subMode = OneHandSubMode.WEB
-                                triggerFeedback("Chế độ Web")
+                                triggerFeedback(PocketStrings.oneHandWebMode(settings.language))
                             }
                             .padding(horizontal = 14.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
@@ -211,7 +212,7 @@ fun OneHandScreen(
                             .background(if (subMode == OneHandSubMode.VIDEO) PrimaryContainer else Color.Transparent)
                             .clickable {
                                 subMode = OneHandSubMode.VIDEO
-                                triggerFeedback("Chế độ Video")
+                                triggerFeedback(PocketStrings.oneHandVideoMode(settings.language))
                             }
                             .padding(horizontal = 14.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
@@ -242,7 +243,7 @@ fun OneHandScreen(
                             val newHand = if (handedness.equals("Right", ignoreCase = true)) "Left" else "Right"
                             handedness = newHand
                             SettingsRepository.updateSettings(settings.copy(oneHandHandedness = newHand))
-                            triggerFeedback(if (newHand == "Right") "Tay phải (Right Hand)" else "Tay trái (Left Hand)")
+                            triggerFeedback(if (newHand == "Right") PocketStrings.oneHandRightHand(settings.language) else PocketStrings.oneHandLeftHand(settings.language))
                         }
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
@@ -254,7 +255,7 @@ fun OneHandScreen(
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = if (handedness.equals("Right", ignoreCase = true)) "Tay Phải ✋" else "✋ Tay Trái",
+                            text = if (handedness.equals("Right", ignoreCase = true)) "${PocketStrings.oneHandRightHand(settings.language)} ✋" else "✋ ${PocketStrings.oneHandLeftHand(settings.language)}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
@@ -263,39 +264,15 @@ fun OneHandScreen(
                 }
             }
 
-            // Context Status & HUD Feedback Bar
+            // HUD Feedback Bar (Host is in TopCommandBar; feedback pill displays prominently when active)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(28.dp)
                     .padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(
-                                when (connectionState) {
-                                    is ConnectionState.Connected -> StatusConnected
-                                    is ConnectionState.Connecting -> AccentAmber
-                                    else -> Color.Gray
-                                }
-                            )
-                    )
-                    Text(
-                        text = when (connectionState) {
-                            is ConnectionState.Connected -> "Host: ${connectionState.device.name ?: "BT-HID"}"
-                            is ConnectionState.Connecting -> "Đang kết nối..."
-                            else -> "Chưa kết nối"
-                        },
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = TextSecondary
-                    )
-                }
-
                 AnimatedVisibility(
                     visible = isFeedbackVisible,
                     enter = fadeIn(),
@@ -305,7 +282,7 @@ fun OneHandScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(PrimaryContainer)
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = feedbackText,
@@ -365,9 +342,9 @@ fun OneHandScreen(
                                 val isLeftSide = startPos.x < (size.width / 2f)
                                 while (true) {
                                     if (isLeftSide) {
-                                        dispatchAction(PocketAction.VideoAction.SeekBackward, "Tua lùi ⏪")
+                                        dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language))
                                     } else {
-                                        dispatchAction(PocketAction.VideoAction.SeekForward, "Tua tiến ⏩")
+                                        dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language))
                                     }
                                     delay(220L)
                                 }
@@ -423,16 +400,16 @@ fun OneHandScreen(
                                         transport?.sendMouseMove(0, 0, HidConstants.MOUSE_BUTTON_NONE, wheelStep)
                                         accumulatedWheel = 0f
                                         lastWheelTime = now
-                                        feedbackText = if (wheelStep < 0) "Cuộn xuống ↓" else "Cuộn lên ↑"
+                                        feedbackText = if (wheelStep < 0) PocketStrings.oneHandFeedbackScrollDown(settings.language) else PocketStrings.oneHandFeedbackScrollUp(settings.language)
                                         feedbackTime = now
                                     }
                                 } else if (isSwipeXMode && subMode == OneHandSubMode.WEB) {
                                     if (abs(totalDx) > 55f) {
                                         pointerChange.consume()
                                         if (totalDx < 0) {
-                                            dispatchAction(PocketAction.WebAction.Back, "← Quay lại (Back)")
+                                            dispatchAction(PocketAction.WebAction.Back, PocketStrings.oneHandFeedbackBack(settings.language))
                                         } else {
-                                            dispatchAction(PocketAction.WebAction.Forward, "Tiếp tục (Forward) →")
+                                            dispatchAction(PocketAction.WebAction.Forward, PocketStrings.oneHandFeedbackForward(settings.language))
                                         }
                                         // Once emitted, lock out further emits for this swipe
                                         isSwipeXMode = false
@@ -441,9 +418,9 @@ fun OneHandScreen(
                                     if (abs(totalDy) > 42f) {
                                         pointerChange.consume()
                                         if (totalDy < 0) {
-                                            dispatchAction(PocketAction.VideoAction.VolumeUp, "Âm lượng ▲")
+                                            dispatchAction(PocketAction.VideoAction.VolumeUp, PocketStrings.oneHandFeedbackVolumeUp(settings.language))
                                         } else {
-                                            dispatchAction(PocketAction.VideoAction.VolumeDown, "Âm lượng ▼")
+                                            dispatchAction(PocketAction.VideoAction.VolumeDown, PocketStrings.oneHandFeedbackVolumeDown(settings.language))
                                         }
                                         totalDy = 0f // Reset for stepped volume control
                                     }
@@ -451,9 +428,9 @@ fun OneHandScreen(
                                     if (abs(totalDx) > 48f) {
                                         pointerChange.consume()
                                         if (totalDx < 0) {
-                                            dispatchAction(PocketAction.VideoAction.SeekBackward, "Tua -10s ⏪")
+                                            dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language))
                                         } else {
-                                            dispatchAction(PocketAction.VideoAction.SeekForward, "Tua +10s ⏩")
+                                            dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language))
                                         }
                                         totalDx = 0f // Reset for stepped seek control
                                     }
@@ -469,9 +446,9 @@ fun OneHandScreen(
                         // Tap classification (quick, non-drag)
                         if (!gestureLocked && duration < 280L && totalDist < 20f) {
                             if (subMode == OneHandSubMode.WEB) {
-                                dispatchAction(PocketAction.PointerAction.LeftClick, "Chuột Trái (Click)")
+                                dispatchAction(PocketAction.PointerAction.LeftClick, PocketStrings.oneHandFeedbackLeftClick(settings.language))
                             } else {
-                                dispatchAction(PocketAction.VideoAction.PlayPause, "Phát / Tạm dừng ⏯")
+                                dispatchAction(PocketAction.VideoAction.PlayPause, PocketStrings.oneHandFeedbackPlayPause(settings.language))
                             }
                         }
                     }
@@ -491,7 +468,7 @@ fun OneHandScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = if (subMode == OneHandSubMode.WEB) "▲ Vuốt lên: Cuộn trang" else "▲ Vuốt lên: Tăng âm lượng",
+                        text = if (subMode == OneHandSubMode.WEB) PocketStrings.oneHandSwipeUpScroll(settings.language) else PocketStrings.oneHandSwipeUpVolume(settings.language),
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         color = TextMuted
@@ -505,7 +482,7 @@ fun OneHandScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (subMode == OneHandSubMode.WEB) "◀ Lùi (Back)" else "◀ Tua -10s",
+                        text = if (subMode == OneHandSubMode.WEB) PocketStrings.oneHandBack(settings.language) else PocketStrings.oneHandSeekBack(settings.language),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = TextMuted
@@ -528,7 +505,7 @@ fun OneHandScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = if (subMode == OneHandSubMode.WEB) "CHẠM\nCLICK" else "CHẠM\nPLAY",
+                                text = if (subMode == OneHandSubMode.WEB) PocketStrings.oneHandTapClick(settings.language) else PocketStrings.oneHandTapPlay(settings.language),
                                 fontSize = 8.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
@@ -540,7 +517,7 @@ fun OneHandScreen(
                     }
 
                     Text(
-                        text = if (subMode == OneHandSubMode.WEB) "Tiến (Fwd) ▶" else "Tua +10s ▶",
+                        text = if (subMode == OneHandSubMode.WEB) PocketStrings.oneHandForward(settings.language) else PocketStrings.oneHandSeekForward(settings.language),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = TextMuted
@@ -553,7 +530,7 @@ fun OneHandScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = if (subMode == OneHandSubMode.WEB) "▼ Vuốt xuống: Cuộn trang" else "▼ Vuốt xuống: Giảm âm lượng",
+                        text = if (subMode == OneHandSubMode.WEB) PocketStrings.oneHandSwipeDownScroll(settings.language) else PocketStrings.oneHandSwipeDownVolume(settings.language),
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         color = TextMuted
@@ -580,28 +557,28 @@ fun OneHandScreen(
                 ) {
                     OneHandQuickButton(
                         icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        label = "Lùi",
-                        onClick = { dispatchAction(PocketAction.WebAction.Back, "Quay lại") }
+                        label = PocketStrings.oneHandBack(settings.language),
+                        onClick = { dispatchAction(PocketAction.WebAction.Back, PocketStrings.oneHandFeedbackBack(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.AutoMirrored.Filled.ArrowForward,
-                        label = "Tiến",
-                        onClick = { dispatchAction(PocketAction.WebAction.Forward, "Tiến trang") }
+                        label = PocketStrings.oneHandForward(settings.language),
+                        onClick = { dispatchAction(PocketAction.WebAction.Forward, PocketStrings.oneHandFeedbackForward(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.Home,
-                        label = "Home",
-                        onClick = { dispatchAction(PocketAction.WebAction.Home, "Trang chủ") }
+                        label = PocketStrings.oneHandWebHome(settings.language),
+                        onClick = { dispatchAction(PocketAction.WebAction.Home, PocketStrings.oneHandWebHome(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.Refresh,
-                        label = "Tải lại",
-                        onClick = { dispatchAction(PocketAction.WebAction.Refresh, "Tải lại trang") }
+                        label = PocketStrings.oneHandWebReload(settings.language),
+                        onClick = { dispatchAction(PocketAction.WebAction.Refresh, PocketStrings.oneHandWebReload(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.Add,
                         label = "+ Tab",
-                        onClick = { dispatchAction(PocketAction.WebAction.NewTab, "Mở Tab Mới") }
+                        onClick = { dispatchAction(PocketAction.WebAction.NewTab, "New Tab") }
                     )
                 }
             } else {
@@ -613,34 +590,34 @@ fun OneHandScreen(
                 ) {
                     OneHandQuickButton(
                         icon = Icons.Default.SkipPrevious,
-                        label = "Trước",
-                        onClick = { dispatchAction(PocketAction.VideoAction.PrevTrack, "Bài trước") }
+                        label = PocketStrings.oneHandVideoPrev(settings.language),
+                        onClick = { dispatchAction(PocketAction.VideoAction.PrevTrack, PocketStrings.oneHandVideoPrev(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.FastRewind,
                         label = "-10s",
-                        onClick = { dispatchAction(PocketAction.VideoAction.SeekBackward, "Lùi 10s") }
+                        onClick = { dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.PlayArrow,
-                        label = "Phát/Dừng",
+                        label = PocketStrings.oneHandVideoPlayPause(settings.language),
                         isAccent = true,
-                        onClick = { dispatchAction(PocketAction.VideoAction.PlayPause, "Phát / Dừng") }
+                        onClick = { dispatchAction(PocketAction.VideoAction.PlayPause, PocketStrings.oneHandFeedbackPlayPause(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.FastForward,
                         label = "+10s",
-                        onClick = { dispatchAction(PocketAction.VideoAction.SeekForward, "Tiến 10s") }
+                        onClick = { dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.Default.SkipNext,
-                        label = "Tiếp",
-                        onClick = { dispatchAction(PocketAction.VideoAction.NextTrack, "Bài tiếp") }
+                        label = PocketStrings.oneHandVideoNext(settings.language),
+                        onClick = { dispatchAction(PocketAction.VideoAction.NextTrack, PocketStrings.oneHandVideoNext(settings.language)) }
                     )
                     OneHandQuickButton(
                         icon = Icons.AutoMirrored.Filled.VolumeMute,
-                        label = "Tắt tiếng",
-                        onClick = { dispatchAction(PocketAction.VideoAction.Mute, "Tắt/Bật tiếng") }
+                        label = PocketStrings.oneHandVideoMute(settings.language),
+                        onClick = { dispatchAction(PocketAction.VideoAction.Mute, PocketStrings.oneHandVideoMute(settings.language)) }
                     )
                 }
             }

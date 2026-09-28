@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -56,10 +57,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.model.ConnectionState
 import dev.aleian.pockethid.model.FocusLockController
+import dev.aleian.pockethid.model.PocketStrings
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.components.TopCommandBar
@@ -73,6 +76,8 @@ import dev.aleian.pockethid.ui.theme.PrimaryBlue
 import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
+
+private val CyanAccent = Color(0xFF00E5FF)
 
 @Composable
 fun MainScreen(
@@ -139,7 +144,8 @@ fun MainScreen(
         }
     }
 
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter, 4: One-Hand
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter, 4: One-Hand, 5: Draw
+    var isDrawModesExpanded by rememberSaveable { mutableStateOf(false) }
     val isFocusLocked by FocusLockController.isLocked.collectAsState()
     var showPairingSheet by rememberSaveable { mutableStateOf(false) }
     var showSettingsScreen by rememberSaveable { mutableStateOf(false) }
@@ -317,112 +323,186 @@ fun MainScreen(
             }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = DarkSurface,
-                tonalElevation = 0.dp
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = {
-                        if (!isFocusLocked) {
-                            selectedTab = 0
+            if (selectedTab == 5 && !isDrawModesExpanded) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                        .clickable {
+                            if (!isFocusLocked) {
+                                isDrawModesExpanded = true
+                            }
+                        },
+                    color = DarkSurface,
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, DarkBorder)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Gesture,
+                                contentDescription = null,
+                                tint = CyanAccent,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = "DRAW TABLET (FULL SCREEN)",
+                                color = TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 0.5.sp
+                            )
                         }
-                    },
-                    icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
-                    label = { Text("Keyboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        indicatorColor = DarkSurface
-                    )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        if (!isFocusLocked) {
-                            selectedTab = 1
+                        if (isFocusLocked) {
+                            Text(
+                                text = "🔒 FOCUS",
+                                color = CyanAccent,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Text(
+                                text = "MODES ⌃",
+                                color = PrimaryBlue,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    },
-                    icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
-                    label = { Text("Mouse", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        indicatorColor = DarkSurface
+                    }
+                }
+            } else {
+                val showNavLabels = configuration.screenWidthDp >= 360
+                val onSelectTab: (Int) -> Unit = { targetIndex ->
+                    val resolved = FocusLockController.resolveModeSwitch(selectedTab, targetIndex)
+                    if (resolved != selectedTab) {
+                        selectedTab = resolved
+                    }
+                    isDrawModesExpanded = false
+                }
+
+                NavigationBar(
+                    containerColor = DarkSurface,
+                    tonalElevation = 0.dp
+                ) {
+                    val navItemColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = CyanAccent,
+                        selectedTextColor = CyanAccent,
+                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.4f) else TextMuted,
+                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.4f) else TextMuted,
+                        indicatorColor = CyanAccent.copy(alpha = 0.16f)
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = {
-                        if (!isFocusLocked) {
-                            selectedTab = 2
-                        }
-                    },
-                    icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Gamepad") },
-                    label = { Text("Gamepad", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        indicatorColor = DarkSurface
+
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        alwaysShowLabel = showNavLabels,
+                        onClick = { onSelectTab(0) },
+                        icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
+                        label = {
+                            Text(
+                                text = PocketStrings.navKeyboard(settings.language),
+                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = navItemColors
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = {
-                        if (!isFocusLocked) {
-                            selectedTab = 3
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
-                    label = { Text("Presenter", fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        indicatorColor = DarkSurface
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        alwaysShowLabel = showNavLabels,
+                        onClick = { onSelectTab(1) },
+                        icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
+                        label = {
+                            Text(
+                                text = PocketStrings.navMouse(settings.language),
+                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = navItemColors
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 4,
-                    onClick = {
-                        if (!isFocusLocked) {
-                            selectedTab = 4
-                        }
-                    },
-                    icon = { Icon(Icons.Default.TouchApp, contentDescription = "One-Hand") },
-                    label = { Text("One-Hand", fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Normal) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        indicatorColor = DarkSurface
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        alwaysShowLabel = showNavLabels,
+                        onClick = { onSelectTab(2) },
+                        icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Gamepad") },
+                        label = {
+                            Text(
+                                text = PocketStrings.navGamepad(settings.language),
+                                fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = navItemColors
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 5,
-                    onClick = {
-                        if (!isFocusLocked) {
-                            selectedTab = 5
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Gesture, contentDescription = "Draw") },
-                    label = { Text("Draw", fontWeight = if (selectedTab == 5) FontWeight.Bold else FontWeight.Normal) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        unselectedTextColor = if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                        indicatorColor = DarkSurface
+                    NavigationBarItem(
+                        selected = selectedTab == 3,
+                        alwaysShowLabel = showNavLabels,
+                        onClick = { onSelectTab(3) },
+                        icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
+                        label = {
+                            Text(
+                                text = PocketStrings.navPresenter(settings.language),
+                                fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = navItemColors
                     )
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == 4,
+                        alwaysShowLabel = showNavLabels,
+                        onClick = { onSelectTab(4) },
+                        icon = { Icon(Icons.Default.TouchApp, contentDescription = "1-Hand") },
+                        label = {
+                            Text(
+                                text = PocketStrings.navOneHand(settings.language),
+                                fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = navItemColors
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 5,
+                        alwaysShowLabel = showNavLabels,
+                        onClick = { onSelectTab(5) },
+                        icon = { Icon(Icons.Default.Gesture, contentDescription = "Draw") },
+                        label = {
+                            Text(
+                                text = PocketStrings.navDraw(settings.language),
+                                fontWeight = if (selectedTab == 5) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = navItemColors
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -454,7 +534,10 @@ fun MainScreen(
                     connectionState = connectionState
                 )
                 5 -> DrawingScreen(
-                    controller = drawingController
+                    controller = drawingController,
+                    transport = transport,
+                    hostOs = settings.hostOs,
+                    isFocusLocked = isFocusLocked
                 )
             }
         }

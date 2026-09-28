@@ -5,6 +5,7 @@ object HidConstants {
     const val REPORT_ID_MOUSE: Byte = 2
     const val REPORT_ID_CONSUMER: Byte = 3
     const val REPORT_ID_GAMEPAD: Byte = 4
+    const val REPORT_ID_TABLET: Byte = 5
 
     // Combo Report Descriptor (Keyboard + Mouse + Consumer Media + Gamepad)
     val COMBO_REPORT_DESCRIPTOR = byteArrayOf(
@@ -102,8 +103,53 @@ object HidConstants {
         0x75.toByte(), 0x08.toByte(), //   Report Size (8)
         0x95.toByte(), 0x02.toByte(), //   Report Count (2)
         0x81.toByte(), 0x02.toByte(), //   Input (Data, Var, Abs)
-        0xC0.toByte()                 // End Collection (Application)
+        0xC0.toByte(),                // End Collection (Application)
+        // Report ID 5 — Digitizer / Absolute Drawing Tablet (5 bytes: Status, X 16-bit, Y 16-bit)
+        0x05.toByte(), 0x0D.toByte(), // Usage Page (Digitizers)
+        0x09.toByte(), 0x02.toByte(), // Usage (Pen)
+        0xA1.toByte(), 0x01.toByte(), // Collection (Application)
+        0x85.toByte(), 0x05.toByte(), //   Report ID (5)
+        0x09.toByte(), 0x20.toByte(), //   Usage (Stylus)
+        0xA1.toByte(), 0x00.toByte(), //   Collection (Physical)
+        0x09.toByte(), 0x42.toByte(), //     Usage (Tip Switch)
+        0x09.toByte(), 0x32.toByte(), //     Usage (In Range)
+        0x09.toByte(), 0x44.toByte(), //     Usage (Barrel Switch)
+        0x09.toByte(), 0x3C.toByte(), //     Usage (Invert)
+        0x09.toByte(), 0x45.toByte(), //     Usage (Eraser)
+        0x15.toByte(), 0x00.toByte(), //     Logical Minimum (0)
+        0x25.toByte(), 0x01.toByte(), //     Logical Maximum (1)
+        0x75.toByte(), 0x01.toByte(), //     Report Size (1)
+        0x95.toByte(), 0x05.toByte(), //     Report Count (5)
+        0x81.toByte(), 0x02.toByte(), //     Input (Data, Var, Abs)
+        0x75.toByte(), 0x01.toByte(), //     Report Size (1)
+        0x95.toByte(), 0x03.toByte(), //     Report Count (3)
+        0x81.toByte(), 0x03.toByte(), //     Input (Const, Var, Abs) - padding 3 bits
+        0x05.toByte(), 0x01.toByte(), //     Usage Page (Generic Desktop)
+        0x09.toByte(), 0x30.toByte(), //     Usage (X)
+        0x09.toByte(), 0x31.toByte(), //     Usage (Y)
+        0x16.toByte(), 0x00.toByte(), 0x00.toByte(), // Logical Minimum (0)
+        0x26.toByte(), 0xFF.toByte(), 0x7F.toByte(), // Logical Maximum (32767)
+        0x36.toByte(), 0x00.toByte(), 0x00.toByte(), // Physical Minimum (0)
+        0x46.toByte(), 0xFF.toByte(), 0x7F.toByte(), // Physical Maximum (32767)
+        0x65.toByte(), 0x00.toByte(), //     Unit (None)
+        0x75.toByte(), 0x10.toByte(), //     Report Size (16)
+        0x95.toByte(), 0x02.toByte(), //     Report Count (2)
+        0x81.toByte(), 0x02.toByte(), //     Input (Data, Var, Abs)
+        0xC0.toByte(),                 //   End Collection (Physical)
+        0xC0.toByte()                  // End Collection (Application)
     )
+
+    const val TABLET_REPORT_LENGTH: Int = 5
+    const val TABLET_LOGICAL_MIN: Int = 0
+    const val TABLET_LOGICAL_MAX: Int = 32767
+
+    // Tablet / Digitizer Status Bits (Byte 0)
+    const val TABLET_STATUS_NONE: Byte = 0x00
+    const val TABLET_STATUS_TIP_SWITCH: Byte = 0x01   // Bit 0: Pen contact touching surface
+    const val TABLET_STATUS_IN_RANGE: Byte = 0x02     // Bit 1: Stylus in sensing range
+    const val TABLET_STATUS_BARREL_SWITCH: Byte = 0x04 // Bit 2: Barrel button
+    const val TABLET_STATUS_INVERT: Byte = 0x08       // Bit 3: Invert
+    const val TABLET_STATUS_ERASER: Byte = 0x10       // Bit 4: Eraser tip
 
     const val GAMEPAD_REPORT_LENGTH: Int = 13
     const val GAMEPAD_BUTTON_COUNT: Int = 16

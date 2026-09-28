@@ -19,6 +19,7 @@ val SurfaceRaised = Color(0xFF334155)
 val SurfaceActive = Color(0xFF1E3A8A)
 
 val PrimaryBlue = Color(0xFF38BDF8) // Electric Cyan primary
+val CyanAccent = Color(0xFF00E5FF) // High-contrast Cyber Cyan
 val PrimaryBlueHover = Color(0xFF0284C7)
 val PrimaryContainer = Color(0xFF38BDF8)
 val OnPrimaryContainer = Color(0xFF00354A)

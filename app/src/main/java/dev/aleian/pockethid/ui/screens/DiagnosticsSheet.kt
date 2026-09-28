@@ -46,6 +46,7 @@ import dev.aleian.pockethid.ui.screens.diagnostics.EnumerationStatusCard
 import dev.aleian.pockethid.ui.screens.diagnostics.GamepadTestPanel
 import dev.aleian.pockethid.ui.screens.diagnostics.HostChecklistPanel
 import dev.aleian.pockethid.ui.screens.diagnostics.MediaConsumerTestPanel
+import dev.aleian.pockethid.ui.screens.diagnostics.TabletTestPanel
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurface
 import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
@@ -68,7 +69,7 @@ fun DiagnosticsSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val settings by SettingsRepository.settings.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("SYSTEM", "GAMEPAD", "MEDIA", "CHECKLIST")
+    val tabs = listOf("SYSTEM", "GAMEPAD", "TABLET", "MEDIA", "CHECKLIST")
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -320,11 +321,17 @@ fun DiagnosticsSheet(
                 }
 
                 2 -> {
+                    // Tablet Coordinate Mapping Test Tab
+                    EnumerationStatusCard(connectionState = connectionState)
+                    TabletTestPanel()
+                }
+
+                3 -> {
                     // Media Consumer Test Tab
                     MediaConsumerTestPanel(transport = transport)
                 }
 
-                3 -> {
+                4 -> {
                     // Host Verification Checklist Tab
                     HostChecklistPanel()
                 }

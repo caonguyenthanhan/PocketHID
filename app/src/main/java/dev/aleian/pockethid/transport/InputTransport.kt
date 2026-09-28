@@ -36,5 +36,11 @@ interface InputTransport {
         rightTrigger: Byte
     ): Boolean
     fun sendGamepadNeutral(): Boolean
+    fun sendTabletReport(
+        status: Byte,
+        x: Int,
+        y: Int
+    ): Boolean = false
+    fun sendTabletNeutral(): Boolean = false
 }
 

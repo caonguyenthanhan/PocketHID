@@ -12,12 +12,13 @@ data class AppSettings(
     val deadZonePx: Int = 1,
     val accelerationFactor: Float = 1.5f,
     val hapticsTrackpad: Boolean = true,
-    val hapticIntensity: String = "Vừa",
+    val hapticIntensity: String = "Medium",
     val naturalScroll: Boolean = false,
     val dragLock: Boolean = true,
     val pasteDelayMs: Long = 15L,
     val keyboardHaptics: Boolean = true,
-    val keepAwakeTimeout: String = "10 Phút",
+    val keepAwakeTimeout: String = "10 Minutes",
+    val language: AppLanguage = AppLanguage.ENGLISH,
     // Screen Behavior & Timeout Settings
     val keepScreenAwake: Boolean = false, // false = Allow screen to sleep (Default), true = Keep screen awake while PocketHID is open
     val screenSleepTimeoutMinutes: Int = 10, // 10 minutes inactivity timeout (Default)
@@ -79,6 +80,7 @@ object SettingsRepository {
     private const val KEY_FAST_SCROLL_ENABLED = "fast_scroll_enabled"
     private const val KEY_FAST_SCROLL_MULTIPLIER = "fast_scroll_multiplier"
     private const val KEY_FAST_SCROLL_WIDTH = "fast_scroll_width"
+    private const val KEY_LANGUAGE = "app_language"
 
     private val _settings = MutableStateFlow(AppSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
@@ -93,12 +95,13 @@ object SettingsRepository {
             deadZonePx = sp.getInt(KEY_DEADZONE, 1),
             accelerationFactor = sp.getFloat(KEY_ACCEL, 1.5f),
             hapticsTrackpad = sp.getBoolean(KEY_HAPTIC_TRACKPAD, true),
-            hapticIntensity = sp.getString(KEY_HAPTIC_INTENSITY, "Vừa") ?: "Vừa",
+            hapticIntensity = sp.getString(KEY_HAPTIC_INTENSITY, "Medium") ?: "Medium",
             naturalScroll = sp.getBoolean(KEY_NATURAL_SCROLL, false),
             dragLock = sp.getBoolean(KEY_DRAG_LOCK, true),
             pasteDelayMs = sp.getLong(KEY_PASTE_DELAY, 15L),
             keyboardHaptics = sp.getBoolean(KEY_KEYBOARD_HAPTICS, true),
-            keepAwakeTimeout = sp.getString(KEY_KEEP_AWAKE, "10 Phút") ?: "10 Phút",
+            keepAwakeTimeout = sp.getString(KEY_KEEP_AWAKE, "10 Minutes") ?: "10 Minutes",
+            language = AppLanguage.fromString(sp.getString(KEY_LANGUAGE, "ENGLISH") ?: "ENGLISH"),
             keepScreenAwake = sp.getBoolean(KEY_KEEP_SCREEN_AWAKE, false),
             screenSleepTimeoutMinutes = sp.getInt(KEY_SCREEN_SLEEP_TIMEOUT, 10),
             hostOs = HostOs.fromString(sp.getString(KEY_HOST_OS, "WINDOWS") ?: "WINDOWS"),
@@ -136,6 +139,7 @@ object SettingsRepository {
             putLong(KEY_PASTE_DELAY, newSettings.pasteDelayMs)
             putBoolean(KEY_KEYBOARD_HAPTICS, newSettings.keyboardHaptics)
             putString(KEY_KEEP_AWAKE, newSettings.keepAwakeTimeout)
+            putString(KEY_LANGUAGE, newSettings.language.name)
             putBoolean(KEY_KEEP_SCREEN_AWAKE, newSettings.keepScreenAwake)
             putInt(KEY_SCREEN_SLEEP_TIMEOUT, newSettings.screenSleepTimeoutMinutes)
             putString(KEY_HOST_OS, newSettings.hostOs.name)

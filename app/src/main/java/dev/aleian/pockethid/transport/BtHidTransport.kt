@@ -210,6 +210,8 @@ class BtHidTransport(
                 hidDevice?.replyReport(device, type, id, ByteArray(2))
             } else if (id == HidConstants.REPORT_ID_GAMEPAD) {
                 hidDevice?.replyReport(device, type, id, ByteArray(13))
+            } else if (id == HidConstants.REPORT_ID_TABLET) {
+                hidDevice?.replyReport(device, type, id, ByteArray(HidConstants.TABLET_REPORT_LENGTH))
             }
         }
 
@@ -678,6 +680,43 @@ class BtHidTransport(
 
     override fun sendGamepadNeutral(): Boolean {
         return sendGamepadReport(0, HidConstants.GAMEPAD_HAT_CENTERED, 0, 0, 0, 0, 0, 0)
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun sendTabletReport(
+        status: Byte,
+        x: Int,
+        y: Int
+    ): Boolean {
+        val hid = hidDevice ?: return false
+        val device = resolveActiveDevice() ?: return false
+        if (!isAppRegistered) return false
+
+        val clampedX = x.coerceIn(HidConstants.TABLET_LOGICAL_MIN, HidConstants.TABLET_LOGICAL_MAX)
+        val clampedY = y.coerceIn(HidConstants.TABLET_LOGICAL_MIN, HidConstants.TABLET_LOGICAL_MAX)
+
+        val report = byteArrayOf(
+            status,
+            (clampedX and 0xFF).toByte(),
+            ((clampedX shr 8) and 0xFF).toByte(),
+            (clampedY and 0xFF).toByte(),
+            ((clampedY shr 8) and 0xFF).toByte()
+        )
+
+        return try {
+            val sent = hid.sendReport(device, HidConstants.REPORT_ID_TABLET.toInt(), report)
+            if (sent && _connectionState.value !is ConnectionState.Connected) {
+                _connectionState.value = ConnectionState.Connected(device)
+            }
+            sent
+        } catch (e: Exception) {
+            Log.e(TAG, "sendTabletReport failed", e)
+            false
+        }
+    }
+
+    override fun sendTabletNeutral(): Boolean {
+        return sendTabletReport(HidConstants.TABLET_STATUS_NONE, 0, 0)
     }
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import dev.aleian.pockethid.model.FocusLockController
 import dev.aleian.pockethid.model.KeyLegend
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -287,7 +288,7 @@ fun DeckModeSwitcher(
     modifier: Modifier = Modifier,
     isFocusLocked: Boolean = false
 ) {
-    val modes = listOf("KEYBOARD", "MOUSE", "GAMEPAD", "PRESENTER", "ONE-HAND", "DRAW")
+    val modes = listOf("KEYBOARD", "MOUSE", "GAMEPAD", "PRESENTER", "1-HAND", "DRAW")
 
     Row(
         modifier = modifier
@@ -305,7 +306,7 @@ fun DeckModeSwitcher(
                 label = "ModeBgAnim"
             )
             val textColor by animateColorAsState(
-                targetValue = if (isSelected) PrimaryBlue else if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                targetValue = if (isSelected) dev.aleian.pockethid.ui.theme.CyanAccent else if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
                 label = "ModeTextAnim"
             )
 
@@ -316,7 +317,7 @@ fun DeckModeSwitcher(
                     .clip(RoundedCornerShape(4.dp))
                     .background(animBg)
                     .clickable {
-                        if (!isFocusLocked) {
+                        if (FocusLockController.canSwitchMode()) {
                             onSelectMode(index)
                         }
                     },
@@ -324,10 +325,12 @@ fun DeckModeSwitcher(
             ) {
                 Text(
                     text = title,
-                    fontSize = 11.sp,
+                    fontSize = 10.5.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = textColor
+                    color = textColor,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }

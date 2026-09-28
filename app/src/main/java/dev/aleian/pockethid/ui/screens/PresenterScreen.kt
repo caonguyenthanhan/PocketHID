@@ -44,8 +44,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aleian.pockethid.model.HidConstants
+import dev.aleian.pockethid.model.PocketStrings
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
+import dev.aleian.pockethid.ui.components.PresenterSafeExitButton
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurface
 import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
@@ -105,7 +107,7 @@ fun PresenterScreen(
         ) {
             PresenterUtilityButton(
                 icon = Icons.Default.PlayArrow,
-                label = "START F5",
+                label = PocketStrings.presenterStart(settings.language),
                 modifier = Modifier.weight(1f)
             ) {
                 dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.StartSlideshow)
@@ -113,19 +115,19 @@ fun PresenterScreen(
 
             PresenterUtilityButton(
                 icon = Icons.Default.FastForward,
-                label = "RESUME ⇧F5",
+                label = PocketStrings.presenterResume(settings.language),
                 modifier = Modifier.weight(1f)
             ) {
                 dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.ResumeSlideshow)
             }
 
-            PresenterUtilityButton(
-                icon = Icons.Default.Close,
-                label = "EXIT ESC",
+            PresenterSafeExitButton(
+                language = settings.language,
+                onExitConfirmed = {
+                    dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.ExitSlideshow)
+                },
                 modifier = Modifier.weight(1f)
-            ) {
-                dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.ExitSlideshow)
-            }
+            )
         }
 
         // Secondary Utility Bar: Screen Blanking & Laser Pointer Mode Toggle
@@ -135,7 +137,7 @@ fun PresenterScreen(
         ) {
             PresenterUtilityButton(
                 icon = Icons.Default.VisibilityOff,
-                label = "BLACK (B)",
+                label = PocketStrings.presenterBlack(settings.language),
                 modifier = Modifier.weight(1f)
             ) {
                 dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.BlankBlack)
@@ -143,7 +145,7 @@ fun PresenterScreen(
 
             PresenterUtilityButton(
                 icon = Icons.Default.Lightbulb,
-                label = "WHITE (W)",
+                label = PocketStrings.presenterWhite(settings.language),
                 modifier = Modifier.weight(1f)
             ) {
                 dispatchAction(dev.aleian.pockethid.action.PocketAction.PresenterAction.BlankWhite)
@@ -151,7 +153,7 @@ fun PresenterScreen(
 
             PresenterUtilityButton(
                 icon = Icons.Default.Highlight,
-                label = if (showPointerPad) "POINTER ON" else "POINTER",
+                label = if (showPointerPad) "POINTER ON" else PocketStrings.presenterPointer(settings.language),
                 modifier = Modifier.weight(1f)
             ) {
                 triggerHaptic()

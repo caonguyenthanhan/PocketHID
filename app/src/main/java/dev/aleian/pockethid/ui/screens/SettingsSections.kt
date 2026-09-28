@@ -63,6 +63,7 @@ import dev.aleian.pockethid.ui.theme.SurfaceRaised
 import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
+import dev.aleian.pockethid.model.AppLanguage
 import java.util.Locale
 
 @Composable
@@ -226,9 +227,14 @@ fun MouseTrackpadSettingsSection(
     fastScrollEnabled: Boolean,
     onFastScrollEnabledChange: (Boolean) -> Unit,
     fastScrollMultiplier: Float,
-    onFastScrollMultiplierChange: (Float) -> Unit
+    onFastScrollMultiplierChange: (Float) -> Unit,
+    language: AppLanguage = AppLanguage.ENGLISH
 ) {
-    SectionHeader(icon = Icons.Default.Mouse, title = "Mouse & Trackpad Engine", subtitle = "Subsystem 0x01")
+    SectionHeader(
+        icon = Icons.Default.Mouse,
+        title = if (language == AppLanguage.VIETNAMESE) "Cấu hình Chuột & Bàn rê" else "Mouse & Trackpad Engine",
+        subtitle = "Subsystem 0x01"
+    )
 
     Box(
         modifier = Modifier
@@ -246,7 +252,12 @@ fun MouseTrackpadSettingsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Tần số lấy mẫu (Polling Rate)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Tần số lấy mẫu (Polling Rate)" else "Polling Rate",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
                     Text("${pollingRate.toInt()} Hz", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
                 }
                 Row(
@@ -288,8 +299,17 @@ fun MouseTrackpadSettingsSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Dead Zone chống trôi Tap-Click", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                        Text("Chặn rung vi mô trong 30ms đầu sau touch-down", fontSize = 11.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Dead Zone chống trôi Tap-Click" else "Tap-Click Anti-Drift Deadzone",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Chặn rung vi mô trong 30ms đầu sau touch-down" else "Suppresses micro-jitter in first 30ms after touchdown",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
                     }
                     Text("$deadZone px", fontSize = 13.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
                 }
@@ -313,7 +333,12 @@ fun MouseTrackpadSettingsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Gia tốc phi tuyến (Acceleration Curve)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Gia tốc phi tuyến (Acceleration Curve)" else "Non-linear Acceleration Curve",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
                     Text(
                         text = "k = ${String.format(Locale.US, "%.1f", accelFactor)}×",
                         fontSize = 13.sp,
@@ -343,8 +368,17 @@ fun MouseTrackpadSettingsSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Phản hồi xúc giác Trackpad", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                        Text("Rung ERM/LRA khi click & drag-lock", fontSize = 11.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Phản hồi xúc giác Trackpad" else "Trackpad Haptic Feedback",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Rung ERM/LRA khi click & drag-lock" else "ERM/LRA haptics on click & drag-lock",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
                     }
                     Switch(
                         checked = hapticTrackpad,
@@ -364,8 +398,17 @@ fun MouseTrackpadSettingsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Cuộn tự nhiên (Natural Scroll)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                    Text("Đảo chiều cuộn 2 ngón giống macOS Trackpad", fontSize = 11.sp, color = TextSecondary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Cuộn tự nhiên (Natural Scroll)" else "Natural Scrolling",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Đảo chiều cuộn 2 ngón giống macOS Trackpad" else "Invert 2-finger scroll direction (macOS style)",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
                 }
                 Switch(
                     checked = naturalScroll,
@@ -385,8 +428,17 @@ fun MouseTrackpadSettingsSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Cử chỉ thu phóng (Pinch Zoom)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                        Text("Chụm/mở 2 ngón để phóng to/thu nhỏ trên PC", fontSize = 11.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Cử chỉ thu phóng (Pinch Zoom)" else "Pinch to Zoom Gesture",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Chụm/mở 2 ngón để phóng to/thu nhỏ trên PC" else "Pinch in/out to zoom in or out on PC",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
                     }
                     Switch(
                         checked = pinchZoomEnabled,
@@ -407,8 +459,17 @@ fun MouseTrackpadSettingsSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Cuộn nhanh mép phải (Fast Scroll)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                        Text("Vuốt mép phải bàn rê để cuộn trang tốc độ cao", fontSize = 11.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Cuộn nhanh mép phải (Fast Scroll)" else "Edge Fast Scroll",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Vuốt mép phải bàn rê để cuộn trang tốc độ cao" else "Drag right edge of trackpad for rapid scrolling",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
                     }
                     Switch(
                         checked = fastScrollEnabled,
@@ -426,7 +487,11 @@ fun MouseTrackpadSettingsSection(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Hệ số tốc độ cuộn nhanh", fontSize = 12.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Hệ số tốc độ cuộn nhanh" else "Fast scroll multiplier",
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
                         Text(
                             text = "${String.format(Locale.US, "%.1f", fastScrollMultiplier)}×",
                             fontSize = 12.sp,
@@ -457,9 +522,14 @@ fun KeyboardSettingsSection(
     pasteDelay: Long,
     onPasteDelayChange: (Long) -> Unit,
     keyboardHaptics: Boolean,
-    onKeyboardHapticsChange: (Boolean) -> Unit
+    onKeyboardHapticsChange: (Boolean) -> Unit,
+    language: AppLanguage = AppLanguage.ENGLISH
 ) {
-    SectionHeader(icon = Icons.Default.Keyboard, title = "Keyboard & Scancode Engine", subtitle = "Subsystem 0x02")
+    SectionHeader(
+        icon = Icons.Default.Keyboard,
+        title = if (language == AppLanguage.VIETNAMESE) "Cấu hình Bàn phím & Scancode" else "Keyboard & Scancode Engine",
+        subtitle = "Subsystem 0x02"
+    )
 
     Box(
         modifier = Modifier
@@ -477,8 +547,17 @@ fun KeyboardSettingsSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Độ trễ dán chuỗi (Paste Throttle)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                        Text("Chống nghẽn buffer HID ring & nuốt ký tự host", fontSize = 11.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Độ trễ dán chuỗi (Paste Throttle)" else "Paste Keystroke Throttle",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Chống nghẽn buffer HID ring & nuốt ký tự host" else "Prevents HID ring buffer overflow & dropped chars",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
                     }
                     Text("$pasteDelay ms", fontSize = 13.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
                 }
@@ -501,8 +580,17 @@ fun KeyboardSettingsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Rung phản hồi phím (Key Vibration)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                    Text("Cảm giác tactile nảy micro-switch khi gõ", fontSize = 11.sp, color = TextSecondary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Rung phản hồi phím (Key Vibration)" else "Keyboard Haptic Feedback",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Cảm giác tactile nảy micro-switch khi gõ" else "Tactile micro-switch click sensation on keypress",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
                 }
                 Switch(
                     checked = keyboardHaptics,
@@ -534,9 +622,14 @@ fun GamepadSettingsSection(
     gpTriggerSens: Float,
     onGpTriggerSensChange: (Float) -> Unit,
     gpInvertY: Boolean,
-    onGpInvertYChange: (Boolean) -> Unit
+    onGpInvertYChange: (Boolean) -> Unit,
+    language: AppLanguage = AppLanguage.ENGLISH
 ) {
-    SectionHeader(icon = Icons.Default.SportsEsports, title = "Gamepad & Controller Calibration", subtitle = "Report ID 4 • Direct HID Joystick")
+    SectionHeader(
+        icon = Icons.Default.SportsEsports,
+        title = if (language == AppLanguage.VIETNAMESE) "Hiệu chỉnh Tay cầm Gamepad" else "Gamepad & Controller Calibration",
+        subtitle = "Report ID 4 • Direct HID Joystick"
+    )
 
     Box(
         modifier = Modifier
@@ -547,11 +640,17 @@ fun GamepadSettingsSection(
             .padding(14.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("CẦN TRÁI (LEFT ANALOG STICK)", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+            Text(
+                text = if (language == AppLanguage.VIETNAMESE) "CẦN TRÁI (LEFT ANALOG STICK)" else "LEFT ANALOG STICK",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryBlue
+            )
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Deadzone (Vùng chết)", fontSize = 13.sp, color = TextPrimary)
+                    Text(if (language == AppLanguage.VIETNAMESE) "Deadzone (Vùng chết)" else "Deadzone", fontSize = 13.sp, color = TextPrimary)
                     Text("${(gpLeftDeadzone * 100).toInt()}%", fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = PrimaryBlue, fontWeight = FontWeight.Bold)
                 }
                 Slider(
@@ -564,7 +663,7 @@ fun GamepadSettingsSection(
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Sensitivity (Độ nhạy)", fontSize = 13.sp, color = TextPrimary)
+                    Text(if (language == AppLanguage.VIETNAMESE) "Sensitivity (Độ nhạy)" else "Sensitivity", fontSize = 13.sp, color = TextPrimary)
                     Text(String.format(Locale.US, "%.1fx", gpLeftSens), fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = PrimaryBlue, fontWeight = FontWeight.Bold)
                 }
                 Slider(
@@ -575,11 +674,17 @@ fun GamepadSettingsSection(
                 )
             }
 
-            Text("CẦN PHẢI (RIGHT ANALOG STICK)", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+            Text(
+                text = if (language == AppLanguage.VIETNAMESE) "CẦN PHẢI (RIGHT ANALOG STICK)" else "RIGHT ANALOG STICK",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryBlue
+            )
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Deadzone (Vùng chết)", fontSize = 13.sp, color = TextPrimary)
+                    Text(if (language == AppLanguage.VIETNAMESE) "Deadzone (Vùng chết)" else "Deadzone", fontSize = 13.sp, color = TextPrimary)
                     Text("${(gpRightDeadzone * 100).toInt()}%", fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = PrimaryBlue, fontWeight = FontWeight.Bold)
                 }
                 Slider(
@@ -597,8 +702,17 @@ fun GamepadSettingsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Đảo trục Y (Invert Y Axis)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                    Text("Phù hợp game mô phỏng bay (Flight Sim)", fontSize = 11.sp, color = TextSecondary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Đảo trục Y (Invert Y Axis)" else "Invert Y Axis",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Phù hợp game mô phỏng bay (Flight Sim)" else "Optimal for flight simulators",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
                 }
                 Switch(
                     checked = gpInvertY,
@@ -617,9 +731,14 @@ fun OneHandSettingsSection(
     oneHandSeekStep: Int,
     onOneHandSeekStepChange: (Int) -> Unit,
     oneHandScrollSens: Float,
-    onOneHandScrollSensChange: (Float) -> Unit
+    onOneHandScrollSensChange: (Float) -> Unit,
+    language: AppLanguage = AppLanguage.ENGLISH
 ) {
-    SectionHeader(icon = Icons.Default.PanTool, title = "One-Hand Remote Control", subtitle = "Thumb Ergonomics")
+    SectionHeader(
+        icon = Icons.Default.PanTool,
+        title = if (language == AppLanguage.VIETNAMESE) "Điều khiển 1-Tay & Công thái học" else "One-Hand Remote Control",
+        subtitle = "Thumb Ergonomics"
+    )
 
     Box(
         modifier = Modifier
@@ -637,8 +756,23 @@ fun OneHandSettingsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Tay thuận (Handedness)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                    Text(if (oneHandHandedness == "Right") "Tay Phải ✋" else "✋ Tay Trái", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Tay thuận (Handedness)" else "Handedness",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (oneHandHandedness == "Right") {
+                            if (language == AppLanguage.VIETNAMESE) "Tay Phải ✋" else "Right Hand ✋"
+                        } else {
+                            if (language == AppLanguage.VIETNAMESE) "✋ Tay Trái" else "✋ Left Hand"
+                        },
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
                 }
                 Row(
                     modifier = Modifier
@@ -649,15 +783,15 @@ fun OneHandSettingsSection(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     SegmentButton(
-                        label = "Tay Phải (Right)",
-                        subLabel = "Vùng ngón cái lệch phải",
+                        label = if (language == AppLanguage.VIETNAMESE) "Tay Phải (Right)" else "Right Hand",
+                        subLabel = if (language == AppLanguage.VIETNAMESE) "Vùng ngón cái lệch phải" else "Thumb reach bias to right",
                         isSelected = oneHandHandedness == "Right",
                         modifier = Modifier.weight(1f),
                         onClick = { onOneHandHandednessChange("Right") }
                     )
                     SegmentButton(
-                        label = "Tay Trái (Left)",
-                        subLabel = "Vùng ngón cái lệch trái",
+                        label = if (language == AppLanguage.VIETNAMESE) "Tay Trái (Left)" else "Left Hand",
+                        subLabel = if (language == AppLanguage.VIETNAMESE) "Vùng ngón cái lệch trái" else "Thumb reach bias to left",
                         isSelected = oneHandHandedness == "Left",
                         modifier = Modifier.weight(1f),
                         onClick = { onOneHandHandednessChange("Left") }
@@ -672,7 +806,12 @@ fun OneHandSettingsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Bước tua Video (Seek Step)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Bước tua Video (Seek Step)" else "Video Seek Step",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
                     Text("${oneHandSeekStep}s", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
                 }
                 Row(
@@ -683,10 +822,10 @@ fun OneHandSettingsSection(
                         .padding(3.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    listOf(5 to "5 Giây", 10 to "10 Giây (Chuẩn)", 30 to "30 Giây").forEach { (step, label) ->
+                    listOf(5 to "5s", 10 to "10s", 30 to "30s").forEach { (step, label) ->
                         SegmentButton(
-                            label = "$step Giây",
-                            subLabel = if (step == 10) "YouTube Chuẩn" else "Tùy chỉnh",
+                            label = if (language == AppLanguage.VIETNAMESE) "$step Giây" else label,
+                            subLabel = if (step == 10) (if (language == AppLanguage.VIETNAMESE) "YouTube Chuẩn" else "Standard") else (if (language == AppLanguage.VIETNAMESE) "Tùy chỉnh" else "Custom"),
                             isSelected = oneHandSeekStep == step,
                             modifier = Modifier.weight(1f),
                             onClick = { onOneHandSeekStepChange(step) }
@@ -702,7 +841,12 @@ fun OneHandSettingsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Độ nhạy cuộn trang Web", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Độ nhạy cuộn trang Web" else "Web Scroll Sensitivity",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
                     Text(String.format(Locale.US, "%.1fx", oneHandScrollSens), fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = PrimaryBlue)
                 }
                 Slider(
@@ -726,9 +870,14 @@ fun ScreenBehaviorSettingsSection(
     keepScreenAwake: Boolean,
     onKeepScreenAwakeChange: (Boolean) -> Unit,
     screenSleepTimeoutMinutes: Int,
-    onScreenSleepTimeoutMinutesChange: (Int) -> Unit
+    onScreenSleepTimeoutMinutesChange: (Int) -> Unit,
+    language: AppLanguage = AppLanguage.ENGLISH
 ) {
-    SectionHeader(icon = Icons.Default.BatteryChargingFull, title = "Screen Behavior & Power", subtitle = "Inactivity & Display Sleep")
+    SectionHeader(
+        icon = Icons.Default.BatteryChargingFull,
+        title = if (language == AppLanguage.VIETNAMESE) "Hành vi Màn hình & Nguồn" else "Screen Behavior & Power",
+        subtitle = "Inactivity & Display Sleep"
+    )
 
     Box(
         modifier = Modifier
@@ -767,7 +916,11 @@ fun ScreenBehaviorSettingsSection(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text("FOREGROUND_SERVICE", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = TextPrimary)
-                        Text("Type: CONNECTED_DEVICE (Active in background)", fontSize = 10.sp, color = TextSecondary)
+                        Text(
+                            text = if (language == AppLanguage.VIETNAMESE) "Loại: CONNECTED_DEVICE (Duy trì nền)" else "Type: CONNECTED_DEVICE (Active in background)",
+                            fontSize = 10.sp,
+                            color = TextSecondary
+                        )
                     }
                 }
                 Box(
@@ -789,7 +942,7 @@ fun ScreenBehaviorSettingsSection(
             // Screen Behavior Selector
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Hành vi màn hình (Screen Behavior)",
+                    text = if (language == AppLanguage.VIETNAMESE) "Hành vi màn hình (Screen Behavior)" else "Screen Behavior",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -813,13 +966,13 @@ fun ScreenBehaviorSettingsSection(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Cho phép màn hình ngủ (Allow screen to sleep)",
+                            text = if (language == AppLanguage.VIETNAMESE) "Cho phép màn hình ngủ (Allow screen to sleep)" else "Allow screen to sleep",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
                         Text(
-                            text = "Màn hình tự tắt sau thời gian không thao tác. Dịch vụ Bluetooth HID vẫn duy trì kết nối nền.",
+                            text = if (language == AppLanguage.VIETNAMESE) "Màn hình tự tắt sau thời gian không thao tác. Dịch vụ Bluetooth HID vẫn duy trì kết nối nền." else "Screen turns off after inactivity. Bluetooth HID service stays connected in background.",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -839,9 +992,13 @@ fun ScreenBehaviorSettingsSection(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Thời gian chờ tắt màn hình:", fontSize = 12.sp, color = TextSecondary)
                             Text(
-                                "$screenSleepTimeoutMinutes phút",
+                                text = if (language == AppLanguage.VIETNAMESE) "Thời gian chờ tắt màn hình:" else "Screen sleep timeout:",
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                            Text(
+                                text = if (language == AppLanguage.VIETNAMESE) "$screenSleepTimeoutMinutes phút" else "$screenSleepTimeoutMinutes min",
                                 fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
@@ -856,7 +1013,12 @@ fun ScreenBehaviorSettingsSection(
                                 .padding(3.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            listOf(5 to "5 Phút", 10 to "10 Phút (Chuẩn)", 15 to "15 Phút").forEach { (timeout, label) ->
+                            listOf(5, 10, 15).forEach { timeout ->
+                                val label = if (language == AppLanguage.VIETNAMESE) {
+                                    if (timeout == 10) "10 Phút (Chuẩn)" else "$timeout Phút"
+                                } else {
+                                    if (timeout == 10) "10 min (Std)" else "$timeout min"
+                                }
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
@@ -896,13 +1058,13 @@ fun ScreenBehaviorSettingsSection(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Luôn giữ màn hình sáng khi mở PocketHID",
+                            text = if (language == AppLanguage.VIETNAMESE) "Luôn giữ màn hình sáng khi mở PocketHID" else "Keep screen awake while PocketHID is active",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
                         Text(
-                            text = "Giữ màn hình luôn bật khi PocketHID hiển thị (phù hợp khi thuyết trình liên tục).",
+                            text = if (language == AppLanguage.VIETNAMESE) "Giữ màn hình luôn bật khi PocketHID hiển thị (phù hợp khi thuyết trình liên tục)." else "Keeps screen permanently awake while PocketHID is open (recommended for presentations).",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -929,7 +1091,7 @@ fun ScreenBehaviorSettingsSection(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Lưu ý bảo mật: PocketHID KHÔNG BAO GIỜ tự khóa máy điện thoại. Sau khi màn hình ngủ, việc có yêu cầu xác thực vân tay/mật khẩu khi bật lại hay không hoàn toàn do cài đặt bảo mật của Android.",
+                        text = if (language == AppLanguage.VIETNAMESE) "Lưu ý bảo mật: PocketHID KHÔNG BAO GIỜ tự khóa máy điện thoại. Sau khi màn hình ngủ, việc có yêu cầu xác thực vân tay/mật khẩu khi bật lại hay không hoàn toàn do cài đặt bảo mật của Android." else "Security note: PocketHID never locks the device. Android system lock screen security determines biometric or PIN requirements upon wake.",
                         fontSize = 11.sp,
                         color = TextMuted,
                         lineHeight = 16.sp
@@ -941,7 +1103,7 @@ fun ScreenBehaviorSettingsSection(
 }
 
 @Composable
-fun DiagnosticsSummarySection(hostName: String) {
+fun DiagnosticsSummarySection(hostName: String, language: AppLanguage = AppLanguage.ENGLISH) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -972,7 +1134,7 @@ fun DiagnosticsSummarySection(hostName: String) {
                 )
             }
             Text(
-                text = "Các thông số này được lưu riêng biệt cho Host: $hostName",
+                text = if (language == AppLanguage.VIETNAMESE) "Các thông số này được lưu riêng biệt cho Host: $hostName" else "These settings are saved specifically for Host: $hostName",
                 fontSize = 10.sp,
                 color = TextSecondary
             )

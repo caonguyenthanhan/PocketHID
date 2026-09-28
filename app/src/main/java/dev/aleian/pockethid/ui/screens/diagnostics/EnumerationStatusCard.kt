@@ -103,14 +103,14 @@ fun EnumerationStatusCard(
         )
 
         DiagnosticItem(
-            label = "Gamepad Report ID",
-            value = "${HidConstants.REPORT_ID_GAMEPAD}",
-            valueColor = TextPrimary
+            label = "Tablet Collection (ID 5)",
+            value = "YES (${HidConstants.TABLET_REPORT_LENGTH} bytes)",
+            valueColor = StatusConnected
         )
 
         DiagnosticItem(
-            label = "Gamepad Report Length",
-            value = "${HidConstants.GAMEPAD_REPORT_LENGTH} bytes",
+            label = "Tablet Logical Range",
+            value = "${HidConstants.TABLET_LOGICAL_MIN}..${HidConstants.TABLET_LOGICAL_MAX}",
             valueColor = TextPrimary
         )
 

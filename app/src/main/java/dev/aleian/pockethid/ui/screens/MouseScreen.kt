@@ -142,152 +142,23 @@ fun MouseScreen(
     var threeFingerStartY by remember { mutableStateOf(0f) }
     var hasTriggeredThreeFingerGesture by remember { mutableStateOf(false) }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(10.dp)
     ) {
-        // TOP: Connection Status Card
-        MouseConnectionStatusCard(
-            connectionState = connectionState,
-            onPairClick = onPairClick,
-            onHostInfoClick = onHostInfoClick,
-            onSettingsClick = onSettingsClick
-        )
-
         // MAIN: Precision Multi-Touch Trackpad with Gesture Engine and Explicit Buttons
         MultiTouchTrackpad(
             transport = transport,
             settings = settings,
             canSendInput = { canSendInput() },
             onOpenCommandDeck = { onSettingsClick() },
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
 
-/**
- * Top Connection Status Card
- */
-@Composable
-private fun MouseConnectionStatusCard(
-    connectionState: ConnectionState,
-    onPairClick: () -> Unit,
-    onHostInfoClick: () -> Unit,
-    onSettingsClick: () -> Unit
-) {
-    val (statusDot, statusText, hostName) = when (connectionState) {
-        is ConnectionState.Connected -> Triple(
-            StatusConnected,
-            "Connected",
-            connectionState.device.name ?: connectionState.device.address
-        )
-        is ConnectionState.Connecting -> Triple(
-            StatusConnecting,
-            "Connecting…",
-            connectionState.device?.name ?: "Searching for Host…"
-        )
-        is ConnectionState.Disconnecting -> Triple(
-            StatusConnecting,
-            "Disconnecting…",
-            "Terminating session"
-        )
-        is ConnectionState.Error -> Triple(
-            Color(0xFFEF4444),
-            "Connection Error",
-            connectionState.message
-        )
-        is ConnectionState.Disconnected -> Triple(
-            StatusDisconnected,
-            "Disconnected",
-            "No active host"
-        )
-    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(DarkSurfaceVariant)
-            .border(1.dp, DarkBorder, RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left Status
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(statusDot)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = statusText,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = hostName,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (connectionState is ConnectionState.Connected) PrimaryBlue else TextSecondary,
-                    maxLines = 1
-                )
-            }
-
-            // Right Actions: Pair / Host Info / Settings
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceCard)
-                        .border(1.dp, DarkBorder, RoundedCornerShape(6.dp))
-                        .clickable(onClick = onPairClick)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (connectionState is ConnectionState.Connected) "Switch" else "Pair",
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryBlue
-                    )
-                }
-
-                IconButton(onClick = onHostInfoClick, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Host Info",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                IconButton(onClick = onSettingsClick, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Tune,
-                        contentDescription = "Settings",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun TouchMouseButton(

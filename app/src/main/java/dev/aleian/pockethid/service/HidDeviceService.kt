@@ -18,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import dev.aleian.pockethid.MainActivity
 import dev.aleian.pockethid.R
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.FocusLockController
 import dev.aleian.pockethid.transport.BtHidTransport
 import dev.aleian.pockethid.transport.InputTransport
 import kotlinx.coroutines.CoroutineScope
@@ -137,6 +138,7 @@ class HidDeviceService : Service() {
                     is ConnectionState.Disconnected -> {
                         updateNotification("Ready for Bluetooth connection")
                         releaseWakeLock()
+                        FocusLockController.reset()
                     }
                     is ConnectionState.Disconnecting -> {
                         updateNotification("Disconnecting…")
@@ -145,6 +147,7 @@ class HidDeviceService : Service() {
                     is ConnectionState.Error -> {
                         updateNotification("Error: ${state.message}")
                         releaseWakeLock()
+                        FocusLockController.reset()
                     }
                 }
             }

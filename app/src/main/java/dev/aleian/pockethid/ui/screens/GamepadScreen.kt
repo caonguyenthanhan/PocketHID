@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import dev.aleian.pockethid.gamepad.GamepadController
 import dev.aleian.pockethid.gamepad.StickResponseCurve
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.PocketStrings
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
 import dev.aleian.pockethid.ui.components.VirtualDpad
@@ -56,6 +58,7 @@ import dev.aleian.pockethid.ui.components.VirtualFaceButtons
 import dev.aleian.pockethid.ui.components.VirtualShoulderCluster
 import dev.aleian.pockethid.ui.components.VirtualSystemButtons
 import dev.aleian.pockethid.ui.components.VirtualThumbstick
+import dev.aleian.pockethid.ui.theme.CyanAccent
 import dev.aleian.pockethid.ui.theme.DarkBg
 import dev.aleian.pockethid.ui.theme.DarkBorder
 import dev.aleian.pockethid.ui.theme.DarkSurface
@@ -134,6 +137,7 @@ fun GamepadScreen(
     } else {
         PortraitGamepadLayout(
             controller = controller,
+            settings = settings,
             connectionState = connectionState,
             leftDeadzone = settings.gamepadLeftDeadzone,
             leftSensitivity = settings.gamepadLeftSensitivity,
@@ -329,6 +333,7 @@ private fun LandscapeGamepadLayout(
 @Composable
 private fun PortraitGamepadLayout(
     controller: GamepadController,
+    settings: dev.aleian.pockethid.model.AppSettings,
     connectionState: ConnectionState,
     leftDeadzone: Float,
     leftSensitivity: Float,
@@ -347,45 +352,52 @@ private fun PortraitGamepadLayout(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBg)
-            .padding(12.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // TOP STATUS BAR
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // TOP 1: Landscape Recommendation Guidance Banner
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(DarkSurfaceVariant)
+                .border(1.dp, DarkBorder, RoundedCornerShape(8.dp))
+                .padding(horizontal = 10.dp, vertical = 5.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.SportsEsports,
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "BLUETOOTH HID GAMEPAD",
-                    fontSize = 13.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-            }
-
-            IconButton(onClick = onOpenDiagnostics) {
-                Icon(
-                    imageVector = Icons.Default.QueryStats,
-                    contentDescription = "Diagnostics",
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(20.dp)
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RotateRight,
+                        contentDescription = null,
+                        tint = CyanAccent,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(
+                        text = PocketStrings.gamepadLandscapeHint(settings.language),
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+                IconButton(onClick = onOpenDiagnostics, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.QueryStats,
+                        contentDescription = "Diagnostics",
+                        tint = CyanAccent,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
             }
         }
 
-        // SHOULDER & TRIGGER BAR
+        // TOP 2: Shoulder & Trigger Bar
         VirtualShoulderCluster(
             triggerSensitivity = triggerSensitivity,
             onPressButton = { mask -> controller.pressButton(mask, view) },
@@ -394,58 +406,58 @@ private fun PortraitGamepadLayout(
             onRightTriggerChange = { valByte -> controller.updateRightTrigger(valByte) }
         )
 
-        // D-PAD & FACE BUTTONS ROW
+        // MIDDLE: D-PAD (Left) & ABXY (Right)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             VirtualDpad(
-                size = 140.dp,
+                size = 125.dp,
                 onDirectionChange = { u, d, l, r ->
                     controller.setDpadDirection(u, d, l, r, view)
                 }
             )
 
             VirtualFaceButtons(
-                size = 140.dp,
-                buttonSize = 42.dp,
+                size = 125.dp,
+                buttonSize = 38.dp,
                 onPress = { mask -> controller.pressButton(mask, view) },
                 onRelease = { mask -> controller.releaseButton(mask) }
             )
         }
 
-        // SYSTEM BUTTONS
-        VirtualSystemButtons(
-            onPress = { mask -> controller.pressButton(mask, view) },
-            onRelease = { mask -> controller.releaseButton(mask) }
-        )
-
-        // DUAL ANALOG STICKS ROW
+        // LOWER: DUAL ANALOG STICKS (Primary thumb touch area)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             VirtualThumbstick(
-                label = "LEFT STICK",
+                label = "LS",
                 deadzone = leftDeadzone,
                 sensitivity = leftSensitivity,
                 curve = leftCurve,
                 invertY = invertY,
-                size = 140.dp,
+                size = 125.dp,
                 onStickMove = { x, y -> controller.updateLeftStick(x, y) }
             )
 
             VirtualThumbstick(
-                label = "RIGHT STICK",
+                label = "RS",
                 deadzone = rightDeadzone,
                 sensitivity = rightSensitivity,
                 curve = rightCurve,
                 invertY = invertY,
-                size = 140.dp,
+                size = 125.dp,
                 onStickMove = { x, y -> controller.updateRightStick(x, y) }
             )
         }
+
+        // BOTTOM: SYSTEM BUTTONS (Back, Guide, Start)
+        VirtualSystemButtons(
+            onPress = { mask -> controller.pressButton(mask, view) },
+            onRelease = { mask -> controller.releaseButton(mask) }
+        )
     }
 }

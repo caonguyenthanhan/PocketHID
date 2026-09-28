@@ -482,8 +482,8 @@ fun KeyboardScreen(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = when {
-                                        isConnected -> "HID Connected • Typing to $hostName"
-                                        isConnecting -> "Connecting to host..."
+                                        isConnected -> "HID Connected • IME Active"
+                                        isConnecting -> "Connecting..."
                                         else -> "Not Connected"
                                     },
                                     fontSize = 11.sp,

@@ -2,6 +2,8 @@ package dev.aleian.pockethid.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,11 +47,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.aleian.pockethid.model.AppLanguage
 import dev.aleian.pockethid.model.AppSettings
 import dev.aleian.pockethid.model.ConnectionState
+import dev.aleian.pockethid.model.PocketStrings
 import dev.aleian.pockethid.model.SettingsRepository
 import dev.aleian.pockethid.transport.InputTransport
+import dev.aleian.pockethid.ui.theme.CyanAccent
 import dev.aleian.pockethid.ui.theme.DarkBg
+import dev.aleian.pockethid.ui.theme.DarkBorder
+import dev.aleian.pockethid.ui.theme.DarkSurfaceVariant
 import dev.aleian.pockethid.ui.theme.OnPrimaryContainer
 import dev.aleian.pockethid.ui.theme.PrimaryBlue
 import dev.aleian.pockethid.ui.theme.PrimaryContainer
@@ -57,6 +64,7 @@ import dev.aleian.pockethid.ui.theme.StatusConnected
 import dev.aleian.pockethid.ui.theme.SurfaceCard
 import dev.aleian.pockethid.ui.theme.SurfaceContainerHigh
 import dev.aleian.pockethid.ui.theme.SurfaceContainerLowest
+import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
 
@@ -98,6 +106,7 @@ fun SettingsScreen(
     var oneHandScrollSens by remember(currentSettings) { mutableFloatStateOf(currentSettings.oneHandScrollSensitivity) }
     var fastScrollEnabled by remember(currentSettings) { mutableStateOf(currentSettings.fastScrollEnabled) }
     var fastScrollMultiplier by remember(currentSettings) { mutableFloatStateOf(currentSettings.fastScrollMultiplier) }
+    var appLanguage by remember(currentSettings) { mutableStateOf(currentSettings.language) }
 
     val hostName = when (connState) {
         is ConnectionState.Connected -> (connState as ConnectionState.Connected).device.name ?: "BT-HID-HOST"
@@ -136,7 +145,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Cài đặt nâng cao",
+                        text = PocketStrings.settingsTitle(appLanguage),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = TextPrimary
                     )
@@ -184,6 +193,70 @@ fun SettingsScreen(
             // Telemetry Banner
             SettingsTelemetryBanner(hostName = hostName, pollingRate = pollingRate)
 
+            // Language Selection Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SurfaceContainerLowest)
+                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+                    .padding(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = PocketStrings.settingsLanguage(appLanguage),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (appLanguage == AppLanguage.ENGLISH) "English (Active)" else "Tiếng Việt (Đang bật)",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (appLanguage == AppLanguage.ENGLISH) CyanAccent.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                .border(1.dp, if (appLanguage == AppLanguage.ENGLISH) CyanAccent else DarkBorder, RoundedCornerShape(6.dp))
+                                .clickable { appLanguage = AppLanguage.ENGLISH }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "EN",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (appLanguage == AppLanguage.ENGLISH) CyanAccent else TextMuted
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (appLanguage == AppLanguage.VIETNAMESE) CyanAccent.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                .border(1.dp, if (appLanguage == AppLanguage.VIETNAMESE) CyanAccent else DarkBorder, RoundedCornerShape(6.dp))
+                                .clickable { appLanguage = AppLanguage.VIETNAMESE }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "VI",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (appLanguage == AppLanguage.VIETNAMESE) CyanAccent else TextMuted
+                            )
+                        }
+                    }
+                }
+            }
+
             // Section 1: Mouse & Trackpad Engine
             MouseTrackpadSettingsSection(
                 pollingRate = pollingRate,
@@ -209,7 +282,8 @@ fun SettingsScreen(
                 fastScrollEnabled = fastScrollEnabled,
                 onFastScrollEnabledChange = { fastScrollEnabled = it },
                 fastScrollMultiplier = fastScrollMultiplier,
-                onFastScrollMultiplierChange = { fastScrollMultiplier = it }
+                onFastScrollMultiplierChange = { fastScrollMultiplier = it },
+                language = appLanguage
             )
 
             // Section 2: Keyboard & Scancode Engine
@@ -217,7 +291,8 @@ fun SettingsScreen(
                 pasteDelay = pasteDelay,
                 onPasteDelayChange = { pasteDelay = it },
                 keyboardHaptics = keyboardHaptics,
-                onKeyboardHapticsChange = { keyboardHaptics = it }
+                onKeyboardHapticsChange = { keyboardHaptics = it },
+                language = appLanguage
             )
 
             // Section 3: Gamepad Calibration
@@ -237,7 +312,8 @@ fun SettingsScreen(
                 gpTriggerSens = gpTriggerSens,
                 onGpTriggerSensChange = { gpTriggerSens = it },
                 gpInvertY = gpInvertY,
-                onGpInvertYChange = { gpInvertY = it }
+                onGpInvertYChange = { gpInvertY = it },
+                language = appLanguage
             )
 
             // Section 4: One-Hand Remote Control
@@ -247,7 +323,8 @@ fun SettingsScreen(
                 oneHandSeekStep = oneHandSeekStep,
                 onOneHandSeekStepChange = { oneHandSeekStep = it },
                 oneHandScrollSens = oneHandScrollSens,
-                onOneHandScrollSensChange = { oneHandScrollSens = it }
+                onOneHandScrollSensChange = { oneHandScrollSens = it },
+                language = appLanguage
             )
 
             // Section 5: Screen Behavior & Power
@@ -255,11 +332,15 @@ fun SettingsScreen(
                 keepScreenAwake = keepScreenAwake,
                 onKeepScreenAwakeChange = { keepScreenAwake = it },
                 screenSleepTimeoutMinutes = screenSleepTimeoutMinutes,
-                onScreenSleepTimeoutMinutesChange = { screenSleepTimeoutMinutes = it }
+                onScreenSleepTimeoutMinutesChange = { screenSleepTimeoutMinutes = it },
+                language = appLanguage
             )
 
             // Quick Diagnostics Summary Box
-            DiagnosticsSummarySection(hostName = hostName)
+            DiagnosticsSummarySection(
+                hostName = hostName,
+                language = appLanguage
+            )
 
             // Action Buttons (Save / Reset)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -293,10 +374,12 @@ fun SettingsScreen(
                             oneHandSeekStepSeconds = oneHandSeekStep,
                             oneHandScrollSensitivity = oneHandScrollSens,
                             fastScrollEnabled = fastScrollEnabled,
-                            fastScrollMultiplier = fastScrollMultiplier
+                            fastScrollMultiplier = fastScrollMultiplier,
+                            language = appLanguage
                         )
                         SettingsRepository.updateSettings(updated)
-                        Toast.makeText(context, "Đã lưu cấu hình PocketHID thành công!", Toast.LENGTH_SHORT).show()
+                        val msg = if (appLanguage == AppLanguage.VIETNAMESE) "Đã lưu cài đặt!" else "Settings saved successfully!"
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -309,7 +392,7 @@ fun SettingsScreen(
                 ) {
                     Icon(imageVector = Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Lưu cấu hình Host này", fontWeight = FontWeight.Bold)
+                    Text(PocketStrings.settingsSave(appLanguage), fontWeight = FontWeight.Bold)
                 }
 
                 OutlinedButton(
@@ -319,12 +402,13 @@ fun SettingsScreen(
                         deadZone = 1
                         accelFactor = 1.5f
                         hapticTrackpad = true
-                        hapticIntensity = "Vừa"
+                        hapticIntensity = "Medium"
                         naturalScroll = false
                         dragLock = true
                         pasteDelay = 15L
                         keyboardHaptics = true
-                        keepAwake = "5 Phút"
+                        keepAwake = "10 Minutes"
+                        appLanguage = AppLanguage.ENGLISH
                         gpLeftDeadzone = 0.10f
                         gpLeftSens = 1.0f
                         gpLeftCurve = "Linear"
@@ -343,7 +427,8 @@ fun SettingsScreen(
                         oneHandScrollSens = 1.0f
                         fastScrollEnabled = true
                         fastScrollMultiplier = 2.5f
-                        Toast.makeText(context, "Đã khôi phục cài đặt mặc định kỹ thuật.", Toast.LENGTH_SHORT).show()
+                        val resetMsg = if (appLanguage == AppLanguage.VIETNAMESE) "Đã khôi phục cài đặt mặc định." else "Reset to default settings."
+                        Toast.makeText(context, resetMsg, Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -355,7 +440,7 @@ fun SettingsScreen(
                 ) {
                     Icon(imageVector = Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Khôi phục mặc định kỹ thuật")
+                    Text(PocketStrings.settingsReset(appLanguage))
                 }
             }
 

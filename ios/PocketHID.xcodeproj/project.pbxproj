@@ -1,0 +1,622 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10100012A00000100000001 /* PocketHIDApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200012A00000100000001 /* PocketHIDApp.swift */; };
+		A10100022A00000100000001 /* ActionDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200022A00000100000001 /* ActionDispatcher.swift */; };
+		A10100032A00000100000001 /* ActionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200032A00000100000001 /* ActionResolver.swift */; };
+		A10100042A00000100000001 /* HostOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200042A00000100000001 /* HostOs.swift */; };
+		A10100052A00000100000001 /* PocketAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200052A00000100000001 /* PocketAction.swift */; };
+		A10100062A00000100000001 /* DrawingCoordinatePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200062A00000100000001 /* DrawingCoordinatePipeline.swift */; };
+		A10100072A00000100000001 /* DrawingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200072A00000100000001 /* DrawingEngine.swift */; };
+		A10100082A00000100000001 /* DrawingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200082A00000100000001 /* DrawingModel.swift */; };
+		A10100092A00000100000001 /* DrawingTabletController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200092A00000100000001 /* DrawingTabletController.swift */; };
+		A101000A2A00000100000001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102000A2A00000100000001 /* AppSettings.swift */; };
+		A101000B2A00000100000001 /* ControlMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102000B2A00000100000001 /* ControlMode.swift */; };
+		A101000C2A00000100000001 /* FocusLockController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102000C2A00000100000001 /* FocusLockController.swift */; };
+		A101000D2A00000100000001 /* HidConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102000D2A00000100000001 /* HidConstants.swift */; };
+		A101000E2A00000100000001 /* KeyLegends.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102000E2A00000100000001 /* KeyLegends.swift */; };
+		A101000F2A00000100000001 /* PocketStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102000F2A00000100000001 /* PocketStrings.swift */; };
+		A10100102A00000100000001 /* PresenterExitSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200102A00000100000001 /* PresenterExitSafety.swift */; };
+		A10100112A00000100000001 /* HIDTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200112A00000100000001 /* HIDTransport.swift */; };
+		A10100122A00000100000001 /* iOSTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200122A00000100000001 /* iOSTransport.swift */; };
+		A10100132A00000100000001 /* TransportCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200132A00000100000001 /* TransportCapability.swift */; };
+		A10100142A00000100000001 /* DeckModeSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200142A00000100000001 /* DeckModeSwitcherView.swift */; };
+		A10100152A00000100000001 /* ModeNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200152A00000100000001 /* ModeNavigationBar.swift */; };
+		A10100162A00000100000001 /* PresenterSafeExitButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200162A00000100000001 /* PresenterSafeExitButtonView.swift */; };
+		A10100172A00000100000001 /* TopCommandBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200172A00000100000001 /* TopCommandBarView.swift */; };
+		A10100182A00000100000001 /* DrawingTabletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200182A00000100000001 /* DrawingTabletView.swift */; };
+		A10100192A00000100000001 /* GamepadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200192A00000100000001 /* GamepadView.swift */; };
+		A101001A2A00000100000001 /* KeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102001A2A00000100000001 /* KeyboardView.swift */; };
+		A101001B2A00000100000001 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102001B2A00000100000001 /* MainView.swift */; };
+		A101001C2A00000100000001 /* MouseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102001C2A00000100000001 /* MouseView.swift */; };
+		A101001D2A00000100000001 /* OneHandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102001D2A00000100000001 /* OneHandView.swift */; };
+		A101001E2A00000100000001 /* PresenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102001E2A00000100000001 /* PresenterView.swift */; };
+		A101001F2A00000100000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A102001F2A00000100000001 /* SettingsView.swift */; };
+		A10100202A00000100000001 /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200202A00000100000001 /* ThemeColors.swift */; };
+		
+		/* Tests */
+		A10100212A00000100000001 /* DrawingCoordinatePipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200212A00000100000001 /* DrawingCoordinatePipelineTests.swift */; };
+		A10100222A00000100000001 /* FocusLockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200222A00000100000001 /* FocusLockTests.swift */; };
+		A10100232A00000100000001 /* KeyboardMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200232A00000100000001 /* KeyboardMappingTests.swift */; };
+		A10100242A00000100000001 /* PresenterExitSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200242A00000100000001 /* PresenterExitSafetyTests.swift */; };
+		A10100252A00000100000001 /* TransportCapabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200252A00000100000001 /* TransportCapabilityTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10300012A00000100000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A100000F2A00000100000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A100000B2A00000100000001;
+			remoteInfo = PocketHID;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A10000052A00000100000001 /* PocketHID.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PocketHID.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000062A00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000262A00000100000001 /* PocketHIDTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketHIDTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		
+		A10200012A00000100000001 /* PocketHIDApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketHIDApp.swift; sourceTree = "<group>"; };
+		A10200022A00000100000001 /* ActionDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionDispatcher.swift; sourceTree = "<group>"; };
+		A10200032A00000100000001 /* ActionResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResolver.swift; sourceTree = "<group>"; };
+		A10200042A00000100000001 /* HostOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostOs.swift; sourceTree = "<group>"; };
+		A10200052A00000100000001 /* PocketAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketAction.swift; sourceTree = "<group>"; };
+		A10200062A00000100000001 /* DrawingCoordinatePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingCoordinatePipeline.swift; sourceTree = "<group>"; };
+		A10200072A00000100000001 /* DrawingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingEngine.swift; sourceTree = "<group>"; };
+		A10200082A00000100000001 /* DrawingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingModel.swift; sourceTree = "<group>"; };
+		A10200092A00000100000001 /* DrawingTabletController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingTabletController.swift; sourceTree = "<group>"; };
+		A102000A2A00000100000001 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A102000B2A00000100000001 /* ControlMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlMode.swift; sourceTree = "<group>"; };
+		A102000C2A00000100000001 /* FocusLockController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusLockController.swift; sourceTree = "<group>"; };
+		A102000D2A00000100000001 /* HidConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HidConstants.swift; sourceTree = "<group>"; };
+		A102000E2A00000100000001 /* KeyLegends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyLegends.swift; sourceTree = "<group>"; };
+		A102000F2A00000100000001 /* PocketStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketStrings.swift; sourceTree = "<group>"; };
+		A10200102A00000100000001 /* PresenterExitSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenterExitSafety.swift; sourceTree = "<group>"; };
+		A10200112A00000100000001 /* HIDTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HIDTransport.swift; sourceTree = "<group>"; };
+		A10200122A00000100000001 /* iOSTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTransport.swift; sourceTree = "<group>"; };
+		A10200132A00000100000001 /* TransportCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportCapability.swift; sourceTree = "<group>"; };
+		A10200142A00000100000001 /* DeckModeSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeckModeSwitcherView.swift; sourceTree = "<group>"; };
+		A10200152A00000100000001 /* ModeNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeNavigationBar.swift; sourceTree = "<group>"; };
+		A10200162A00000100000001 /* PresenterSafeExitButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenterSafeExitButtonView.swift; sourceTree = "<group>"; };
+		A10200172A00000100000001 /* TopCommandBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopCommandBarView.swift; sourceTree = "<group>"; };
+		A10200182A00000100000001 /* DrawingTabletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingTabletView.swift; sourceTree = "<group>"; };
+		A10200192A00000100000001 /* GamepadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadView.swift; sourceTree = "<group>"; };
+		A102001A2A00000100000001 /* KeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardView.swift; sourceTree = "<group>"; };
+		A102001B2A00000100000001 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		A102001C2A00000100000001 /* MouseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseView.swift; sourceTree = "<group>"; };
+		A102001D2A00000100000001 /* OneHandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OneHandView.swift; sourceTree = "<group>"; };
+		A102001E2A00000100000001 /* PresenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenterView.swift; sourceTree = "<group>"; };
+		A102001F2A00000100000001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A10200202A00000100000001 /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
+		
+		A10200212A00000100000001 /* DrawingCoordinatePipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingCoordinatePipelineTests.swift; sourceTree = "<group>"; };
+		A10200222A00000100000001 /* FocusLockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusLockTests.swift; sourceTree = "<group>"; };
+		A10200232A00000100000001 /* KeyboardMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardMappingTests.swift; sourceTree = "<group>"; };
+		A10200242A00000100000001 /* PresenterExitSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenterExitSafetyTests.swift; sourceTree = "<group>"; };
+		A10200252A00000100000001 /* TransportCapabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportCapabilityTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000072A00000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000272A00000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000082A00000100000001 = {
+			isa = PBXGroup;
+			children = (
+				A10000092A00000100000001 /* PocketHID */,
+				A10000282A00000100000001 /* PocketHIDTests */,
+				A100000A2A00000100000001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000092A00000100000001 /* PocketHID */ = {
+			isa = PBXGroup;
+			children = (
+				A10000292A00000100000001 /* App */,
+				A100002A2A00000100000001 /* Core */,
+				A100002B2A00000100000001 /* Transport */,
+				A100002C2A00000100000001 /* UI */,
+				A100002D2A00000100000001 /* Resources */,
+			);
+			path = PocketHID;
+			sourceTree = "<group>";
+		};
+		A10000292A00000100000001 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A10200012A00000100000001 /* PocketHIDApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A100002A2A00000100000001 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A100002E2A00000100000001 /* Action */,
+				A100002F2A00000100000001 /* Drawing */,
+				A10000302A00000100000001 /* Model */,
+				A10000312A00000100000001 /* Presenter */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A100002E2A00000100000001 /* Action */ = {
+			isa = PBXGroup;
+			children = (
+				A10200022A00000100000001 /* ActionDispatcher.swift */,
+				A10200032A00000100000001 /* ActionResolver.swift */,
+				A10200042A00000100000001 /* HostOs.swift */,
+				A10200052A00000100000001 /* PocketAction.swift */,
+			);
+			path = Action;
+			sourceTree = "<group>";
+		};
+		A100002F2A00000100000001 /* Drawing */ = {
+			isa = PBXGroup;
+			children = (
+				A10200062A00000100000001 /* DrawingCoordinatePipeline.swift */,
+				A10200072A00000100000001 /* DrawingEngine.swift */,
+				A10200082A00000100000001 /* DrawingModel.swift */,
+				A10200092A00000100000001 /* DrawingTabletController.swift */,
+			);
+			path = Drawing;
+			sourceTree = "<group>";
+		};
+		A10000302A00000100000001 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				A102000A2A00000100000001 /* AppSettings.swift */,
+				A102000B2A00000100000001 /* ControlMode.swift */,
+				A102000C2A00000100000001 /* FocusLockController.swift */,
+				A102000D2A00000100000001 /* HidConstants.swift */,
+				A102000E2A00000100000001 /* KeyLegends.swift */,
+				A102000F2A00000100000001 /* PocketStrings.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		A10000312A00000100000001 /* Presenter */ = {
+			isa = PBXGroup;
+			children = (
+				A10200102A00000100000001 /* PresenterExitSafety.swift */,
+			);
+			path = Presenter;
+			sourceTree = "<group>";
+		};
+		A100002B2A00000100000001 /* Transport */ = {
+			isa = PBXGroup;
+			children = (
+				A10200112A00000100000001 /* HIDTransport.swift */,
+				A10200122A00000100000001 /* iOSTransport.swift */,
+				A10200132A00000100000001 /* TransportCapability.swift */,
+			);
+			path = Transport;
+			sourceTree = "<group>";
+		};
+		A100002C2A00000100000001 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A10000322A00000100000001 /* Theme */,
+				A10000332A00000100000001 /* Components */,
+				A10000342A00000100000001 /* Screens */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		A10000322A00000100000001 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				A10200202A00000100000001 /* ThemeColors.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		A10000332A00000100000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A10200142A00000100000001 /* DeckModeSwitcherView.swift */,
+				A10200152A00000100000001 /* ModeNavigationBar.swift */,
+				A10200162A00000100000001 /* PresenterSafeExitButtonView.swift */,
+				A10200172A00000100000001 /* TopCommandBarView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A10000342A00000100000001 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				A10200182A00000100000001 /* DrawingTabletView.swift */,
+				A10200192A00000100000001 /* GamepadView.swift */,
+				A102001A2A00000100000001 /* KeyboardView.swift */,
+				A102001B2A00000100000001 /* MainView.swift */,
+				A102001C2A00000100000001 /* MouseView.swift */,
+				A102001D2A00000100000001 /* OneHandView.swift */,
+				A102001E2A00000100000001 /* PresenterView.swift */,
+				A102001F2A00000100000001 /* SettingsView.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		A100002D2A00000100000001 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000062A00000100000001 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000282A00000100000001 /* PocketHIDTests */ = {
+			isa = PBXGroup;
+			children = (
+				A10200212A00000100000001 /* DrawingCoordinatePipelineTests.swift */,
+				A10200222A00000100000001 /* FocusLockTests.swift */,
+				A10200232A00000100000001 /* KeyboardMappingTests.swift */,
+				A10200242A00000100000001 /* PresenterExitSafetyTests.swift */,
+				A10200252A00000100000001 /* TransportCapabilityTests.swift */,
+			);
+			path = PocketHIDTests;
+			sourceTree = "<group>";
+		};
+		A100000A2A00000100000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000052A00000100000001 /* PocketHID.app */,
+				A10000262A00000100000001 /* PocketHIDTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A100000B2A00000100000001 /* PocketHID */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100000C2A00000100000001 /* Build configuration list for PBXNativeTarget "PocketHID" */;
+			buildPhases = (
+				A100000D2A00000100000001 /* Sources */,
+				A10000072A00000100000001 /* Frameworks */,
+				A100000E2A00000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PocketHID;
+			productName = PocketHID;
+			productReference = A10000052A00000100000001 /* PocketHID.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A10000352A00000100000001 /* PocketHIDTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000362A00000100000001 /* Build configuration list for PBXNativeTarget "PocketHIDTests" */;
+			buildPhases = (
+				A10000372A00000100000001 /* Sources */,
+				A10000272A00000100000001 /* Frameworks */,
+				A10000382A00000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000392A00000100000001 /* PBXTargetDependency */,
+			);
+			name = PocketHIDTests;
+			productName = PocketHIDTests;
+			productReference = A10000262A00000100000001 /* PocketHIDTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A100000F2A00000100000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A100000B2A00000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					A10000352A00000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = A100000B2A00000100000001;
+					};
+				};
+			};
+			buildConfigurationList = A10000102A00000100000001 /* Build configuration list for PBXProject "PocketHID" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000082A00000100000001;
+			productRefGroup = A100000A2A00000100000001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A100000B2A00000100000001 /* PocketHID */,
+				A10000352A00000100000001 /* PocketHIDTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A100000E2A00000100000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000382A00000100000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A100000D2A00000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10100012A00000100000001 /* PocketHIDApp.swift in Sources */,
+				A10100022A00000100000001 /* ActionDispatcher.swift in Sources */,
+				A10100032A00000100000001 /* ActionResolver.swift in Sources */,
+				A10100042A00000100000001 /* HostOs.swift in Sources */,
+				A10100052A00000100000001 /* PocketAction.swift in Sources */,
+				A10100062A00000100000001 /* DrawingCoordinatePipeline.swift in Sources */,
+				A10100072A00000100000001 /* DrawingEngine.swift in Sources */,
+				A10100082A00000100000001 /* DrawingModel.swift in Sources */,
+				A10100092A00000100000001 /* DrawingTabletController.swift in Sources */,
+				A101000A2A00000100000001 /* AppSettings.swift in Sources */,
+				A101000B2A00000100000001 /* ControlMode.swift in Sources */,
+				A101000C2A00000100000001 /* FocusLockController.swift in Sources */,
+				A101000D2A00000100000001 /* HidConstants.swift in Sources */,
+				A101000E2A00000100000001 /* KeyLegends.swift in Sources */,
+				A101000F2A00000100000001 /* PocketStrings.swift in Sources */,
+				A10100102A00000100000001 /* PresenterExitSafety.swift in Sources */,
+				A10100112A00000100000001 /* HIDTransport.swift in Sources */,
+				A10100122A00000100000001 /* iOSTransport.swift in Sources */,
+				A10100132A00000100000001 /* TransportCapability.swift in Sources */,
+				A10100142A00000100000001 /* DeckModeSwitcherView.swift in Sources */,
+				A10100152A00000100000001 /* ModeNavigationBar.swift in Sources */,
+				A10100162A00000100000001 /* PresenterSafeExitButtonView.swift in Sources */,
+				A10100172A00000100000001 /* TopCommandBarView.swift in Sources */,
+				A10100182A00000100000001 /* DrawingTabletView.swift in Sources */,
+				A10100192A00000100000001 /* GamepadView.swift in Sources */,
+				A101001A2A00000100000001 /* KeyboardView.swift in Sources */,
+				A101001B2A00000100000001 /* MainView.swift in Sources */,
+				A101001C2A00000100000001 /* MouseView.swift in Sources */,
+				A101001D2A00000100000001 /* OneHandView.swift in Sources */,
+				A101001E2A00000100000001 /* PresenterView.swift in Sources */,
+				A101001F2A00000100000001 /* SettingsView.swift in Sources */,
+				A10100202A00000100000001 /* ThemeColors.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000372A00000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10100212A00000100000001 /* DrawingCoordinatePipelineTests.swift in Sources */,
+				A10100222A00000100000001 /* FocusLockTests.swift in Sources */,
+				A10100232A00000100000001 /* KeyboardMappingTests.swift in Sources */,
+				A10100242A00000100000001 /* PresenterExitSafetyTests.swift in Sources */,
+				A10100252A00000100000001 /* TransportCapabilityTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000392A00000100000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A100000B2A00000100000001 /* PocketHID */;
+			targetProxy = A10300012A00000100000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000112A00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10000122A00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A10000132A00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PocketHID/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.aleian.pockethid;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A10000142A00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PocketHID/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.aleian.pockethid;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A100003A2A00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.aleian.pockethid.PocketHIDTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PocketHID.app/PocketHID";
+			};
+			name = Debug;
+		};
+		A100003B2A00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.aleian.pockethid.PocketHIDTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PocketHID.app/PocketHID";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000102A00000100000001 /* Build configuration list for PBXProject "PocketHID" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000112A00000100000001 /* Debug */,
+				A10000122A00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100000C2A00000100000001 /* Build configuration list for PBXNativeTarget "PocketHID" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000132A00000100000001 /* Debug */,
+				A10000142A00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000362A00000100000001 /* Build configuration list for PBXNativeTarget "PocketHIDTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100003A2A00000100000001 /* Debug */,
+				A100003B2A00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = A100000F2A00000100000001 /* Project object */;
+}
