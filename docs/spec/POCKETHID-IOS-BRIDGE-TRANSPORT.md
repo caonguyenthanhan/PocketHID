@@ -51,7 +51,7 @@ The iOS `BridgeTransport` adheres to a strict semantic state machine. The requir
 - **`CONNECTING`**: Establishing BLE link, discovering GATT services/characteristics, and negotiating MTU.
 - **`CONNECTED`**: Link established, characteristics subscribed, and bridge explicitly acknowledges readiness. 
   *(Rule: Do NOT fake the `CONNECTED` state. The UI must only reflect `CONNECTED` when the GATT link is physically confirmed.)*
-- **`DISCONNECTING`**: The transitional state prior to closing the physical link. **Why it exists:** It provides the critical lifecycle window required for flushing neutral/safety reports (e.g., releasing all keys/buttons) to the host before the connection is severed.
+- **`DISCONNECTING`**: The transitional state prior to closing the physical link. **Why it exists:** It provides the critical lifecycle window to ATTEMPT flushing neutral/safety reports (e.g., releasing all keys/buttons) to the host before the connection is severed (successful transmission cannot be guaranteed if the link is failing).
 - **`ERROR`**: Connection dropped, GATT discovery failed, MTU too small, or Bluetooth disabled.
 
 **Valid Transitions:**
@@ -67,7 +67,7 @@ The iOS `BridgeTransport` adheres to a strict semantic state machine. The requir
 ## 4. Connection Lifecycle
 
 1. **Connect:** Core requests a connection. `BridgeTransport` initiates connection via CoreBluetooth. Upon discovering the custom HID Service and RX Characteristic, it transitions to `CONNECTED`.
-2. **Disconnect:** Core requests disconnection. `BridgeTransport` transitions to `DISCONNECTING`. Neutral safety reports MUST be sent during this window. Once flushed, it explicitly cancels the peripheral connection and transitions to `DISCONNECTED`.
+2. **Disconnect:** Core requests disconnection. `BridgeTransport` transitions to `DISCONNECTING`. Neutral safety reports MUST be ATTEMPTED during this window. Once the attempt is made, it explicitly cancels the peripheral connection and transitions to `DISCONNECTED`.
 3. **Error Handling:** If the bridge stops responding or a CoreBluetooth error occurs, `BridgeTransport` immediately transitions to `ERROR`, ceases transmission, and safely cleans up CoreBluetooth references.
 
 ---
@@ -77,7 +77,7 @@ The iOS `BridgeTransport` adheres to a strict semantic state machine. The requir
 - **Protocol Preservation:** The iOS BridgeTransport utilizes the exact binary report structures defined in `POCKETHID-BRIDGE-WIRE-PROTOCOL.md`.
 - **Framing Ownership & Opacity:** To prevent leaking BLE/GATT implementation details into the Core/Domain, and to prevent the BridgeTransport from introspecting opaque HID payloads:
   - The **ActionDispatcher** provides the raw, opaque HID report payload.
-  - The **BridgeTransport** is solely responsible for encapsulating this payload within the bridge wire envelope (e.g., adding bridge-specific routing fields, endpoint IDs, or custom framing) before BLE transmission.
+  - The **BridgeTransport** is solely responsible for encapsulating this payload within the bridge wire envelope. This envelope MUST match the EXISTING wire protocol exactly (do not invent endpoint/routing fields or custom framing that are not part of the frozen protocol) before BLE transmission.
 - **GATT MTU Constraints:** The Transport queries the BLE MTU. If the fully framed packet (wire envelope + HID report payload) exceeds the MTU, the `BridgeTransport` is responsible for safe fragmentation (if the custom GATT protocol requires it) or dropping with an error.
 - **Mapping:** 
   - `PocketAction` → `ActionResolver` → `ActionDispatcher` (HID Payload) → `BridgeTransport` (Wire Envelope) → `CoreBluetooth WriteValue (WithoutResponse preferred)`.
@@ -93,7 +93,7 @@ The BridgeTransport treats all device payloads opaquely. It routes them using th
 - **Consumer Control:** Media keys (Volume, Play/Pause).
 - **Gamepad:** Axes and button states.
 - **Tablet:** Absolute coordinates, pressure, and stylus states.
-- **Neutral/Safety Reports:** `BridgeTransport` guarantees the transmission of zeroed/neutral reports (e.g., all keys up, mouse buttons released) immediately prior to intentional disconnection or app backgrounding.
+- **Neutral/Safety Reports:** `BridgeTransport` attempts the transmission of zeroed/neutral reports (e.g., all keys up, mouse buttons released) immediately prior to intentional disconnection or app backgrounding.
 
 ---
 

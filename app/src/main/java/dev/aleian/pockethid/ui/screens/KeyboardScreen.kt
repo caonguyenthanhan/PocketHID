@@ -37,6 +37,8 @@ import dev.aleian.pockethid.ui.components.DedicatedNumberRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardHide
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -44,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,6 +82,9 @@ import dev.aleian.pockethid.ui.theme.SurfaceCard
 import dev.aleian.pockethid.ui.theme.TextMuted
 import dev.aleian.pockethid.ui.theme.TextPrimary
 import dev.aleian.pockethid.ui.theme.TextSecondary
+import dev.aleian.pockethid.voice.AndroidVoicePlatform
+import dev.aleian.pockethid.voice.VoiceInputController
+import dev.aleian.pockethid.voice.VoiceState
 import kotlinx.coroutines.launch
 
 enum class ModifierState {
@@ -116,6 +122,69 @@ fun KeyboardScreen(
     var terminalStreamText by remember { mutableStateOf("ready>") }
 
     var lastWarnTime by remember { mutableStateOf(0L) }
+
+    val voicePlatform = remember { AndroidVoicePlatform(context) }
+    val voiceController = remember { VoiceInputController(voicePlatform) }
+    val voiceState by voiceController.state.collectAsState()
+    val isConnected = connectionState is dev.aleian.pockethid.model.ConnectionState.Connected || transport?.isConnected == true
+
+    DisposableEffect(Unit) {
+        onDispose {
+            voiceController.cleanup()
+        }
+    }
+
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val langCode = if (settings.language == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
+            voiceController.startListening(langCode)
+        }
+    }
+
+    var prevVoiceState by remember { mutableStateOf(VoiceState.IDLE) }
+    LaunchedEffect(voiceState) {
+        when (voiceState) {
+            VoiceState.LISTENING -> {
+                dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_LISTENING_STARTED)
+                terminalStreamText = "Listening..."
+            }
+            VoiceState.PROCESSING -> {
+                terminalStreamText = "Processing..."
+            }
+            VoiceState.RESULT -> {
+                dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_RESULT)
+                val text = voiceController.transcript.value
+                terminalStreamText = text
+                if (isConnected && transport != null) {
+                    TextInjector.injectText(text, transport, settings.pasteDelayMs)
+                }
+                voiceController.cancel()
+            }
+            VoiceState.ERROR -> {
+                dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_ERROR)
+                terminalStreamText = "Voice Error"
+                voiceController.cancel()
+            }
+            VoiceState.IDLE -> {
+                if (prevVoiceState == VoiceState.LISTENING) {
+                    dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_LISTENING_STOPPED)
+                    terminalStreamText = "ready>"
+                }
+            }
+            VoiceState.UNAVAILABLE -> {
+                terminalStreamText = "Voice Unavailable"
+            }
+        }
+        prevVoiceState = voiceState
+    }
+
+    LaunchedEffect(isConnected) {
+        if (!isConnected && voiceState == VoiceState.LISTENING) {
+            voiceController.cancel()
+        }
+    }
 
     fun canSendInput(): Boolean {
         if (connectionState is dev.aleian.pockethid.model.ConnectionState.Connected || transport?.isConnected == true) {
@@ -428,13 +497,39 @@ fun KeyboardScreen(
                                             color = PrimaryBlue
                                         )
                                     }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(26.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Color(0xFFEF4444).copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                            .clickable {
+                                                if (voiceState == VoiceState.LISTENING) {
+                                                    voiceController.cancel()
+                                                } else {
+                                                    if (!voicePlatform.checkAudioPermission()) {
+                                                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                                    } else {
+                                                        val langCode = if (settings.language == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
+                                                        voiceController.startListening(langCode)
+                                                    }
+                                                }
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Icons.Default.MicOff else Icons.Default.Mic,
+                                            contentDescription = "Voice Input",
+                                            tint = if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Color(0xFFEF4444) else TextMuted,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
                     // IME Input Area (High-Reliability PocketImeInputView surface)
-                    val isConnected = connectionState is dev.aleian.pockethid.model.ConnectionState.Connected || transport?.isConnected == true
                     val isConnecting = connectionState is dev.aleian.pockethid.model.ConnectionState.Connecting
                     val hostName = if (connectionState is dev.aleian.pockethid.model.ConnectionState.Connected) {
                         connectionState.device.name ?: connectionState.device.address
