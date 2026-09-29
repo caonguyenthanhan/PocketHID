@@ -1,10 +1,13 @@
 # CONTEXT_MANIFEST.md
-Cập nhật lần cuối: 2026-09-27T00:59:05.305997
+Cập nhật lần cuối: 2026-09-29T21:48:55.576800
 
 ## Core (luôn nạp vào context)
+- .agent
+- docs
 
 ## Vendored / operational (KHÔNG nạp vào context, KHÔNG di chuyển)
 - .git
+- build
 
 ## Đã archive (xem chi tiết trong Archived/<ngày>/ARCHIVE_NOTE.md)
 

@@ -39,11 +39,12 @@
 - **Log Inspected:** `Microsoft-Windows-Kernel-PnP/Device Management` [`OBSERVED`].
 - **Query Window:** Events leading up to current session [`OBSERVED`].
 - **Findings:**
-  - No `Event ID 1010` (device driver failed to start) recorded during connection attempts [`OBSERVED`].
+  - Event ID 1010 indicates a device reported as missing on the bus / surprise removal.
+  - No relevant Event ID 1010 entry was observed for an ESP32-S3-class device during the inspected interval [`OBSERVED`].
   - No failed USB descriptor requests (`USB\VID_0000&PID_0002` / `Device Descriptor Request Failed`) recorded [`OBSERVED`].
   - No Port Reset failures or Unknown USB Device events present [`OBSERVED`].
 - **Diagnosis Category:** **Category A: No new USB device at all detected by Windows USB host controller** [`INFERRED`].
-- **OS Implication:** The host OS PnP manager did not register any new USB device connection [`INFERRED`].
+- **OS Conclusion:** Windows did not observe/register a new ESP32-S3-class USB device [`OBSERVED`].
 
 ---
 
