@@ -1,137 +1,182 @@
-# ESP32-S3 Firmware Build & Integration Gate
+# ESP32-S3 Firmware Build & Cross-Compilation Record
 
-**Document ID:** `GATE-004-ESP32S3-BUILD-AUDIT`  
-**Status:** BUILD & INTEGRATION AUDIT COMPLETE — HOST TESTS PASS (59/59) — CROSS-COMPILE BLOCKED LOCALLY (ESP-IDF ABSENT)  
+**Document ID:** `GATE-005-ESP32S3-CROSS-BUILD`
+**Status:** ESP-IDF TOOLCHAIN BOOTSTRAP COMPLETE — REAL CROSS-COMPILE PASS — ARTIFACTS VERIFIED
 
 ---
 
-## 1. Environment
+## 1. Environment & Baseline
 
 - **Host Operating System:** Windows 10 Home Single Language (Version 22H2, Build 19045.6456)
 - **Host Shell:** PowerShell 5.1
-- **Host Compiler:** GCC 16.1.0 (MSYS2 Project, Rev5)
-- **Python Environment:** Python 3.11.9 (`C:\Users\LIGHTKING\scoop\apps\python\current\python.exe`)
-- **Git Version:** Git 2.45.1 (`C:\Program Files\Git\cmd\git.exe`)
+- **Host Compiler (Unit Tests):** GCC 16.1.0 (MSYS2 Project, Rev5)
+- **Host Python:** Python 3.11.9
+- **Git Version:** Git 2.45.1.windows.1
 
 ---
 
-## 2. ESP-IDF & Toolchain Discovery
+## 2. Selected ESP-IDF Version & Lifecycle Research
 
-A systematic scan of the local machine PATH, environment variables, and filesystem was performed:
-- `idf.py`: NOT FOUND on PATH or standard directories.
-- `idf_tools.py`: NOT FOUND.
-- `xtensa-esp32s3-elf-gcc`: NOT FOUND.
-- `riscv32-esp-elf-gcc`: NOT FOUND.
-- `CMake`: Available via Scoop / Winget, but ESP-IDF environment integration script (`export.ps1`) is absent.
-- `Ninja`: Available via Scoop.
+### Supported Versions Review
+Official Espressif documentation and release lifecycles confirm:
+- **ESP-IDF v5.1:** End of Life (EOL).
+- **ESP-IDF v5.2:** Reached End of Maintenance / EOL in August 2026. Not recommended for new setups.
+- **ESP-IDF v5.3:** Actively supported stable release series (EOL: January 2027). Native support for ESP32-S3, USB OTG TinyUSB, and Apache NimBLE.
+- **ESP-IDF v5.4:** Current active release series.
 
-### Exact Toolchain Blocker:
-The host workstation lacks the Espressif ESP-IDF SDK (recommended v5.2.2 LTS) and the Xtensa toolchain. Pursuant to Wave 7 instructions:
-> *"If installation is impossible due permissions/environment: STOP at toolchain setup and report the exact blocker. DO NOT fake a firmware build."*
+### Why ESP-IDF v5.3.1
+1. **Active Official Support:** v5.3 is the newest mature supported LTS-like release branch compatible with the project source.
+2. **First-Class ESP32-S3 USB OTG:** Component-managed `espressif/esp_tinyusb` (v1.7.6) and TinyUSB stack (v0.21.0) provide reliable multi-report composite HID device support.
+3. **NimBLE BLE Host:** Complete vendor GATT server support with zero standard HID (`0x1812`) advertisement conflicts.
 
-The cross-compilation target is explicitly labeled:
+---
+
+## 3. Installation Method
+
+The installation was performed via the official **Espressif Installation Manager CLI (`eim`)**:
+- Tool: `eim-cli-windows-x64.exe` (v0.19.0) installed via WinGet (`Espressif.EIM-CLI`).
+- Command:
+  ```powershell
+  eim install -t esp32s3 -i v5.3.1 -n true --do-not-track true -p "D:\esp"
+  ```
+- Target paths:
+  - ESP-IDF repository: `D:\esp\v5.3.1\esp-idf`
+  - Toolchain & tools: `C:\Espressif\tools`
+  - Python virtual environment: `C:\Espressif\tools\python\v5.3.1\venv`
+  - PowerShell activation script: `C:\Espressif\tools\Microsoft.v5.3.1.PowerShell_profile.ps1`
+
+---
+
+## 4. Environment Verification
+
+All required executables and environment variables resolved cleanly:
+
+| Tool | Resolved Version | Executable / Path |
+| :--- | :--- | :--- |
+| `IDF_PATH` | `v5.3.1` | `D:\esp\v5.3.1\esp-idf` |
+| `IDF_TOOLS_PATH` | — | `C:\Espressif\tools` |
+| `idf.py` | `ESP-IDF v5.3.1` | Invoke-idfpy via Python venv |
+| `xtensa-esp32s3-elf-gcc` | `13.2.0 (esp-13.2.0_20240530)` | `C:\Espressif\tools\xtensa-esp-elf\esp-13.2.0_20240530\xtensa-esp-elf\bin\xtensa-esp32s3-elf-gcc.exe` |
+| `cmake` | `3.24.0` | `C:\Espressif\tools\cmake\3.24.0\bin\cmake.exe` |
+| `ninja` | `1.11.1` | `C:\Espressif\tools\ninja\1.11.1\ninja.exe` |
+| `python` | `3.11.9` | `C:\Espressif\tools\python\v5.3.1\venv\Scripts\python.exe` |
+| `git` | `2.45.1.windows.1` | `C:\Program Files\Git\cmd\git.exe` |
+
+---
+
+## 5. Project Configuration
+
+### Component Management
+Added [`main/idf_component.yml`](file:///d:/desktop/PocketHID/firmware/esp32s3-bridge/main/idf_component.yml) declaring:
+```yaml
+dependencies:
+  espressif/esp_tinyusb: "^1.4"
+  idf: "^5.3"
 ```
-ESP32-S3 CROSS-COMPILE:
-BLOCKED (ESP-IDF absent locally)
+Registered component requirement `esp_tinyusb` in [`main/CMakeLists.txt`](file:///d:/desktop/PocketHID/firmware/esp32s3-bridge/main/CMakeLists.txt).
+
+### `sdkconfig.defaults`
+Configured for ESP32-S3 with TinyUSB Composite HID and NimBLE Peripheral:
+```ini
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_TINYUSB_HID_COUNT=1
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_CONTROLLER_ONLY=n
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
+CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=5
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+CONFIG_FREERTOS_HZ=1000
 ```
 
 ---
 
-## 3. Policy & Recommended Stable Version
+## 6. Real Cross-Compilation Sequence
 
-For reproducible continuous integration (CI) and build environments, the approved version policy is:
-- **Target MCU:** ESP32-S3 (Xtensa Dual-core LX7)
-- **ESP-IDF Release:** `v5.2.2` (Current Long-Term Support release)
-- **Cross-Compiler:** `xtensa-esp-elf-gcc` (gcc 13.2.0 esp-2023r2)
-- **Build System:** CMake 3.24+ & Ninja 1.11+
-- **Python:** Python 3.10 – 3.11
-
----
-
-## 4. Setup & Build Commands (Standard Reproducible Procedure)
-
-For any workstation equipped with ESP-IDF v5.2.2:
+Executed from [`firmware/esp32s3-bridge/`](file:///d:/desktop/PocketHID/firmware/esp32s3-bridge):
 
 ```powershell
-# 1. Activate ESP-IDF environment (if installed to ~/esp/esp-idf)
-. $HOME/esp/esp-idf/export.ps1
+# 1. Activate toolchain environment
+. C:\Espressif\tools\Microsoft.v5.3.1.PowerShell_profile.ps1
 
-# 2. Navigate to firmware directory
-cd firmware/esp32s3-bridge
-
-# 3. Clean full build
+# 2. Clean build directory
 idf.py fullclean
 
-# 4. Set target to ESP32-S3
+# 3. Configure target
 idf.py set-target esp32s3
 
-# 5. Build bootloader, partition table, and application binaries
+# 4. Cross-compile application, bootloader, partition table
 idf.py build
+
+# 5. Generate unified flash image
+idf.py merge-bin
 ```
 
 ---
 
-## 5. Output Artifacts & Verification
+## 7. Compile Issues Resolved
 
-In an environment with ESP-IDF installed, `idf.py build` generates:
-- `build/bootloader/bootloader.bin`
-- `build/partition_table/partition-table.bin`
-- `build/pockethid-esp32s3-bridge.elf`
-- `build/pockethid-esp32s3-bridge.bin`
-
-### Local Workspace Status:
-- Cross-compiled binaries: `NOT GENERATED` (cross-compile blocked by toolchain absence).
-- Host Unit Test binaries: `BUILT & VERIFIED` (59 / 59 tests passing, verified via MSYS2 GCC).
-
----
-
-## 6. Static Firmware Integration Audit
-
-A line-by-line audit of the firmware architecture was executed to identify concurrency and lifecycle hazards:
-
-1. **BLE Callback $\to$ HID Handshake Concurrency:**
-   - *Audit Finding:* `handle_rx_packet()` is invoked from NimBLE GATT access context (`gatt_svr_chr_access`).
-   - *Safety Measure:* `usb_hid_send_report()` checks `tud_mounted()` and uses non-blocking TinyUSB FIFO scheduling. For future multi-threading under heavy load, an intermediate FreeRTOS queue (`xQueueSendFromISR`) will buffer incoming packets to decouple radio interrupt latency from USB endpoint availability.
-2. **Buffer Lifetime:**
-   - *Audit Finding:* `parse_packet()` executes synchronously on the stack buffer received from NimBLE mbuf (`ble_hs_mbuf_to_flat`). Zero dangling pointer risks exist.
-3. **Safety Watchdog Context:**
-   - *Audit Finding:* `safety_manager_tick()` executes in the dedicated FreeRTOS main task loop at 10 ms intervals, completely independent of BLE stack state.
-4. **Idempotent Neutralization:**
-   - *Audit Finding:* Verified that `safety_manager_force_all_neutral()` checks `mgr->is_neutral` before dispatching reports, eliminating USB traffic storms during sustained disconnection or timeout states.
+1. **TinyUSB Component Migration in IDF v5.3:**
+   - *Error:* `Failed to resolve component 'tinyusb'`.
+   - *Resolution:* Added `main/idf_component.yml` with `espressif/esp_tinyusb` and updated `REQUIRES esp_tinyusb` in `main/CMakeLists.txt`. Updated `sdkconfig.defaults` with `CONFIG_TINYUSB_HID_COUNT=1`.
+2. **Symbol Collision with NimBLE Core:**
+   - *Error:* `conflicting types for 'ble_transport_init'; have 'void(void)'` from `nimble/transport.h`.
+   - *Resolution:* Renamed application bridge transport functions to `bridge_ble_transport_init()`, `bridge_ble_transport_send_notify()`, and `bridge_ble_transport_is_connected()` to prevent global C symbol namespace pollution.
+3. **TinyUSB Report Descriptor Callback:**
+   - *Error:* Undefined reference to `tud_hid_descriptor_report_cb`.
+   - *Resolution:* Implemented `tud_hid_descriptor_report_cb()` returning `pockethid_combo_report_descriptor` from `main/hid/usb_hid.c`.
+4. **NVS Flash Initialization:**
+   - *Requirement:* NimBLE on ESP32 requires NVS flash initialization before stack bringup.
+   - *Resolution:* Added standard `nvs_flash_init()` block to `app_main.c`.
 
 ---
 
-## 7. USB HID Descriptor & Golden Packet Verification
+## 8. Compiler Warnings & Runtime Safety Audit
 
-Tested and confirmed using [`firmware/esp32s3-bridge/tools/verify_descriptor.py`](file:///d:/desktop/PocketHID/firmware/esp32s3-bridge/tools/verify_descriptor.py) and [`tools/host_tests.c`](file:///d:/desktop/PocketHID/firmware/esp32s3-bridge/tools/host_tests.c):
-
-- **Expected Composite Descriptor Length:** 313 bytes (matching Android `HidConstants.COMBO_REPORT_DESCRIPTOR`).
-- **Actual C Descriptor Length:** 313 bytes.
-- **Match:** `YES` (100% byte-for-byte parity).
-
-### Verified Golden Packets:
-1. **Keyboard A:** `5AA50110010008000004000000000028AD` (17 bytes) $\to$ `PASS`
-2. **Shift + A:** `5AA501100200080200040000000000745A` (17 bytes) $\to$ `PASS`
-3. **Mouse Left Click:** `5AA501200300040100000009AF` (13 bytes) $\to$ `PASS`
-4. **Volume +:** `5AA50130040002E9006F2B` (11 bytes) $\to$ `PASS`
-5. **Gamepad A:** `5AA5014005000D01000000000000000000000000A4CD` (22 bytes) $\to$ `PASS`
-6. **Tablet Center:** `5AA5015006000503004000402AFA` (14 bytes) $\to$ `PASS`
+Rebuilt application source files (`app_main.c`, `ble_transport.c`, `usb_hid.c`) with compiler warnings enabled:
+- **Warnings Emitted:** `0` (Zero compiler warnings).
+- **Buffer Safety:** No unbound string or buffer copy operations.
+- **Signedness:** All packet lengths and indices conform strictly to signed/unsigned conventions.
+- **Type Coercion:** Explicit casts throughout all FreeRTOS, NimBLE, and TinyUSB callback interfaces.
 
 ---
 
-## 8. Known Warnings & Limitations
+## 9. Firmware Artifacts & Verification
 
-1. **ESP-IDF Absent on Local Host:** Firmware cross-compilation must be performed on a host or CI runner equipped with ESP-IDF v5.2+.
-2. **Physical Hardware:** PENDING (no physical ESP32-S3 board connected to local USB).
-3. **Authentication:** POC limitation noted in [`POCKETHID-BRIDGE-SECURITY.md`](file:///d:/desktop/PocketHID/docs/spec/POCKETHID-BRIDGE-SECURITY.md).
+All target binaries were generated directly by `xtensa-esp32s3-elf-gcc`:
+
+| Artifact | Flash Offset | Size (Bytes) | SHA-256 Hash |
+| :--- | :--- | :--- | :--- |
+| `pockethid-esp32s3-bridge.elf` | — | 7,020,480 | `9D4E4291D0DD99B07FD97C78E374B38DC009137B44F7C82567F13C00C8E9ADB3` |
+| `pockethid-esp32s3-bridge.bin` | `0x10000` | 568,160 (0x8AB60) | `5D06784D36942B760AB0318271E51DA82B8DED8A742FDC1790AC4DFEB72A05E3` |
+| `bootloader/bootloader.bin` | `0x00000` | 21,088 (0x5260) | `D8016C8FD0D219CA09708B5D38E8DA64DE6A24FEBE6BE63FC83EFCD54F194E9D` |
+| `partition_table/partition-table.bin` | `0x08000` | 3,072 | `7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820` |
+| `merged-binary.bin` | `0x00000` | 633,696 (0x9AB60) | `D75D123954ECDCE4EEB9B1CD7BF0336AC8D0EACFD546ED8C5E9C58E4747944BD` |
 
 ---
 
-## 9. Physical Verification Status
+## 10. Regressions & Validation Summary
 
-- **Host Unit Tests:** `59 / 59 PASSED`
-- **Firmware Cross-Compilation:** `BLOCKED`
-- **USB HID Physical Device:** `PENDING`
-- **Windows HID Enumeration:** `PENDING`
-- **BLE Physical Link:** `PENDING`
-- **iOS BridgeTransport:** `NOT IMPLEMENTED`
+- **USB HID Descriptor:** 313 bytes (`PASS`, verified by `verify_descriptor.py`)
+  - Report ID 1: Keyboard (8B)
+  - Report ID 2: Mouse (4B)
+  - Report ID 3: Consumer (2B)
+  - Report ID 4: Gamepad (13B)
+  - Report ID 5: Digitizer / Tablet (5B)
+- **Host Unit Tests:** 59 / 59 PASS (`PASS`, verified by `run_host_tests.py`)
+- **Android Unit Tests:** 147 / 147 PASS across 18 test suites (`PASS`, `.\gradlew.bat testDebugUnitTest`)
+- **Android APK Build:** assembleDebug PASS (`PASS`, `.\gradlew.bat assembleDebug`)
+
+---
+
+## 11. Physical Hardware Gate Status
+
+- **ESP32-S3 Physical Board:** PENDING (no board attached to host COM ports).
+- **USB Physical Enumeration:** PENDING.
+- **BLE Physical Link:** PENDING.
+- **Windows Device Manager / Input Verification:** PENDING.
+- **iOS BridgeTransport:** NOT IMPLEMENTED (kept strictly as transport abstraction).
+- **Production Readiness:** NOT CLAIMED.

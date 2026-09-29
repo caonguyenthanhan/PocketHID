@@ -17,6 +17,7 @@
 #ifdef ESP_PLATFORM
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 static const char *TAG = "POCKETHID_MAIN";
@@ -72,7 +73,7 @@ static void handle_rx_packet(const uint8_t *data, size_t length) {
             ready.bridge_firmware_ver = BRIDGE_FIRMWARE_VERSION;
             ready.usb_host_status = (usb_hid_get_status() == USB_STATUS_ENUMERATED) ? 1 : 0;
             ready.active_hid_endpoints = 0x1F; // All 5 endpoints active
-            ble_transport_send_notify((const uint8_t*)&ready, sizeof(ready));
+            bridge_ble_transport_send_notify((const uint8_t*)&ready, sizeof(ready));
             break;
         }
 
@@ -150,6 +151,15 @@ static void handle_ble_connection(bool connected) {
 }
 
 void app_main(void) {
+#ifdef ESP_PLATFORM
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+#endif
+
     diagnostics_init();
     safety_manager_init(&s_safety_mgr, DEFAULT_WATCHDOG_TIMEOUT_MS, usb_hid_send_all_neutral);
 
@@ -161,7 +171,7 @@ void app_main(void) {
         .on_packet = handle_rx_packet,
         .on_connection = handle_ble_connection,
     };
-    ble_transport_init(&ble_cbs);
+    bridge_ble_transport_init(&ble_cbs);
 
 #ifdef ESP_PLATFORM
     ESP_LOGI(TAG, "PocketHID ESP32-S3 Bridge POC Initialized (Firmware v%04x)", BRIDGE_FIRMWARE_VERSION);

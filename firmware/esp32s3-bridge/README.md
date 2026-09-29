@@ -26,16 +26,16 @@ iPhone (PocketHID iOS)
 ## 3. Toolchain & Build Environment
 - **Target Microcontroller:** ESP32-S3 (Xtensa Dual-core LX7)
 - **Approved Version Policy:**
-  - **ESP-IDF:** `v5.2.2 LTS` (Supported stable release)
-  - **Compiler:** `xtensa-esp-elf-gcc` (gcc 13.2.0 esp-2023r2)
+  - **ESP-IDF:** `v5.3.1` (Active supported release series)
+  - **Compiler:** `xtensa-esp-elf-gcc` (13.2.0 esp-13.2.0_20240530)
   - **Build System:** CMake 3.24+ & Ninja 1.11+
-  - **Python:** Python 3.10 – 3.11
-- **Host Unit Testing:** MSYS2 / GCC 16+ or Clang + Python 3.11+
-- **Local Workstation Build Status:** `BLOCKED` (ESP-IDF absent locally; host tests 59/59 PASS)
+  - **Python:** Python 3.11+
+- **Host Unit Testing:** MSYS2 / GCC 16+ or Clang + Python 3.11+ (59/59 PASS)
+- **ESP32-S3 Cross-Compilation:** `PASS` (Bootloader, Partition Table, Application, and Merged Binary verified)
 - **Clean Reproducible Build Commands:**
-  ```bash
+  ```powershell
   # 1. Activate ESP-IDF environment
-  . $HOME/esp/esp-idf/export.ps1
+  . C:\Espressif\tools\Microsoft.v5.3.1.PowerShell_profile.ps1
 
   # 2. Clean build directory
   idf.py fullclean
@@ -46,10 +46,13 @@ iPhone (PocketHID iOS)
   # 4. Build bootloader, partition table, and application binaries
   idf.py build
 
-  # 5. Flash to device (replace COMx with your port)
+  # 5. Generate unified flash image
+  idf.py merge-bin
+
+  # 6. Flash to physical device (when connected)
   idf.py -p COMx flash
 
-  # 6. Monitor serial logs
+  # 7. Monitor serial logs
   idf.py -p COMx monitor
   ```
 

@@ -31,17 +31,17 @@ typedef struct {
 /**
  * @brief Initializes BLE GATT server and begins advertising.
  */
-bool ble_transport_init(const ble_callbacks_t *cbs);
+bool bridge_ble_transport_init(const ble_callbacks_t *cbs);
 
 /**
  * @brief Sends notification packet back to connected central (e.g. MSG_SYS_READY).
  */
-bool ble_transport_send_notify(const uint8_t *data, size_t length);
+bool bridge_ble_transport_send_notify(const uint8_t *data, size_t length);
 
 /**
  * @brief Checks if an iPhone central is currently connected.
  */
-bool ble_transport_is_connected(void);
+bool bridge_ble_transport_is_connected(void);
 
 #ifdef __cplusplus
 }

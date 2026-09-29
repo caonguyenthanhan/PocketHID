@@ -18,7 +18,7 @@ idf_component_register(
         "diagnostics"
         "tests"
     REQUIRES
-        tinyusb
+        esp_tinyusb
         bt
         nvs_flash
         esp_timer

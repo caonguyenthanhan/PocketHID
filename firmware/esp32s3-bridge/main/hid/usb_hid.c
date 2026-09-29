@@ -5,6 +5,7 @@
 
 #include "usb_hid.h"
 #include "hid_reports.h"
+#include "hid_descriptors.h"
 #include <string.h>
 
 #ifdef ESP_PLATFORM
@@ -17,6 +18,12 @@ static const char *TAG = "USB_HID";
 static usb_status_t s_usb_status = USB_STATUS_NOT_INITIALIZED;
 
 #ifdef ESP_PLATFORM
+// Invoked when received GET HID REPORT DESCRIPTOR request
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
+    (void)instance;
+    return pockethid_combo_report_descriptor;
+}
+
 // Invoked when received GET_REPORT control request
 uint16_t tud_hid_get_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
     (void) itf;
