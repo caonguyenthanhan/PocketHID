@@ -20,7 +20,7 @@ The physical validation of this system strictly adheres to the following axioms:
 
 **STATUS:** `BLOCKED`
 
-**Blocker Reason:** No ESP32-S3-class device is currently detected by the Windows host operating system. Physical validation cannot proceed without hardware enumeration.
+**Blocker Reason:** Windows currently shows no present ESP32-S3-class USB device and no corresponding serial/JTAG interface. Physical validation cannot proceed without hardware enumeration.
 
 *(Note: Root causes such as cable data capability, specific USB port connections, OS drivers, or electrical issues are NOT inferred in this document.)*
 

@@ -44,7 +44,7 @@
   - No failed USB descriptor requests (`USB\VID_0000&PID_0002` / `Device Descriptor Request Failed`) recorded [`OBSERVED`].
   - No Port Reset failures or Unknown USB Device events present [`OBSERVED`].
 - **Diagnosis Category:** **Category A: No new USB device at all detected by Windows USB host controller** [`INFERRED`].
-- **OS Conclusion:** Windows did not observe/register a new ESP32-S3-class USB device [`OBSERVED`].
+- **OS Conclusion:** Windows currently shows no present ESP32-S3-class USB device and no corresponding serial/JTAG interface. [`OBSERVED`]
 
 ---
 
@@ -105,7 +105,7 @@ Standard ESP32-S3 ROM bootloader strapping sequence:
 ## 9. Driver Status
 
 - **Status:** Driver evaluation is **NOT APPLICABLE** at this stage [`INFERRED`].
-- **Technical Justification:** Device driver matching (VCP or WinUSB) occurs only after successful USB device enumeration (Device Descriptor retrieval). Because Windows Kernel-PnP records zero device arrivals, the absence of connection is at the OS PnP layer, not the driver stack [`INFERRED`].
+- **Technical Justification:** Device driver matching (VCP or WinUSB) occurs only after successful USB device enumeration. Windows currently shows no present ESP32-S3-class USB device and no corresponding serial/JTAG interface. [`INFERRED`]
 - **Policy:** Do not install third-party drivers or modify Windows driver store without device presence [`INFERRED`].
 
 ---
