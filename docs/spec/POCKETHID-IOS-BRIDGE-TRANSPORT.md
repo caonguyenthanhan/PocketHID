@@ -113,3 +113,4 @@ Because the physical ESP32-S3 validation is `BLOCKED`, the following iOS BridgeT
 - `PENDING`: Actual BLE connection stability and GATT MTU negotiation.
 - `PENDING`: End-to-end latency (iOS touch -> BLE -> ESP32-S3 -> USB -> Windows OS).
 - `BLOCKED`: End-to-end correctness of host-input physical verification.
+
