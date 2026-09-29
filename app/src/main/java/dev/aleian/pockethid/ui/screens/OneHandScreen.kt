@@ -134,7 +134,7 @@ fun OneHandScreen(
     var isFeedbackVisible by remember { mutableStateOf(false) }
     isFeedbackVisible = (System.currentTimeMillis() - feedbackTime) < 1400L && feedbackText.isNotEmpty()
 
-    fun dispatchAction(action: PocketAction, feedback: String = "") {
+    fun dispatchAction(action: PocketAction, feedback: String = "", isContinuous: Boolean = false) {
         if (connectionState !is ConnectionState.Connected && transport?.isConnected != true) {
             triggerFeedback(PocketStrings.noHostConnectedPrompt(settings.language), isLightHaptic = true)
             return
@@ -147,7 +147,8 @@ fun OneHandScreen(
                 action = action,
                 transport = transport,
                 hostOs = settings.hostOs,
-                zoomMode = settings.zoomMode
+                zoomMode = settings.zoomMode,
+                playFeedback = !isContinuous
             )
         }
     }
@@ -342,9 +343,9 @@ fun OneHandScreen(
                                 val isLeftSide = startPos.x < (size.width / 2f)
                                 while (true) {
                                     if (isLeftSide) {
-                                        dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language))
+                                        dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language), isContinuous = true)
                                     } else {
-                                        dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language))
+                                        dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language), isContinuous = true)
                                     }
                                     delay(220L)
                                 }
@@ -418,9 +419,9 @@ fun OneHandScreen(
                                     if (abs(totalDy) > 42f) {
                                         pointerChange.consume()
                                         if (totalDy < 0) {
-                                            dispatchAction(PocketAction.VideoAction.VolumeUp, PocketStrings.oneHandFeedbackVolumeUp(settings.language))
+                                            dispatchAction(PocketAction.VideoAction.VolumeUp, PocketStrings.oneHandFeedbackVolumeUp(settings.language), isContinuous = true)
                                         } else {
-                                            dispatchAction(PocketAction.VideoAction.VolumeDown, PocketStrings.oneHandFeedbackVolumeDown(settings.language))
+                                            dispatchAction(PocketAction.VideoAction.VolumeDown, PocketStrings.oneHandFeedbackVolumeDown(settings.language), isContinuous = true)
                                         }
                                         totalDy = 0f // Reset for stepped volume control
                                     }
@@ -428,9 +429,9 @@ fun OneHandScreen(
                                     if (abs(totalDx) > 48f) {
                                         pointerChange.consume()
                                         if (totalDx < 0) {
-                                            dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language))
+                                            dispatchAction(PocketAction.VideoAction.SeekBackward, PocketStrings.oneHandSeekBack(settings.language), isContinuous = true)
                                         } else {
-                                            dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language))
+                                            dispatchAction(PocketAction.VideoAction.SeekForward, PocketStrings.oneHandSeekForward(settings.language), isContinuous = true)
                                         }
                                         totalDx = 0f // Reset for stepped seek control
                                     }

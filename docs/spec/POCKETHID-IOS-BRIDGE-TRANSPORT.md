@@ -23,51 +23,64 @@ This specification defines the strict contract for the `iOS BridgeTransport` mod
 
 ## 2. Architecture Boundaries
 
-The pipeline is strictly segregated into the following layers:
+The pipeline strictly preserves the existing architecture and is segregated into the following layers:
 
-1. **PocketHID Core / Domain (Platform-Agnostic):**
-   - Generates and manages `PocketAction` events (button presses, axis movements).
-   - Serializes actions into exact binary report payloads as defined in `POCKETHID-GOLDEN-VECTORS.md`.
-2. **iOS BridgeTransport (Swift / CoreBluetooth):**
-   - Implements the generic `HidTransport` interface.
-   - Receives golden binary payloads from the Core.
-   - Handles BLE framing, MTU negotiation, and dispatching to the ESP32-S3 via CoreBluetooth.
-3. **BLE Custom GATT (Air Interface):**
-   - A dedicated GATT Service and TX/RX Characteristic exposed by the ESP32-S3.
-   - Transmits the raw frames from iOS to the Bridge.
-4. **External HID Bridge (ESP32-S3 Hardware):**
-   - Acts as a BLE GATT Server.
-   - Receives packets, deframes them if necessary, and forwards the exact HID report payloads to the PC over native USB HID.
+1. **INPUT SOURCE & Core Domain (Platform-Agnostic):**
+   - Generates and manages semantic `PocketAction` events (e.g., button presses, axis movements).
+   - Contains no BLE/GATT details and does not serialize binary HID reports.
+2. **ActionResolver:**
+   - Resolves semantic/platform-aware actions based on the current context.
+3. **ActionDispatcher / Execution:**
+   - Converts the resolved actions into the required binary HID report payload (as defined in `POCKETHID-GOLDEN-VECTORS.md`) or invokes the appropriate report-building path.
+4. **iOS BridgeTransport (Swift / CoreBluetooth):**
+   - Serves strictly as a transport boundary implementing the `HidTransport` interface.
+   - Receives the already-resolved/serialized HID report payload and does not inspect semantic actions.
+   - Handles bridge-specific wire framing, MTU negotiation, and dispatching to the ESP32-S3 via CoreBluetooth.
+5. **BLE Custom GATT (Air Interface):**
+   - A dedicated GATT Service and TX/RX Characteristic exposed by the ESP32-S3 to transmit raw frames.
+6. **External HID Bridge (ESP32-S3 Hardware):**
+   - Acts as a BLE GATT Server. Receives packets, deframes them if necessary, and forwards the exact HID report payloads to the PC over native USB HID.
 
 ---
 
 ## 3. BridgeTransport State Model
 
-The iOS `BridgeTransport` adheres to a strict state machine:
+The iOS `BridgeTransport` adheres to a strict semantic state machine. The required states and valid transitions are:
 
-- **`DISCONNECTED`**: Default state. Bluetooth is off, or no bridge is currently targeted.
-- **`SCANNING`**: Actively searching for the specific ESP32-S3 BLE Advertisement.
+- **`DISCONNECTED`**: Default state. Bluetooth is off, or no connection is active.
 - **`CONNECTING`**: Establishing BLE link, discovering GATT services/characteristics, and negotiating MTU.
 - **`CONNECTED`**: Link established, characteristics subscribed, and bridge explicitly acknowledges readiness. 
   *(Rule: Do NOT fake the `CONNECTED` state. The UI must only reflect `CONNECTED` when the GATT link is physically confirmed.)*
+- **`DISCONNECTING`**: The transitional state prior to closing the physical link. **Why it exists:** It provides the critical lifecycle window required for flushing neutral/safety reports (e.g., releasing all keys/buttons) to the host before the connection is severed.
 - **`ERROR`**: Connection dropped, GATT discovery failed, MTU too small, or Bluetooth disabled.
+
+**Valid Transitions:**
+- `DISCONNECTED` → `CONNECTING`
+- `CONNECTING` → `CONNECTED`
+- `CONNECTING` → `ERROR`
+- `CONNECTED` → `DISCONNECTING`
+- `DISCONNECTING` → `DISCONNECTED`
+- *(Any transport failure)* → `ERROR`
 
 ---
 
 ## 4. Connection Lifecycle
 
-1. **Connect:** Core requests a connection. `BridgeTransport` initiates CoreBluetooth scan. Upon finding the Bridge, it connects, discovers the custom HID Service and RX Characteristic, and transitions to `CONNECTED`.
-2. **Disconnect:** Core requests disconnection, or physical link drops. `BridgeTransport` explicitly cancels the peripheral connection and transitions to `DISCONNECTED`. Neutral safety reports MUST be sent prior to intentional disconnect.
-3. **Error Handling:** If the bridge stops responding or a CoreBluetooth error occurs, `BridgeTransport` immediately fires an `ERROR` state event, ceases transmission, and safely cleans up CoreBluetooth references.
+1. **Connect:** Core requests a connection. `BridgeTransport` initiates connection via CoreBluetooth. Upon discovering the custom HID Service and RX Characteristic, it transitions to `CONNECTED`.
+2. **Disconnect:** Core requests disconnection. `BridgeTransport` transitions to `DISCONNECTING`. Neutral safety reports MUST be sent during this window. Once flushed, it explicitly cancels the peripheral connection and transitions to `DISCONNECTED`.
+3. **Error Handling:** If the bridge stops responding or a CoreBluetooth error occurs, `BridgeTransport` immediately transitions to `ERROR`, ceases transmission, and safely cleans up CoreBluetooth references.
 
 ---
 
-## 5. Packet Framing and Action Mapping
+## 5. Packet Framing and Protocol Boundary
 
 - **Protocol Preservation:** The iOS BridgeTransport utilizes the exact binary report structures defined in `POCKETHID-BRIDGE-WIRE-PROTOCOL.md`.
-- **GATT MTU Constraints:** The Transport queries the BLE MTU. If a serialized HID report (plus bridge protocol headers, e.g., endpoint ID) exceeds the MTU, the `BridgeTransport` is responsible for safe fragmentation (if the custom GATT protocol requires it) or dropping with an error. 
+- **Framing Ownership & Opacity:** To prevent leaking BLE/GATT implementation details into the Core/Domain, and to prevent the BridgeTransport from introspecting opaque HID payloads:
+  - The **ActionDispatcher** provides the raw, opaque HID report payload.
+  - The **BridgeTransport** is solely responsible for encapsulating this payload within the bridge wire envelope (e.g., adding bridge-specific routing fields, endpoint IDs, or custom framing) before BLE transmission.
+- **GATT MTU Constraints:** The Transport queries the BLE MTU. If the fully framed packet (wire envelope + HID report payload) exceeds the MTU, the `BridgeTransport` is responsible for safe fragmentation (if the custom GATT protocol requires it) or dropping with an error.
 - **Mapping:** 
-  - `PocketAction` -> `Core` -> `Binary Array` -> `BridgeTransport` -> `CoreBluetooth WriteValue (WithoutResponse preferred for latency)`.
+  - `PocketAction` → `ActionResolver` → `ActionDispatcher` (HID Payload) → `BridgeTransport` (Wire Envelope) → `CoreBluetooth WriteValue (WithoutResponse preferred)`.
 
 ---
 
@@ -88,10 +101,10 @@ The BridgeTransport treats all device payloads opaquely. It routes them using th
 
 ### A. Unit-Testable without Hardware
 The following logic can and must be unit-tested using mocked CoreBluetooth dependencies:
-- State machine transitions (`DISCONNECTED` -> `SCANNING` -> `CONNECTING` -> `CONNECTED`).
+- State machine transitions (`DISCONNECTED` → `CONNECTING` → `CONNECTED` → `DISCONNECTING` → `DISCONNECTED`).
 - Error propagation and lifecycle management.
-- Protocol payload encapsulation (ensuring the byte array passed to the transport is untouched before being handed to the GATT write method).
-- Neutral report injection on simulated disconnect.
+- Protocol payload encapsulation (ensuring the opaque HID payload is correctly wrapped in the bridge wire envelope without content inspection).
+- Neutral report injection during the `DISCONNECTING` state window.
 - GATT MTU segmentation logic (if implemented).
 
 ### B. Hardware-Dependent (Currently `BLOCKED` / `PENDING`)

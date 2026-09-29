@@ -17,12 +17,13 @@ object ActionDispatcher {
         action: PocketAction,
         transport: InputTransport?,
         hostOs: HostOs = HostOs.WINDOWS,
-        zoomMode: String = "Wheel"
+        zoomMode: String = "Wheel",
+        playFeedback: Boolean = true
     ): Boolean {
         if (transport == null) return false
         val plan = ActionResolver.resolve(action, hostOs, zoomMode)
         val success = execute(plan, transport)
-        if (success) {
+        if (success && playFeedback) {
             AudioFeedbackManager.play(AudioEvent.ACTION_ACCEPTED)
         }
         return success

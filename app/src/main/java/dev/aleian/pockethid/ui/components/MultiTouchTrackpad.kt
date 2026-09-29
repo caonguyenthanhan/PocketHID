@@ -149,12 +149,14 @@ fun MultiTouchTrackpad(
             showGestureFeedback(feedback)
         }
 
+        val isContinuous = gesture == GestureType.TWO_FINGER_PINCH_IN || gesture == GestureType.TWO_FINGER_PINCH_OUT
         scope.launch {
             dev.aleian.pockethid.action.ActionDispatcher.dispatch(
                 action = action,
                 transport = transport,
                 hostOs = settings.hostOs,
-                zoomMode = settings.zoomMode
+                zoomMode = settings.zoomMode,
+                playFeedback = !isContinuous
             )
         }
     }

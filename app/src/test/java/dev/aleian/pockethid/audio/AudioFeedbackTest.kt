@@ -94,6 +94,57 @@ class AudioFeedbackTest {
         // In the FakeAudioFeedbackController we can implement release to block further plays.
         assertEquals(1, fakeAudioManager.playCount)
     }
+
+    @Test
+    fun testDispatchWithPlayFeedbackFalseDoesNotPlayAudio() = kotlinx.coroutines.runBlocking {
+        setSoundEffectsEnabled(true)
+        // Inject fake controller into manager
+        AudioFeedbackManager.setController(controller)
+        
+        // Stub transport
+        val dummyTransport = object : dev.aleian.pockethid.transport.InputTransport {
+            override val connectionState = kotlinx.coroutines.flow.MutableStateFlow(dev.aleian.pockethid.model.ConnectionState.Disconnected)
+            override val isSupported = true
+            override val connectedDevice = null
+            override val isConnected = true
+            override fun register() {}
+            override fun unregister() {}
+            override fun syncConnectionState() {}
+            override fun connect(device: android.bluetooth.BluetoothDevice) = true
+            override fun disconnect() = true
+            override fun sendMouseMove(dx: Int, dy: Int, buttons: Byte, wheel: Int) = true
+            override suspend fun sendMouseClick(buttons: Byte) {}
+            override fun sendKeyPress(keyCode: Byte, modifiers: Byte) = true
+            override fun sendKeyReport(keyCodes: ByteArray, modifiers: Byte) = true
+            override fun sendKeyRelease() = true
+            override suspend fun sendKeyClick(keyCode: Byte, modifiers: Byte) {}
+            override fun sendConsumerClick(usageCode: Int) = true
+            override fun sendConsumerPress(usageCode: Int) = true
+            override fun sendConsumerRelease() = true
+            override fun sendGamepadReport(b: Int, h: Byte, lx: Short, ly: Short, rx: Short, ry: Short, lt: Byte, rt: Byte) = true
+            override fun sendGamepadNeutral() = true
+            override fun sendTabletReport(s: Byte, x: Int, y: Int) = true
+            override fun sendTabletNeutral() = true
+        }
+
+        // Discrete action with playFeedback = true should play audio
+        dev.aleian.pockethid.action.ActionDispatcher.dispatch(
+            dev.aleian.pockethid.action.PocketAction.EditAction.Copy, 
+            dummyTransport, 
+            dev.aleian.pockethid.action.HostOs.WINDOWS, 
+            playFeedback = true
+        )
+        assertEquals(1, fakeAudioManager.playCount)
+
+        // Continuous action with playFeedback = false should NOT play audio
+        dev.aleian.pockethid.action.ActionDispatcher.dispatch(
+            dev.aleian.pockethid.action.PocketAction.VideoAction.VolumeUp, 
+            dummyTransport, 
+            dev.aleian.pockethid.action.HostOs.WINDOWS, 
+            playFeedback = false
+        )
+        assertEquals(1, fakeAudioManager.playCount) // Count remains 1
+    }
 }
 
 class FakeAudioManager {
