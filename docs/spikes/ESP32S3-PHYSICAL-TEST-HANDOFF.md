@@ -7,12 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Git commit | `160fddfa6763989cebe0aca67efe2d2e1dbdc65a` |
+| Git commit | `89412ccd0dfeab3522268a8ffd2947320b4653df` |
 | Project name | `pockethid-esp32s3-bridge` |
 | ESP-IDF version | **v5.3.1** |
 | Compiler | `xtensa-esp32s3-elf-gcc` (esp-13.2.0_20240530) |
-| Build wave | Wave 8 (cross-compiled) |
-| Build date | 2026-09-29 09:01 UTC+7 |
+| Build wave | Wave 11.1 (cross-compiled) |
 | Flash mode | DIO |
 | Flash frequency | 80 MHz |
 | Flash size | 2 MB |
@@ -21,9 +20,9 @@
 
 | File | SHA-256 |
 |---|---|
-| `merged-binary.bin` (use this) | `D75D123954ECDCE4EEB9B1CD7BF0336AC8D0EACFD546ED8C5E9C58E4747944BD` |
-| `pockethid-esp32s3-bridge.bin` | `5D06784D36942B760AB0318271E51DA82B8DED8A742FDC1790AC4DFEB72A05E3` |
-| `bootloader/bootloader.bin` | `D8016C8FD0D219CA09708B5D38E8DA64DE6A24FEBE6BE63FC83EFCD54F194E9D` |
+| `merged-binary.bin` (use this) | `E8FF42CF23758AF8F74A2FA43ECB32EB5802BE4A01DFFAA14B21EA415861B1B3` |
+| `pockethid-esp32s3-bridge.bin` | `7573E07635FDDFC00F910799FA0A9C1944E36753A9FB23C410DF0802594025FB` |
+| `bootloader/bootloader.bin` | `12874BF6599764D06082A4DA5442B48556A91D73FE924696DF9AEC6042897CFB` |
 | `partition_table/partition-table.bin` | `7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820` |
 
 ---
@@ -80,10 +79,10 @@ Driver          :
 cd d:\desktop\PocketHID\firmware\esp32s3-bridge
 
 (Get-FileHash ".\build\merged-binary.bin" -Algorithm SHA256).Hash
-# Must be: D75D123954ECDCE4EEB9B1CD7BF0336AC8D0EACFD546ED8C5E9C58E4747944BD
+# Must be: E8FF42CF23758AF8F74A2FA43ECB32EB5802BE4A01DFFAA14B21EA415861B1B3
 ```
 
-Do NOT flash if hash does not match. Rebuild from commit `160fddfa6763989cebe0aca67efe2d2e1dbdc65a`.
+Do NOT flash if hash does not match. Rebuild from commit `89412ccd0dfeab3522268a8ffd2947320b4653df`.
 
 ---
 
