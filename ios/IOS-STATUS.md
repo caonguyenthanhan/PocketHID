@@ -1,4 +1,31 @@
 # PocketHID iOS Status
+**Last updated: Wave 9R.1 — 2026-09-29**
+
+---
+
+## Wave 9R.1 Status
+
+```
+External HID Bridge:
+POC DIRECTION
+
+Firmware:
+CROSS-COMPILED (Wave 8, commit 160fddfa, ESP-IDF v5.3.1)
+
+Physical bridge:
+PENDING
+
+USB HID host verification:
+PENDING
+
+BLE physical verification:
+PENDING
+
+iOS BridgeTransport:
+NOT IMPLEMENTED
+```
+
+---
 
 ## Current iOS Transport Direction
 
