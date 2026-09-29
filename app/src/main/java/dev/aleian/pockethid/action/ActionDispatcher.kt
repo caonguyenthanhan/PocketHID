@@ -2,6 +2,8 @@ package dev.aleian.pockethid.action
 
 import dev.aleian.pockethid.transport.InputTransport
 import kotlinx.coroutines.delay
+import dev.aleian.pockethid.audio.AudioFeedbackManager
+import dev.aleian.pockethid.audio.AudioEvent
 
 /**
  * Coordinates execution of [ActionExecutionPlan]s and [PocketAction]s onto an [InputTransport].
@@ -19,7 +21,11 @@ object ActionDispatcher {
     ): Boolean {
         if (transport == null) return false
         val plan = ActionResolver.resolve(action, hostOs, zoomMode)
-        return execute(plan, transport)
+        val success = execute(plan, transport)
+        if (success) {
+            AudioFeedbackManager.play(AudioEvent.ACTION_ACCEPTED)
+        }
+        return success
     }
 
     /**

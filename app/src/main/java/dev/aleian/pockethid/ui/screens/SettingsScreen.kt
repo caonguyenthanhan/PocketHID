@@ -87,6 +87,7 @@ fun SettingsScreen(
     var dragLock by remember(currentSettings) { mutableStateOf(currentSettings.dragLock) }
     var pasteDelay by remember(currentSettings) { mutableLongStateOf(currentSettings.pasteDelayMs) }
     var keyboardHaptics by remember(currentSettings) { mutableStateOf(currentSettings.keyboardHaptics) }
+    var soundEffectsEnabled by remember(currentSettings) { mutableStateOf(currentSettings.soundEffectsEnabled) }
     var keepAwake by remember(currentSettings) { mutableStateOf(currentSettings.keepAwakeTimeout) }
     var gpLeftDeadzone by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadLeftDeadzone) }
     var gpLeftSens by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadLeftSensitivity) }
@@ -313,6 +314,8 @@ fun SettingsScreen(
                 onPasteDelayChange = { pasteDelay = it },
                 keyboardHaptics = keyboardHaptics,
                 onKeyboardHapticsChange = { keyboardHaptics = it },
+                soundEffectsEnabled = soundEffectsEnabled,
+                onSoundEffectsEnabledChange = { soundEffectsEnabled = it },
                 language = appLanguage
             )
 
@@ -394,6 +397,7 @@ fun SettingsScreen(
                             dragLock = dragLock,
                             pasteDelayMs = pasteDelay,
                             keyboardHaptics = keyboardHaptics,
+                            soundEffectsEnabled = soundEffectsEnabled,
                             keepAwakeTimeout = keepAwake,
                             gamepadLeftDeadzone = gpLeftDeadzone,
                             gamepadLeftSensitivity = gpLeftSens,
@@ -451,6 +455,7 @@ fun SettingsScreen(
                         dragLock = true
                         pasteDelay = 15L
                         keyboardHaptics = true
+                        soundEffectsEnabled = true
                         keepAwake = "10 Minutes"
                         appLanguage = AppLanguage.ENGLISH
                         gpLeftDeadzone = 0.10f

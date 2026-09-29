@@ -17,6 +17,7 @@ data class AppSettings(
     val dragLock: Boolean = true,
     val pasteDelayMs: Long = 15L,
     val keyboardHaptics: Boolean = true,
+    val soundEffectsEnabled: Boolean = true,
     val keepAwakeTimeout: String = "10 Minutes",
     val language: AppLanguage = AppLanguage.ENGLISH,
     // Screen Behavior & Timeout Settings
@@ -65,6 +66,7 @@ object SettingsRepository {
     private const val KEY_DRAG_LOCK = "drag_lock"
     private const val KEY_PASTE_DELAY = "paste_delay"
     private const val KEY_KEYBOARD_HAPTICS = "keyboard_haptics"
+    private const val KEY_SOUND_EFFECTS = "sound_effects_enabled"
     private const val KEY_KEEP_AWAKE = "keep_awake"
     private const val KEY_KEEP_SCREEN_AWAKE = "keep_screen_awake"
     private const val KEY_SCREEN_SLEEP_TIMEOUT = "screen_sleep_timeout"
@@ -117,6 +119,7 @@ object SettingsRepository {
             dragLock = sp.getBoolean(KEY_DRAG_LOCK, true),
             pasteDelayMs = sp.getLong(KEY_PASTE_DELAY, 15L),
             keyboardHaptics = sp.getBoolean(KEY_KEYBOARD_HAPTICS, true),
+            soundEffectsEnabled = sp.getBoolean(KEY_SOUND_EFFECTS, true),
             keepAwakeTimeout = sp.getString(KEY_KEEP_AWAKE, "10 Minutes") ?: "10 Minutes",
             language = AppLanguage.fromString(sp.getString(KEY_LANGUAGE, "ENGLISH") ?: "ENGLISH"),
             keepScreenAwake = sp.getBoolean(KEY_KEEP_SCREEN_AWAKE, false),
@@ -183,6 +186,7 @@ object SettingsRepository {
             putBoolean(KEY_DRAG_LOCK, finalSettings.dragLock)
             putLong(KEY_PASTE_DELAY, finalSettings.pasteDelayMs)
             putBoolean(KEY_KEYBOARD_HAPTICS, finalSettings.keyboardHaptics)
+            putBoolean(KEY_SOUND_EFFECTS, finalSettings.soundEffectsEnabled)
             putString(KEY_KEEP_AWAKE, finalSettings.keepAwakeTimeout)
             putString(KEY_LANGUAGE, finalSettings.language.name)
             putBoolean(KEY_KEEP_SCREEN_AWAKE, finalSettings.keepScreenAwake)

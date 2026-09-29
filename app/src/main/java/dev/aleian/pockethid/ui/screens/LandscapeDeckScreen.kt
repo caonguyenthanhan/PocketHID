@@ -239,6 +239,7 @@ fun LandscapeDeckScreen(
                 val resolved = FocusLockController.resolveModeSwitch(selectedTopMode, targetIndex)
                 if (resolved != selectedTopMode) {
                     selectedTopMode = resolved
+                    dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.MODE_CHANGED)
                 }
             },
             settings = settings,

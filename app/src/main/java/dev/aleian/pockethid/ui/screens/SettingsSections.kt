@@ -523,6 +523,8 @@ fun KeyboardSettingsSection(
     onPasteDelayChange: (Long) -> Unit,
     keyboardHaptics: Boolean,
     onKeyboardHapticsChange: (Boolean) -> Unit,
+    soundEffectsEnabled: Boolean,
+    onSoundEffectsEnabledChange: (Boolean) -> Unit,
     language: AppLanguage = AppLanguage.ENGLISH
 ) {
     SectionHeader(
@@ -595,6 +597,34 @@ fun KeyboardSettingsSection(
                 Switch(
                     checked = keyboardHaptics,
                     onCheckedChange = onKeyboardHapticsChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = TextPrimary,
+                        checkedTrackColor = PrimaryContainer
+                    )
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Âm thanh hệ thống (Sound Effects)" else "UI Sound Effects",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Phát âm thanh nhỏ khi nhấn phím hoặc chuyển đổi trạng thái" else "Play subtle audio feedback on actions and state changes",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+                Switch(
+                    checked = soundEffectsEnabled,
+                    onCheckedChange = onSoundEffectsEnabledChange,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = TextPrimary,
                         checkedTrackColor = PrimaryContainer

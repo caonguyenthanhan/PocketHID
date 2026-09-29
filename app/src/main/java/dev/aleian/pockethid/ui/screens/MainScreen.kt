@@ -121,17 +121,21 @@ fun MainScreen(
             when (val current = connectionState) {
                 is ConnectionState.Connected -> {
                     val name = current.device.name ?: current.device.address
+                    dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.CONNECTED)
                     snackbarHostState.showSnackbar("Connected to $name. Ready to control.")
                 }
                 is ConnectionState.Error -> {
+                    dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.ERROR)
                     snackbarHostState.showSnackbar("Error: ${current.message}", duration = SnackbarDuration.Long)
                 }
                 is ConnectionState.Disconnected -> {
                     FocusLockController.reset()
                     if (prev is ConnectionState.Connected) {
+                        dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.DISCONNECTED)
                         val name = (prev as ConnectionState.Connected).device.name ?: "Host"
                         snackbarHostState.showSnackbar("Disconnected from $name.")
                     } else if (prev is ConnectionState.Connecting) {
+                        dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.ERROR)
                         snackbarHostState.showSnackbar("Could not connect. Please check host Bluetooth.")
                     }
                 }
@@ -410,6 +414,7 @@ fun MainScreen(
                     val resolved = FocusLockController.resolveModeSwitch(selectedTab, targetIndex)
                     if (resolved != selectedTab) {
                         selectedTab = resolved
+                        dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.MODE_CHANGED)
                     }
                     isDrawModesExpanded = false
                 }
