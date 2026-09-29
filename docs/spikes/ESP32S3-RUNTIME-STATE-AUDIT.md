@@ -142,12 +142,7 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 - **Buffer Escape:** `rx_buf[128]` resides strictly on the call stack of `gatt_svr_chr_access()`.
 - **Use-After-Return:** `s_cbs.on_packet` executes synchronously and completes before `gatt_svr_chr_access` returns. No pointer to `rx_buf` or its contents is retained by any static or background pointer.
 - **Reentrancy:** Writes are dispatched serially by the NimBLE host task event loop. No concurrent calls to `gatt_svr_chr_access` can occur.
-- **Execution Budget:** Synchronous processing inside `handle_rx_packet` comprises:
-  - CRC-16 computation: ~15 µs
-  - Sequence validation: < 1 µs
-  - Report encoding: < 2 µs
-  - TinyUSB enqueue: < 5 µs
-  - Total latency: < 30 µs. This is well within the NimBLE connection event processing window (typically 7.5 ms – 30 ms) and does not starve the NimBLE task.
+- **Execution Budget:** Static/source-level review indicates a short non-blocking path (CRC-16 arithmetic, bounds validation, Little-Endian serialization, and non-blocking TinyUSB FIFO enqueue); physical timing has not been measured.
 
 ---
 
@@ -413,7 +408,7 @@ Core 1 (CPU1):
 ### Deadlock Analysis
 - PocketHID application code does not instantiate or take any FreeRTOS mutexes (`xSemaphoreCreateMutex`), recursive mutexes, or direct task notifications with blocking timeouts.
 - No callback paths are re-entrant or recursive.
-- Deadlock probability: **0%**.
+- No deadlock path was identified in static review.
 
 ---
 
@@ -422,14 +417,13 @@ Core 1 (CPU1):
 During this deep runtime audit, the following characteristics and non-fatal runtime constraints were identified:
 
 ### Finding 1: TinyUSB Single IN Endpoint Saturation during `usb_hid_send_all_neutral()`
-- **Detail:** In `usb_hid.c:usb_hid_send_all_neutral()`, 5 report transmissions (`KEYBOARD`, `MOUSE`, `CONSUMER`, `GAMEPAD`, `TABLET`) are invoked sequentially with no delays.
+- **Detail:** In original `usb_hid.c:usb_hid_send_all_neutral()`, 5 report transmissions (`KEYBOARD`, `MOUSE`, `CONSUMER`, `GAMEPAD`, `TABLET`) were invoked sequentially with no delays.
 - **Mechanism:** In TinyUSB composite HID sharing a single interrupt IN endpoint, `tud_hid_report()` will return `false` if the endpoint is already busy transmitting the preceding report.
-- **Impact:** If physical host polling latency is slower than the execution time of 5 function calls, subsequent reports (e.g. Gamepad, Tablet) could return `false` and be skipped unless queued or polled until endpoint becomes ready (`tud_hid_ready()`).
-- **Classification:** Physical Runtime Verification Backlog (to be tested when hardware is attached).
+- **Remediation (Wave 11.1):** Resolved by implementing a non-blocking serialized state machine driven by `tud_hid_report_complete_cb()` and backed by `usb_hid_tick()`.
 
 ### Finding 2: Unchecked `usb_hid_init()` Return in `app_main()`
-- **Detail:** `app_main()` calls `usb_hid_init()` but does not inspect the boolean return value.
-- **Mitigation:** If `usb_hid_init()` fails, `s_usb_status` remains `USB_STATUS_NOT_INITIALIZED` and `tud_mounted()` returns `false`, causing all subsequent send attempts to abort safely. However, logging or LED fault signaling would be beneficial post-POC.
+- **Detail:** `app_main()` called `usb_hid_init()` but did not inspect the boolean return value.
+- **Remediation (Wave 11.1):** Resolved by adding explicit error checking, setting `USB_STATUS_INIT_FAILED`, and logging boot diagnostics with precise terminology ("USB STACK READY, USB HOST ENUMERATION PENDING").
 
 ### Finding 3: Lack of Mutual Exclusion on `safety_manager_t`
 - **Detail:** `s_safety_mgr` is accessed concurrently from `ble_host_task` (feeding) and `main_task` (ticking) on CPU0 without `portENTER_CRITICAL()`.
@@ -437,15 +431,16 @@ During this deep runtime audit, the following characteristics and non-fatal runt
 
 ### Finding 4: Synchronous Dispatch in NimBLE Host Task
 - **Detail:** Packet parsing, validation, and report submission execute directly inside `gatt_svr_chr_access()`.
-- **Mitigation:** Total execution time is under 30 µs, which is well below the BLE connection interval. For future production scaling, an explicit FreeRTOS queue could decouple BLE RX from USB TX.
+- **Mitigation:** Static/source-level review indicates a short non-blocking path; physical timing has not been measured. For future production scaling, an explicit FreeRTOS queue could decouple BLE RX from USB TX.
 
 ---
 
 ## 14. Required Fixes
 
-**Zero source code changes are required for Wave 11.**
-
-In strict accordance with the Wave 11 freeze contract ("DO NOT BREAK THE FREEZE. This wave is AUDIT ONLY... Only fix an actual runtime-safety/integration defect discovered by audit"), no speculative refactorings are permitted. None of the findings represent a runtime safety breach or undefined behavior. The firmware is structurally sound and ready for physical hardware attachment.
+In Wave 11.1, the two actionable runtime integration findings were resolved:
+1. **Neutral Report Serialization:** Implemented state-machine serialization across all 5 report endpoints in `usb_hid.c`, advancing on `tud_hid_report_complete_cb()` and `usb_hid_tick()`. Normal reports are guarded from preempting neutral sequences.
+2. **Explicit USB Init Status & Boot Diagnostics:** Added `USB_STATUS_INIT_FAILED`, verified return code in `app_main.c`, and standardized boot diagnostics.
+3. **Unit Test Harness Expansion:** Added 7 dedicated host unit tests validating start, step progression, completion, busy-endpoint deferral, and idempotency (99/99 tests PASS).
 
 ---
 

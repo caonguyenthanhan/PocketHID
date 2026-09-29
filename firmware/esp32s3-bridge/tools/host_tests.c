@@ -14,6 +14,7 @@
 #include "../main/safety/safety_manager.h"
 #include "../main/hid/hid_descriptors.h"
 #include "../main/hid/hid_reports.h"
+#include "../main/hid/usb_hid.h"
 
 static int s_tests_run = 0;
 static int s_tests_passed = 0;
@@ -277,6 +278,149 @@ static void test_golden_vector_packets(void) {
     TEST_ASSERT(tab->status == 0x03 && tab->x == 16384 && tab->y == 16384, "Golden Tablet Center coordinates match");
 }
 
+static void test_neutral_sequence_starts(void) {
+    printf("Running test_neutral_sequence_starts...\n");
+    usb_hid_mock_reset();
+
+    // Send a normal report so device is active
+    uint8_t kb[8] = {0x02, 0, 0x04, 0, 0, 0, 0, 0};
+    TEST_ASSERT(usb_hid_send_report(REPORT_ID_KEYBOARD, kb, sizeof(kb)) == true, "Normal report sent");
+    TEST_ASSERT(usb_hid_is_neutral_complete() == false, "Device has active report");
+
+    // Initiate neutral sequence
+    usb_hid_send_all_neutral();
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Neutral sequence is in progress");
+    TEST_ASSERT(usb_hid_mock_get_step() == 1, "Step 0 (Keyboard) sent; step 1 (Mouse) pending");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_KEYBOARD, "Last report is Keyboard neutral");
+}
+
+static void test_neutral_sequence_advances(void) {
+    printf("Running test_neutral_sequence_advances...\n");
+    // Continuing from Step 0 completion:
+    usb_hid_mock_complete_report(); // Step 0 (Keyboard) completes -> Step 1 (Mouse) sent
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Neutral still in progress");
+    TEST_ASSERT(usb_hid_mock_get_step() == 2, "Step 1 (Mouse) sent; step 2 (Consumer) pending");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_MOUSE, "Last report is Mouse neutral");
+
+    usb_hid_mock_complete_report(); // Step 1 (Mouse) completes -> Step 2 (Consumer) sent
+    TEST_ASSERT(usb_hid_mock_get_step() == 3, "Step 2 (Consumer) sent; step 3 (Gamepad) pending");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_CONSUMER, "Last report is Consumer neutral");
+}
+
+static void test_neutral_sequence_completes(void) {
+    printf("Running test_neutral_sequence_completes...\n");
+    // Continuing from Step 2 completion:
+    usb_hid_mock_complete_report(); // Step 2 (Consumer) completes -> Step 3 (Gamepad) sent
+    TEST_ASSERT(usb_hid_mock_get_step() == 4, "Step 3 (Gamepad) sent; step 4 (Tablet) pending");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_GAMEPAD, "Last report is Gamepad neutral");
+
+    usb_hid_mock_complete_report(); // Step 3 (Gamepad) completes -> Step 4 (Tablet) sent
+    TEST_ASSERT(usb_hid_mock_get_step() == 5, "Step 4 (Tablet) sent; step 5 pending");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_TABLET, "Last report is Tablet neutral");
+
+    usb_hid_mock_complete_report(); // Step 4 (Tablet) completes
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == false, "Neutral sequence finished");
+    TEST_ASSERT(usb_hid_is_neutral_complete() == true, "All 5 endpoints confirmed neutral");
+    TEST_ASSERT(usb_hid_mock_get_completed_count() == 5, "Exactly 5 neutral reports completed");
+}
+
+static void test_neutral_sequence_when_endpoint_busy(void) {
+    printf("Running test_neutral_sequence_when_endpoint_busy...\n");
+    usb_hid_mock_reset();
+
+    // Mark active report
+    uint8_t kb[8] = {0x02, 0, 0x04, 0, 0, 0, 0, 0};
+    usb_hid_send_report(REPORT_ID_KEYBOARD, kb, sizeof(kb));
+
+    // Simulate endpoint busy (e.g. previous report in-flight)
+    usb_hid_mock_set_ready(false);
+
+    usb_hid_send_all_neutral();
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Neutral sequence queued");
+    TEST_ASSERT(usb_hid_mock_get_step() == 0, "Step remains 0 because endpoint was busy");
+
+    // Normal reports rejected while neutral is pending
+    TEST_ASSERT(usb_hid_send_report(REPORT_ID_KEYBOARD, kb, sizeof(kb)) == false, "Normal report rejected while neutral pending");
+
+    // Endpoint becomes ready (previous report completed)
+    usb_hid_mock_set_ready(true);
+    usb_hid_mock_complete_report(); // Fires completion hook, which drives pending step 0
+    TEST_ASSERT(usb_hid_mock_get_step() == 1, "Step 0 sent upon endpoint becoming free");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_KEYBOARD, "Keyboard neutral sent");
+}
+
+static void test_repeated_neutral_is_idempotent(void) {
+    printf("Running test_repeated_neutral_is_idempotent...\n");
+    usb_hid_mock_reset();
+    TEST_ASSERT(usb_hid_is_neutral_complete() == true, "Initially neutral");
+
+    // Repeated call while already neutral must not start sequence or send traffic
+    usb_hid_send_all_neutral();
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == false, "No sequence started when already neutral");
+    TEST_ASSERT(usb_hid_mock_get_completed_count() == 0, "No reports transmitted");
+
+    // Start a sequence, then request neutral again mid-sequence
+    uint8_t kb[8] = {0x02, 0, 0x04, 0, 0, 0, 0, 0};
+    usb_hid_send_report(REPORT_ID_KEYBOARD, kb, sizeof(kb));
+    usb_hid_send_all_neutral();
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Neutral sequence active");
+    TEST_ASSERT(usb_hid_mock_get_step() == 1, "Step 0 sent");
+
+    // Advance to step 2
+    usb_hid_mock_complete_report();
+    TEST_ASSERT(usb_hid_mock_get_step() == 2, "Step 1 sent, now on step 2");
+
+    // Re-assert neutral while in progress: must reset to step 0 to ensure full coverage without duplicate sequences
+    usb_hid_send_all_neutral();
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Still in progress");
+    TEST_ASSERT(usb_hid_mock_get_step() == 1, "Reset to step 0 and resent, now on step 1");
+}
+
+static void test_disconnect_forces_neutral_sequence(void) {
+    printf("Running test_disconnect_forces_neutral_sequence...\n");
+    usb_hid_mock_reset();
+    safety_manager_t mgr;
+    safety_manager_init(&mgr, 250, usb_hid_send_all_neutral);
+
+    // Active session
+    safety_manager_feed(&mgr, 100);
+    uint8_t m[4] = {1, 10, -5, 0};
+    usb_hid_send_report(REPORT_ID_MOUSE, m, sizeof(m));
+    TEST_ASSERT(usb_hid_is_neutral_complete() == false, "Device has active mouse state");
+
+    // BLE disconnect
+    safety_manager_on_disconnect(&mgr);
+    TEST_ASSERT(mgr.state == SAFETY_STATE_DISCONNECTED, "Safety manager in DISCONNECTED state");
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Disconnect triggered neutral sequence");
+    TEST_ASSERT(usb_hid_mock_get_last_report_id() == REPORT_ID_KEYBOARD, "First neutral report is Keyboard");
+
+    // Normal input blocked during disconnect neutralization
+    TEST_ASSERT(usb_hid_send_report(REPORT_ID_MOUSE, m, sizeof(m)) == false, "Input rejected during disconnect neutral");
+}
+
+static void test_timeout_forces_neutral_sequence(void) {
+    printf("Running test_timeout_forces_neutral_sequence...\n");
+    usb_hid_mock_reset();
+    safety_manager_t mgr;
+    safety_manager_init(&mgr, 250, usb_hid_send_all_neutral);
+
+    // Feed packet at time 100
+    safety_manager_feed(&mgr, 100);
+    uint8_t kb[8] = {0, 0, 0x04, 0, 0, 0, 0, 0};
+    usb_hid_send_report(REPORT_ID_KEYBOARD, kb, sizeof(kb));
+
+    // Tick before timeout (elapsed 200ms < 250ms)
+    safety_manager_tick(&mgr, 300);
+    TEST_ASSERT(mgr.state == SAFETY_STATE_ACTIVE, "Still active at 200ms");
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == false, "No neutral triggered yet");
+
+    // Tick after timeout (elapsed 260ms >= 250ms)
+    safety_manager_tick(&mgr, 360);
+    TEST_ASSERT(mgr.state == SAFETY_STATE_TIMED_OUT, "State transitions to TIMED_OUT");
+    TEST_ASSERT(usb_hid_is_neutral_in_progress() == true, "Timeout triggered neutral sequence");
+    TEST_ASSERT(usb_hid_mock_get_step() == 1, "Keyboard neutral sent immediately");
+}
+
 int main(void) {
     printf("==================================================\n");
     printf("POCKETHID BRIDGE FIRMWARE HOST UNIT TESTS\n");
@@ -291,6 +435,15 @@ int main(void) {
     test_safety_manager_disconnect();
     test_hid_report_builders_match_android();
     test_golden_vector_packets();
+
+    // Wave 11.1 Neutral Serialization Tests
+    test_neutral_sequence_starts();
+    test_neutral_sequence_advances();
+    test_neutral_sequence_completes();
+    test_neutral_sequence_when_endpoint_busy();
+    test_repeated_neutral_is_idempotent();
+    test_disconnect_forces_neutral_sequence();
+    test_timeout_forces_neutral_sequence();
 
     printf("==================================================\n");
     printf("TEST RESULTS: %d / %d PASSED\n", s_tests_passed, s_tests_run);

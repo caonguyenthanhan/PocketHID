@@ -164,22 +164,36 @@ void app_main(void) {
     safety_manager_init(&s_safety_mgr, DEFAULT_WATCHDOG_TIMEOUT_MS, usb_hid_send_all_neutral);
 
     // Phase 3: USB HID Composite
-    usb_hid_init();
+    bool usb_ok = usb_hid_init();
+#ifdef ESP_PLATFORM
+    if (!usb_ok) {
+        ESP_LOGE(TAG, "USB: INIT_FAILED");
+    } else {
+        ESP_LOGI(TAG, "USB: INIT_OK (USB STACK READY, USB HOST ENUMERATION PENDING)");
+    }
+#endif
 
     // Phase 5: BLE GATT Server
     ble_callbacks_t ble_cbs = {
         .on_packet = handle_rx_packet,
         .on_connection = handle_ble_connection,
     };
-    bridge_ble_transport_init(&ble_cbs);
-
+    bool ble_ok = bridge_ble_transport_init(&ble_cbs);
 #ifdef ESP_PLATFORM
+    if (!ble_ok) {
+        ESP_LOGE(TAG, "BLE: INIT_FAILED");
+    } else {
+        ESP_LOGI(TAG, "BLE: INIT_OK");
+    }
+
+    ESP_LOGI(TAG, "SAFETY: READY (CONFIGURED TIMEOUT=%u ms)", DEFAULT_WATCHDOG_TIMEOUT_MS);
     ESP_LOGI(TAG, "PocketHID ESP32-S3 Bridge POC Initialized (Firmware v%04x)", BRIDGE_FIRMWARE_VERSION);
 
     // Periodic safety watchdog loop
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(10));
         safety_manager_tick(&s_safety_mgr, get_time_ms());
+        usb_hid_tick();
     }
 #endif
 }

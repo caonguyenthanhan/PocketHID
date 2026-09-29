@@ -19,7 +19,8 @@ def run_tests():
         os.path.join(main_dir, "protocol", "packet_parser.c"),
         os.path.join(main_dir, "safety", "safety_manager.c"),
         os.path.join(main_dir, "hid", "hid_reports.c"),
-        os.path.join(main_dir, "hid", "hid_descriptors.c")
+        os.path.join(main_dir, "hid", "hid_descriptors.c"),
+        os.path.join(main_dir, "hid", "usb_hid.c")
     ]
     
     out_binary = os.path.join(script_dir, "host_tests.exe" if os.name == "nt" else "host_tests")
