@@ -44,7 +44,14 @@ data class AppSettings(
     // Right Edge Fast Scroll Settings
     val fastScrollEnabled: Boolean = true,
     val fastScrollMultiplier: Float = 2.5f,
-    val fastScrollWidthPercent: Float = 0.10f
+    val fastScrollWidthPercent: Float = 0.10f,
+    // Visible Modes
+    val modeKeyboardVisible: Boolean = true,
+    val modeMouseVisible: Boolean = true,
+    val modeGamepadVisible: Boolean = false,
+    val modePresenterVisible: Boolean = true,
+    val modeOneHandVisible: Boolean = true,
+    val modeDrawVisible: Boolean = false
 )
 
 object SettingsRepository {
@@ -81,6 +88,12 @@ object SettingsRepository {
     private const val KEY_FAST_SCROLL_MULTIPLIER = "fast_scroll_multiplier"
     private const val KEY_FAST_SCROLL_WIDTH = "fast_scroll_width"
     private const val KEY_LANGUAGE = "app_language"
+    private const val KEY_MODE_KEYBOARD = "mode_keyboard_visible"
+    private const val KEY_MODE_MOUSE = "mode_mouse_visible"
+    private const val KEY_MODE_GAMEPAD = "mode_gamepad_visible"
+    private const val KEY_MODE_PRESENTER = "mode_presenter_visible"
+    private const val KEY_MODE_ONE_HAND = "mode_one_hand_visible"
+    private const val KEY_MODE_DRAW = "mode_draw_visible"
 
     private val _settings = MutableStateFlow(AppSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
@@ -89,6 +102,10 @@ object SettingsRepository {
 
     fun init(context: Context) {
         val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        init(sp)
+    }
+
+    fun init(sp: SharedPreferences) {
         prefs = sp
         _settings.value = AppSettings(
             pollingRate = sp.getFloat(KEY_POLLING_RATE, 125f),
@@ -122,45 +139,79 @@ object SettingsRepository {
             oneHandEdgeGestures = sp.getBoolean(KEY_ONE_HAND_EDGE_GESTURES, true),
             fastScrollEnabled = sp.getBoolean(KEY_FAST_SCROLL_ENABLED, true),
             fastScrollMultiplier = sp.getFloat(KEY_FAST_SCROLL_MULTIPLIER, 2.5f),
-            fastScrollWidthPercent = sp.getFloat(KEY_FAST_SCROLL_WIDTH, 0.10f)
+            fastScrollWidthPercent = sp.getFloat(KEY_FAST_SCROLL_WIDTH, 0.10f),
+            modeKeyboardVisible = sp.getBoolean(KEY_MODE_KEYBOARD, true),
+            modeMouseVisible = sp.getBoolean(KEY_MODE_MOUSE, true),
+            modeGamepadVisible = sp.getBoolean(KEY_MODE_GAMEPAD, false),
+            modePresenterVisible = sp.getBoolean(KEY_MODE_PRESENTER, true),
+            modeOneHandVisible = sp.getBoolean(KEY_MODE_ONE_HAND, true),
+            modeDrawVisible = sp.getBoolean(KEY_MODE_DRAW, false)
         )
     }
 
     fun updateSettings(newSettings: AppSettings) {
-        _settings.value = newSettings
+        val visibleCount = listOf(
+            newSettings.modeKeyboardVisible,
+            newSettings.modeMouseVisible,
+            newSettings.modeGamepadVisible,
+            newSettings.modePresenterVisible,
+            newSettings.modeOneHandVisible,
+            newSettings.modeDrawVisible
+        ).count { it }
+
+        val finalSettings = if (visibleCount < 3) {
+            newSettings.copy(
+                modeKeyboardVisible = _settings.value.modeKeyboardVisible,
+                modeMouseVisible = _settings.value.modeMouseVisible,
+                modeGamepadVisible = _settings.value.modeGamepadVisible,
+                modePresenterVisible = _settings.value.modePresenterVisible,
+                modeOneHandVisible = _settings.value.modeOneHandVisible,
+                modeDrawVisible = _settings.value.modeDrawVisible
+            )
+        } else {
+            newSettings
+        }
+
+        _settings.value = finalSettings
         prefs?.edit()?.apply {
-            putFloat(KEY_POLLING_RATE, newSettings.pollingRate)
-            putInt(KEY_DEADZONE, newSettings.deadZonePx)
-            putFloat(KEY_ACCEL, newSettings.accelerationFactor)
-            putBoolean(KEY_HAPTIC_TRACKPAD, newSettings.hapticsTrackpad)
-            putString(KEY_HAPTIC_INTENSITY, newSettings.hapticIntensity)
-            putBoolean(KEY_NATURAL_SCROLL, newSettings.naturalScroll)
-            putBoolean(KEY_DRAG_LOCK, newSettings.dragLock)
-            putLong(KEY_PASTE_DELAY, newSettings.pasteDelayMs)
-            putBoolean(KEY_KEYBOARD_HAPTICS, newSettings.keyboardHaptics)
-            putString(KEY_KEEP_AWAKE, newSettings.keepAwakeTimeout)
-            putString(KEY_LANGUAGE, newSettings.language.name)
-            putBoolean(KEY_KEEP_SCREEN_AWAKE, newSettings.keepScreenAwake)
-            putInt(KEY_SCREEN_SLEEP_TIMEOUT, newSettings.screenSleepTimeoutMinutes)
-            putString(KEY_HOST_OS, newSettings.hostOs.name)
-            putFloat(KEY_GAMEPAD_LEFT_DEADZONE, newSettings.gamepadLeftDeadzone)
-            putFloat(KEY_GAMEPAD_LEFT_SENS, newSettings.gamepadLeftSensitivity)
-            putString(KEY_GAMEPAD_LEFT_CURVE, newSettings.gamepadLeftCurve)
-            putFloat(KEY_GAMEPAD_RIGHT_DEADZONE, newSettings.gamepadRightDeadzone)
-            putFloat(KEY_GAMEPAD_RIGHT_SENS, newSettings.gamepadRightSensitivity)
-            putString(KEY_GAMEPAD_RIGHT_CURVE, newSettings.gamepadRightCurve)
-            putFloat(KEY_GAMEPAD_TRIGGER_SENS, newSettings.gamepadTriggerSensitivity)
-            putBoolean(KEY_GAMEPAD_INVERT_Y, newSettings.gamepadInvertY)
-            putBoolean(KEY_PINCH_ZOOM_ENABLED, newSettings.pinchZoomEnabled)
-            putFloat(KEY_PINCH_THRESHOLD, newSettings.pinchThresholdPx)
-            putString(KEY_ZOOM_MODE, newSettings.zoomMode)
-            putString(KEY_ONE_HAND_HANDEDNESS, newSettings.oneHandHandedness)
-            putInt(KEY_ONE_HAND_SEEK_STEP, newSettings.oneHandSeekStepSeconds)
-            putFloat(KEY_ONE_HAND_SCROLL_SENS, newSettings.oneHandScrollSensitivity)
-            putBoolean(KEY_ONE_HAND_EDGE_GESTURES, newSettings.oneHandEdgeGestures)
-            putBoolean(KEY_FAST_SCROLL_ENABLED, newSettings.fastScrollEnabled)
-            putFloat(KEY_FAST_SCROLL_MULTIPLIER, newSettings.fastScrollMultiplier)
-            putFloat(KEY_FAST_SCROLL_WIDTH, newSettings.fastScrollWidthPercent)
+            putFloat(KEY_POLLING_RATE, finalSettings.pollingRate)
+            putInt(KEY_DEADZONE, finalSettings.deadZonePx)
+            putFloat(KEY_ACCEL, finalSettings.accelerationFactor)
+            putBoolean(KEY_HAPTIC_TRACKPAD, finalSettings.hapticsTrackpad)
+            putString(KEY_HAPTIC_INTENSITY, finalSettings.hapticIntensity)
+            putBoolean(KEY_NATURAL_SCROLL, finalSettings.naturalScroll)
+            putBoolean(KEY_DRAG_LOCK, finalSettings.dragLock)
+            putLong(KEY_PASTE_DELAY, finalSettings.pasteDelayMs)
+            putBoolean(KEY_KEYBOARD_HAPTICS, finalSettings.keyboardHaptics)
+            putString(KEY_KEEP_AWAKE, finalSettings.keepAwakeTimeout)
+            putString(KEY_LANGUAGE, finalSettings.language.name)
+            putBoolean(KEY_KEEP_SCREEN_AWAKE, finalSettings.keepScreenAwake)
+            putInt(KEY_SCREEN_SLEEP_TIMEOUT, finalSettings.screenSleepTimeoutMinutes)
+            putString(KEY_HOST_OS, finalSettings.hostOs.name)
+            putFloat(KEY_GAMEPAD_LEFT_DEADZONE, finalSettings.gamepadLeftDeadzone)
+            putFloat(KEY_GAMEPAD_LEFT_SENS, finalSettings.gamepadLeftSensitivity)
+            putString(KEY_GAMEPAD_LEFT_CURVE, finalSettings.gamepadLeftCurve)
+            putFloat(KEY_GAMEPAD_RIGHT_DEADZONE, finalSettings.gamepadRightDeadzone)
+            putFloat(KEY_GAMEPAD_RIGHT_SENS, finalSettings.gamepadRightSensitivity)
+            putString(KEY_GAMEPAD_RIGHT_CURVE, finalSettings.gamepadRightCurve)
+            putFloat(KEY_GAMEPAD_TRIGGER_SENS, finalSettings.gamepadTriggerSensitivity)
+            putBoolean(KEY_GAMEPAD_INVERT_Y, finalSettings.gamepadInvertY)
+            putBoolean(KEY_PINCH_ZOOM_ENABLED, finalSettings.pinchZoomEnabled)
+            putFloat(KEY_PINCH_THRESHOLD, finalSettings.pinchThresholdPx)
+            putString(KEY_ZOOM_MODE, finalSettings.zoomMode)
+            putString(KEY_ONE_HAND_HANDEDNESS, finalSettings.oneHandHandedness)
+            putInt(KEY_ONE_HAND_SEEK_STEP, finalSettings.oneHandSeekStepSeconds)
+            putFloat(KEY_ONE_HAND_SCROLL_SENS, finalSettings.oneHandScrollSensitivity)
+            putBoolean(KEY_ONE_HAND_EDGE_GESTURES, finalSettings.oneHandEdgeGestures)
+            putBoolean(KEY_FAST_SCROLL_ENABLED, finalSettings.fastScrollEnabled)
+            putFloat(KEY_FAST_SCROLL_MULTIPLIER, finalSettings.fastScrollMultiplier)
+            putFloat(KEY_FAST_SCROLL_WIDTH, finalSettings.fastScrollWidthPercent)
+            putBoolean(KEY_MODE_KEYBOARD, finalSettings.modeKeyboardVisible)
+            putBoolean(KEY_MODE_MOUSE, finalSettings.modeMouseVisible)
+            putBoolean(KEY_MODE_GAMEPAD, finalSettings.modeGamepadVisible)
+            putBoolean(KEY_MODE_PRESENTER, finalSettings.modePresenterVisible)
+            putBoolean(KEY_MODE_ONE_HAND, finalSettings.modeOneHandVisible)
+            putBoolean(KEY_MODE_DRAW, finalSettings.modeDrawVisible)
             apply()
         }
     }

@@ -285,10 +285,19 @@ fun FocusLockButton(
 fun DeckModeSwitcher(
     selectedMode: Int,
     onSelectMode: (Int) -> Unit,
+    settings: dev.aleian.pockethid.model.AppSettings,
     modifier: Modifier = Modifier,
     isFocusLocked: Boolean = false
 ) {
     val modes = listOf("KEYBOARD", "MOUSE", "GAMEPAD", "PRESENTER", "1-HAND", "DRAW")
+    val modeVisibilities = listOf(
+        settings.modeKeyboardVisible,
+        settings.modeMouseVisible,
+        settings.modeGamepadVisible,
+        settings.modePresenterVisible,
+        settings.modeOneHandVisible,
+        settings.modeDrawVisible
+    )
 
     Row(
         modifier = modifier
@@ -300,38 +309,40 @@ fun DeckModeSwitcher(
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         modes.forEachIndexed { index, title ->
-            val isSelected = selectedMode == index
-            val animBg by animateColorAsState(
-                targetValue = if (isSelected) DarkSurface else Color.Transparent,
-                label = "ModeBgAnim"
-            )
-            val textColor by animateColorAsState(
-                targetValue = if (isSelected) dev.aleian.pockethid.ui.theme.CyanAccent else if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
-                label = "ModeTextAnim"
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(animBg)
-                    .clickable {
-                        if (FocusLockController.canSwitchMode()) {
-                            onSelectMode(index)
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = title,
-                    fontSize = 10.5.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = textColor,
-                    maxLines = 1,
-                    softWrap = false
+            if (modeVisibilities[index]) {
+                val isSelected = selectedMode == index
+                val animBg by animateColorAsState(
+                    targetValue = if (isSelected) DarkSurface else Color.Transparent,
+                    label = "ModeBgAnim"
                 )
+                val textColor by animateColorAsState(
+                    targetValue = if (isSelected) dev.aleian.pockethid.ui.theme.CyanAccent else if (isFocusLocked) TextMuted.copy(alpha = 0.5f) else TextMuted,
+                    label = "ModeTextAnim"
+                )
+    
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(animBg)
+                        .clickable {
+                            if (FocusLockController.canSwitchMode()) {
+                                onSelectMode(index)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = title,
+                        fontSize = 10.5.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = textColor,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
             }
         }
     }

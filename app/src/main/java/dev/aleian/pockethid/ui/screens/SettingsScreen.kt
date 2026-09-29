@@ -108,6 +108,27 @@ fun SettingsScreen(
     var fastScrollMultiplier by remember(currentSettings) { mutableFloatStateOf(currentSettings.fastScrollMultiplier) }
     var appLanguage by remember(currentSettings) { mutableStateOf(currentSettings.language) }
 
+    var modeKeyboardVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeKeyboardVisible) }
+    var modeMouseVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeMouseVisible) }
+    var modeGamepadVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeGamepadVisible) }
+    var modePresenterVisible by remember(currentSettings) { mutableStateOf(currentSettings.modePresenterVisible) }
+    var modeOneHandVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeOneHandVisible) }
+    var modeDrawVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeDrawVisible) }
+
+    val visibleModesCount = listOf(
+        modeKeyboardVisible, modeMouseVisible, modeGamepadVisible,
+        modePresenterVisible, modeOneHandVisible, modeDrawVisible
+    ).count { it }
+
+    val handleModeVisibilityChange: (Boolean, (Boolean) -> Unit) -> Unit = { newValue, setter ->
+        if (!newValue && visibleModesCount <= 3) {
+            val msg = if (appLanguage == AppLanguage.VIETNAMESE) "Cần ít nhất 3 chế độ!" else "At least 3 modes must be visible!"
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        } else {
+            setter(newValue)
+        }
+    }
+
     val hostName = when (connState) {
         is ConnectionState.Connected -> (connState as ConnectionState.Connected).device.name ?: "BT-HID-HOST"
         else -> "WIN-11-PRO-DESK"
@@ -336,6 +357,23 @@ fun SettingsScreen(
                 language = appLanguage
             )
 
+            // Section 6: Visible Modes
+            VisibleModesSection(
+                modeKeyboardVisible = modeKeyboardVisible,
+                onModeKeyboardVisibleChange = { handleModeVisibilityChange(it) { modeKeyboardVisible = it } },
+                modeMouseVisible = modeMouseVisible,
+                onModeMouseVisibleChange = { handleModeVisibilityChange(it) { modeMouseVisible = it } },
+                modeGamepadVisible = modeGamepadVisible,
+                onModeGamepadVisibleChange = { handleModeVisibilityChange(it) { modeGamepadVisible = it } },
+                modePresenterVisible = modePresenterVisible,
+                onModePresenterVisibleChange = { handleModeVisibilityChange(it) { modePresenterVisible = it } },
+                modeOneHandVisible = modeOneHandVisible,
+                onModeOneHandVisibleChange = { handleModeVisibilityChange(it) { modeOneHandVisible = it } },
+                modeDrawVisible = modeDrawVisible,
+                onModeDrawVisibleChange = { handleModeVisibilityChange(it) { modeDrawVisible = it } },
+                language = appLanguage
+            )
+
             // Quick Diagnostics Summary Box
             DiagnosticsSummarySection(
                 hostName = hostName,
@@ -375,7 +413,13 @@ fun SettingsScreen(
                             oneHandScrollSensitivity = oneHandScrollSens,
                             fastScrollEnabled = fastScrollEnabled,
                             fastScrollMultiplier = fastScrollMultiplier,
-                            language = appLanguage
+                            language = appLanguage,
+                            modeKeyboardVisible = modeKeyboardVisible,
+                            modeMouseVisible = modeMouseVisible,
+                            modeGamepadVisible = modeGamepadVisible,
+                            modePresenterVisible = modePresenterVisible,
+                            modeOneHandVisible = modeOneHandVisible,
+                            modeDrawVisible = modeDrawVisible
                         )
                         SettingsRepository.updateSettings(updated)
                         val msg = if (appLanguage == AppLanguage.VIETNAMESE) "Đã lưu cài đặt!" else "Settings saved successfully!"
@@ -427,6 +471,12 @@ fun SettingsScreen(
                         oneHandScrollSens = 1.0f
                         fastScrollEnabled = true
                         fastScrollMultiplier = 2.5f
+                        modeKeyboardVisible = true
+                        modeMouseVisible = true
+                        modeGamepadVisible = false
+                        modePresenterVisible = true
+                        modeOneHandVisible = true
+                        modeDrawVisible = false
                         val resetMsg = if (appLanguage == AppLanguage.VIETNAMESE) "Đã khôi phục cài đặt mặc định." else "Reset to default settings."
                         Toast.makeText(context, resetMsg, Toast.LENGTH_SHORT).show()
                     },

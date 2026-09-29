@@ -60,7 +60,33 @@ fun LandscapeDeckScreen(
         }
     }
 
-    var selectedTopMode by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter
+    var selectedTopMode by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter, 4: One-Hand, 5: Draw
+    
+    LaunchedEffect(settings) {
+        val isCurrentTabVisible = when (selectedTopMode) {
+            0 -> settings.modeKeyboardVisible
+            1 -> settings.modeMouseVisible
+            2 -> settings.modeGamepadVisible
+            3 -> settings.modePresenterVisible
+            4 -> settings.modeOneHandVisible
+            5 -> settings.modeDrawVisible
+            else -> false
+        }
+        if (!isCurrentTabVisible) {
+            val firstVisible = listOf(
+                0 to settings.modeKeyboardVisible,
+                1 to settings.modeMouseVisible,
+                2 to settings.modeGamepadVisible,
+                3 to settings.modePresenterVisible,
+                4 to settings.modeOneHandVisible,
+                5 to settings.modeDrawVisible
+            ).firstOrNull { it.second }?.first ?: 0
+            
+            val resolved = FocusLockController.resolveModeSwitch(selectedTopMode, firstVisible)
+            selectedTopMode = resolved
+        }
+    }
+
     var selectedKeyboardSubMode by rememberSaveable { mutableIntStateOf(0) } // 0: Type, 1: Shortcuts, 2: Media, 3: System, 4: F-Keys, 5: Numpad
 
     // Modifier Key States
@@ -215,6 +241,7 @@ fun LandscapeDeckScreen(
                     selectedTopMode = resolved
                 }
             },
+            settings = settings,
             isFocusLocked = isFocusLocked
         )
 

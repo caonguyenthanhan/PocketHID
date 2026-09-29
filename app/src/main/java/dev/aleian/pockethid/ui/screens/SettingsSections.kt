@@ -1141,3 +1141,74 @@ fun DiagnosticsSummarySection(hostName: String, language: AppLanguage = AppLangu
         }
     }
 }
+
+@Composable
+fun VisibleModesSection(
+    modeKeyboardVisible: Boolean,
+    onModeKeyboardVisibleChange: (Boolean) -> Unit,
+    modeMouseVisible: Boolean,
+    onModeMouseVisibleChange: (Boolean) -> Unit,
+    modeGamepadVisible: Boolean,
+    onModeGamepadVisibleChange: (Boolean) -> Unit,
+    modePresenterVisible: Boolean,
+    onModePresenterVisibleChange: (Boolean) -> Unit,
+    modeOneHandVisible: Boolean,
+    onModeOneHandVisibleChange: (Boolean) -> Unit,
+    modeDrawVisible: Boolean,
+    onModeDrawVisibleChange: (Boolean) -> Unit,
+    language: AppLanguage = AppLanguage.ENGLISH
+) {
+    SectionHeader(
+        icon = Icons.Default.Info,
+        title = if (language == AppLanguage.VIETNAMESE) "Các Mode Hiển Thị" else "Visible Modes",
+        subtitle = "UI Configuration"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfaceContainer)
+            .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+            .padding(14.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            val buildToggle = @Composable { title: String, desc: String, checked: Boolean, onChange: (Boolean) -> Unit ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = title,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = desc,
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = checked,
+                        onCheckedChange = onChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = TextPrimary,
+                            checkedTrackColor = PrimaryContainer
+                        )
+                    )
+                }
+            }
+
+            buildToggle(if (language == AppLanguage.VIETNAMESE) "Bàn phím" else "Keyboard", "Mode 0: Keyboard", modeKeyboardVisible, onModeKeyboardVisibleChange)
+            buildToggle(if (language == AppLanguage.VIETNAMESE) "Chuột" else "Mouse", "Mode 1: Mouse", modeMouseVisible, onModeMouseVisibleChange)
+            buildToggle(if (language == AppLanguage.VIETNAMESE) "Gamepad" else "Gamepad", "Mode 2: Controller", modeGamepadVisible, onModeGamepadVisibleChange)
+            buildToggle(if (language == AppLanguage.VIETNAMESE) "Trình chiếu" else "Presenter", "Mode 3: Presentation", modePresenterVisible, onModePresenterVisibleChange)
+            buildToggle(if (language == AppLanguage.VIETNAMESE) "1-Tay" else "One-Hand", "Mode 4: Remote Control", modeOneHandVisible, onModeOneHandVisibleChange)
+            buildToggle(if (language == AppLanguage.VIETNAMESE) "Bảng vẽ" else "Draw / Tablet", "Mode 5: Graphics Tablet", modeDrawVisible, onModeDrawVisibleChange)
+        }
+    }
+}

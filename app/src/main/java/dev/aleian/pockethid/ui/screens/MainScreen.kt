@@ -145,6 +145,32 @@ fun MainScreen(
     }
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Keyboard, 1: Mouse, 2: Gamepad, 3: Presenter, 4: One-Hand, 5: Draw
+    
+    LaunchedEffect(settings) {
+        val isCurrentTabVisible = when (selectedTab) {
+            0 -> settings.modeKeyboardVisible
+            1 -> settings.modeMouseVisible
+            2 -> settings.modeGamepadVisible
+            3 -> settings.modePresenterVisible
+            4 -> settings.modeOneHandVisible
+            5 -> settings.modeDrawVisible
+            else -> false
+        }
+        if (!isCurrentTabVisible) {
+            val firstVisible = listOf(
+                0 to settings.modeKeyboardVisible,
+                1 to settings.modeMouseVisible,
+                2 to settings.modeGamepadVisible,
+                3 to settings.modePresenterVisible,
+                4 to settings.modeOneHandVisible,
+                5 to settings.modeDrawVisible
+            ).firstOrNull { it.second }?.first ?: 0
+            
+            val resolved = FocusLockController.resolveModeSwitch(selectedTab, firstVisible)
+            selectedTab = resolved
+        }
+    }
+
     var isDrawModesExpanded by rememberSaveable { mutableStateOf(false) }
     val isFocusLocked by FocusLockController.isLocked.collectAsState()
     var showPairingSheet by rememberSaveable { mutableStateOf(false) }
@@ -400,108 +426,120 @@ fun MainScreen(
                         indicatorColor = CyanAccent.copy(alpha = 0.16f)
                     )
 
-                    NavigationBarItem(
-                        selected = selectedTab == 0,
-                        alwaysShowLabel = showNavLabels,
-                        onClick = { onSelectTab(0) },
-                        icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
-                        label = {
-                            Text(
-                                text = PocketStrings.navKeyboard(settings.language),
-                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = navItemColors
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 1,
-                        alwaysShowLabel = showNavLabels,
-                        onClick = { onSelectTab(1) },
-                        icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
-                        label = {
-                            Text(
-                                text = PocketStrings.navMouse(settings.language),
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = navItemColors
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 2,
-                        alwaysShowLabel = showNavLabels,
-                        onClick = { onSelectTab(2) },
-                        icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Gamepad") },
-                        label = {
-                            Text(
-                                text = PocketStrings.navGamepad(settings.language),
-                                fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = navItemColors
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 3,
-                        alwaysShowLabel = showNavLabels,
-                        onClick = { onSelectTab(3) },
-                        icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
-                        label = {
-                            Text(
-                                text = PocketStrings.navPresenter(settings.language),
-                                fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = navItemColors
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 4,
-                        alwaysShowLabel = showNavLabels,
-                        onClick = { onSelectTab(4) },
-                        icon = { Icon(Icons.Default.TouchApp, contentDescription = "1-Hand") },
-                        label = {
-                            Text(
-                                text = PocketStrings.navOneHand(settings.language),
-                                fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = navItemColors
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 5,
-                        alwaysShowLabel = showNavLabels,
-                        onClick = { onSelectTab(5) },
-                        icon = { Icon(Icons.Default.Gesture, contentDescription = "Draw") },
-                        label = {
-                            Text(
-                                text = PocketStrings.navDraw(settings.language),
-                                fontWeight = if (selectedTab == 5) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = navItemColors
-                    )
+                    if (settings.modeKeyboardVisible) {
+                        NavigationBarItem(
+                            selected = selectedTab == 0,
+                            alwaysShowLabel = showNavLabels,
+                            onClick = { onSelectTab(0) },
+                            icon = { Icon(Icons.Default.Keyboard, contentDescription = "Keyboard") },
+                            label = {
+                                Text(
+                                    text = PocketStrings.navKeyboard(settings.language),
+                                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = navItemColors
+                        )
+                    }
+                    if (settings.modeMouseVisible) {
+                        NavigationBarItem(
+                            selected = selectedTab == 1,
+                            alwaysShowLabel = showNavLabels,
+                            onClick = { onSelectTab(1) },
+                            icon = { Icon(Icons.Default.Mouse, contentDescription = "Mouse") },
+                            label = {
+                                Text(
+                                    text = PocketStrings.navMouse(settings.language),
+                                    fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = navItemColors
+                        )
+                    }
+                    if (settings.modeGamepadVisible) {
+                        NavigationBarItem(
+                            selected = selectedTab == 2,
+                            alwaysShowLabel = showNavLabels,
+                            onClick = { onSelectTab(2) },
+                            icon = { Icon(Icons.Default.SportsEsports, contentDescription = "Gamepad") },
+                            label = {
+                                Text(
+                                    text = PocketStrings.navGamepad(settings.language),
+                                    fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = navItemColors
+                        )
+                    }
+                    if (settings.modePresenterVisible) {
+                        NavigationBarItem(
+                            selected = selectedTab == 3,
+                            alwaysShowLabel = showNavLabels,
+                            onClick = { onSelectTab(3) },
+                            icon = { Icon(Icons.Default.Slideshow, contentDescription = "Presenter") },
+                            label = {
+                                Text(
+                                    text = PocketStrings.navPresenter(settings.language),
+                                    fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = navItemColors
+                        )
+                    }
+                    if (settings.modeOneHandVisible) {
+                        NavigationBarItem(
+                            selected = selectedTab == 4,
+                            alwaysShowLabel = showNavLabels,
+                            onClick = { onSelectTab(4) },
+                            icon = { Icon(Icons.Default.TouchApp, contentDescription = "1-Hand") },
+                            label = {
+                                Text(
+                                    text = PocketStrings.navOneHand(settings.language),
+                                    fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = navItemColors
+                        )
+                    }
+                    if (settings.modeDrawVisible) {
+                        NavigationBarItem(
+                            selected = selectedTab == 5,
+                            alwaysShowLabel = showNavLabels,
+                            onClick = { onSelectTab(5) },
+                            icon = { Icon(Icons.Default.Gesture, contentDescription = "Draw") },
+                            label = {
+                                Text(
+                                    text = PocketStrings.navDraw(settings.language),
+                                    fontWeight = if (selectedTab == 5) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = navItemColors
+                        )
+                    }
                 }
             }
         }
