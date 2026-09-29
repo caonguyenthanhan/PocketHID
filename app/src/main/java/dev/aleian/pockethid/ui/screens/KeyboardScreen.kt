@@ -9,6 +9,7 @@ import dev.aleian.pockethid.action.ActionDispatcher
 import dev.aleian.pockethid.action.ActionExecutionPlan
 import dev.aleian.pockethid.action.PocketAction
 import dev.aleian.pockethid.mapping.TextInputResolver
+import dev.aleian.pockethid.mapping.TextInjector
 import dev.aleian.pockethid.ui.components.ImeDiagnosticsHub
 import dev.aleian.pockethid.ui.components.PocketImeInputView
 import androidx.compose.foundation.background
@@ -546,24 +547,18 @@ fun KeyboardScreen(
                                             if (canSendInput() && transport != null) {
                                                 triggerHaptic()
                                                 scope.launch {
-                                                    val strokes = TextInputResolver.resolveText(text)
-                                                    for (stroke in strokes) {
-                                                        ActionDispatcher.execute(
-                                                            ActionExecutionPlan.KeyStroke(stroke.keyCode, stroke.modifiers),
-                                                            transport
-                                                        )
-                                                        ImeDiagnosticsHub.record(
-                                                            "commitText",
-                                                            text,
-                                                            "KEY 0x${stroke.keyCode.toString(16)} (mod=0x${stroke.modifiers.toString(16)})",
-                                                            "Sent"
-                                                        )
-                                                        lastSentCharInfo = "Typed: '$text'"
-                                                        terminalStreamText = text
-                                                        if (settings.pasteDelayMs > 0) {
-                                                            kotlinx.coroutines.delay(settings.pasteDelayMs)
-                                                        }
-                                                    }
+                                                    TextInjector.injectText(text, transport, settings.pasteDelayMs)
+                                                    
+                                                    // ImeDiagnosticsHub is still useful, but since we want abstract injection,
+                                                    // the diagnostic is better handled per-char or as a bulk text action.
+                                                    ImeDiagnosticsHub.record(
+                                                        "commitText",
+                                                        text,
+                                                        "INJECTED STRING",
+                                                        "Sent"
+                                                    )
+                                                    lastSentCharInfo = "Typed: '$text'"
+                                                    terminalStreamText = text
                                                 }
                                             }
                                         }
