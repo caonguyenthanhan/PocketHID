@@ -21,6 +21,7 @@ public enum ConnectionStatus: Equatable {
 
 /// Abstract contract for HID communication.
 /// Decoupled from platform implementations (Android BluetoothHidDevice vs iOS Transport).
+@MainActor
 public protocol HIDTransport: AnyObject {
     /// Current connection status of the transport
     var status: ConnectionStatus { get }

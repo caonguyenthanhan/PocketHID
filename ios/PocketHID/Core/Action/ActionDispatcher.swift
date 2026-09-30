@@ -9,6 +9,7 @@
 import Foundation
 
 /// Dispatches execution plans onto an active HIDTransport instance.
+@MainActor
 public struct ActionDispatcher {
     
     @discardableResult

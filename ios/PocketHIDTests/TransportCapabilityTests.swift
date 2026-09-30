@@ -9,6 +9,7 @@
 import XCTest
 @testable import PocketHID
 
+@MainActor
 final class TransportCapabilityTests: XCTestCase {
 
     func testIOSBaselineDoesNotClaimDirectHID() {

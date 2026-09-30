@@ -13,6 +13,7 @@ import Combine
 /// Formally adheres to the Hard Architecture Gate:
 /// Exposes capability state as unsupported for direct driverless PC Bluetooth HID,
 /// while providing an interactive telemetry pipeline for local UI control and demonstration.
+@MainActor
 public final class iOSTransport: ObservableObject, HIDTransport {
     
     @Published public private(set) var status: ConnectionStatus

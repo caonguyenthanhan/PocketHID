@@ -24,6 +24,7 @@ extension TransportCapability {
 
 /// iOS BridgeTransport skeleton for External HID Bridge architecture.
 /// Conforms to docs/spec/POCKETHID-IOS-BRIDGE-TRANSPORT.md
+@MainActor
 public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport, CBCentralManagerDelegate, CBPeripheralDelegate {
 
     @Published public private(set) var status: ConnectionStatus
@@ -89,6 +90,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         _ = sendRawReport(endpoint: kbNeutral.endpoint, payload: kbNeutral.payload)
         let mouseNeutral = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
         _ = sendRawReport(endpoint: mouseNeutral.endpoint, payload: mouseNeutral.payload)
+        let gamepadNeutral = HIDReportBuilder.buildGamepadReport(buttons: 0, leftStickX: 0, leftStickY: 0, rightStickX: 0, rightStickY: 0, leftTrigger: 0, rightTrigger: 0)
+        _ = sendRawReport(endpoint: gamepadNeutral.endpoint, payload: gamepadNeutral.payload)
         let tabletNeutral = HIDReportBuilder.buildTabletNeutral()
         _ = sendRawReport(endpoint: tabletNeutral.endpoint, payload: tabletNeutral.payload)
 
