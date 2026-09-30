@@ -134,16 +134,26 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
             return false
         }
         
+        guard let peripheral = connectedPeripheral, let tx = txCharacteristic else {
+            return false
+        }
+        
+        // Respect CoreBluetooth's available-send-flow-control behavior
+        guard peripheral.canSendWriteWithoutResponse else {
+            return false
+        }
+        
         guard let wireEnvelope = WireEncoder.encode(msgType: msgType, sequenceNo: sequenceNumber, payload: payload) else {
             return false
         }
+        
         sequenceNumber = sequenceNumber &+ 1
         
         // PENDING: GATT MTU segmentation logic
-        // let data = Data(wireEnvelope)
-        // if let tx = txCharacteristic, let peripheral = connectedPeripheral {
-        //     peripheral.writeValue(data, for: tx, type: .withoutResponse)
-        // }
+        // If wireEnvelope.count > peripheral.maximumWriteValueLength(for: .withoutResponse),
+        // fragmentation will be required in a future task.
+        let data = Data(wireEnvelope)
+        peripheral.writeValue(data, for: tx, type: .withoutResponse)
         
         return true
     }
