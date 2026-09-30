@@ -12,7 +12,6 @@ import Combine
 /// High-level coordinator for Graphics Tablet on iOS.
 /// Combines local stroke rendering, canonical coordinate transformation,
 /// and floating toolbar lifecycle (collapsed by default).
-@MainActor
 public final class DrawingTabletController: ObservableObject {
     
     public let engine: DrawingEngine

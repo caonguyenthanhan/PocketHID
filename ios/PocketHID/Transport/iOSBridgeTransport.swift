@@ -24,11 +24,12 @@ extension TransportCapability {
 
 /// iOS BridgeTransport skeleton for External HID Bridge architecture.
 /// Conforms to docs/spec/POCKETHID-IOS-BRIDGE-TRANSPORT.md
-@MainActor
 public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport, CBCentralManagerDelegate, CBPeripheralDelegate {
 
     @Published public private(set) var status: ConnectionStatus
     @Published public private(set) var capability: TransportCapability
+
+    private let lock = NSLock()
 
     // CoreBluetooth state
     private var centralManager: CBCentralManager?
@@ -54,6 +55,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     // MARK: - Lifecycle API
 
     public func connect() {
+        lock.lock()
+        defer { lock.unlock() }
         guard status == .notConnected || isErrorStatus(status) else { return }
 
         status = .connecting(deviceName: targetDeviceName)
@@ -71,9 +74,11 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func disconnect() -> Bool {
+        lock.lock()
         // Only valid if we were connected
         guard case .connected = status else {
             status = .notConnected
+            lock.unlock()
             return true
         }
 
@@ -82,6 +87,7 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
 
         // Clear outbound queue to prevent normal sends from delaying disconnect
         writeQueue.removeAll()
+        lock.unlock()
 
         // ATTEMPT flushing neutral reports locally.
         // We cannot guarantee these leave the radio before cancelPeripheralConnection,
@@ -95,6 +101,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         let tabletNeutral = HIDReportBuilder.buildTabletNeutral()
         _ = sendRawReport(endpoint: tabletNeutral.endpoint, payload: tabletNeutral.payload)
 
+        lock.lock()
+        defer { lock.unlock() }
         flushQueue()
 
         // Cancel peripheral connection
@@ -142,6 +150,9 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     /// Encapsulates the opaque HID payload into the bridge wire envelope (without content inspection)
     /// and writes it to the GATT TX characteristic.
     private func dispatchToBLE(msgType: WireEncoder.MessageType, payload: [UInt8]) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
         let isConnected: Bool
         if case .connected = status { isConnected = true } else { isConnected = false }
 
@@ -184,6 +195,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     // MARK: - CoreBluetooth Delegates
 
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        lock.lock()
+        defer { lock.unlock() }
         switch central.state {
         case .poweredOn:
             if case .connecting = status {
@@ -204,6 +217,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        lock.lock()
+        defer { lock.unlock() }
         centralManager?.stopScan()
         connectedPeripheral = peripheral
         peripheral.delegate = self
@@ -211,10 +226,14 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        lock.lock()
+        defer { lock.unlock() }
         peripheral.discoverServices([bridgeServiceUUID])
     }
 
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        lock.lock()
+        defer { lock.unlock() }
         connectedPeripheral = nil
         txCharacteristic = nil
         writeQueue.removeAll()
@@ -227,6 +246,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        lock.lock()
+        defer { lock.unlock() }
         guard error == nil else {
             status = .error(message: error!.localizedDescription)
             return
@@ -241,6 +262,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        lock.lock()
+        defer { lock.unlock() }
         guard error == nil else {
             status = .error(message: error!.localizedDescription)
             return
@@ -262,6 +285,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        lock.lock()
+        defer { lock.unlock() }
         flushQueue()
     }
 }
