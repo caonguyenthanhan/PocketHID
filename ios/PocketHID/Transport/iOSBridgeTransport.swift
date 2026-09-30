@@ -178,6 +178,10 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
             return false
         }
 
+        guard let peripheral = connectedPeripheral else {
+            return false
+        }
+
         // Validate queue bounds BEFORE accepting and encoding
         if writeQueue.count >= maxQueueDepth {
             _status = .error(message: "BLE write queue overflow")
@@ -188,6 +192,14 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         guard let wireEnvelope = WireEncoder.encode(msgType: msgType, sequenceNo: sequenceNumber, payload: payload) else {
             return false
         }
+
+        let maxLength = peripheral.maximumWriteValueLength(for: .withoutResponse)
+        if wireEnvelope.count > maxLength {
+            _status = .error(message: "Packet size (\(wireEnvelope.count)) exceeds MTU limit (\(maxLength))")
+            disconnectCleanupOnQueue()
+            return false
+        }
+
         sequenceNumber = sequenceNumber &+ 1
 
         let data = Data(wireEnvelope)
