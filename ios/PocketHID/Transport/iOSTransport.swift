@@ -35,54 +35,42 @@ public final class iOSTransport: ObservableObject, HIDTransport {
     
     // MARK: - HIDTransport Operations
     
-    public func sendKeyboardReport(keyCodes: [UInt8], modifiers: UInt8) -> Bool {
+    public func sendRawReport(endpoint: UInt8, payload: [UInt8]) -> Bool {
         totalLocalActionsDispatched += 1
-        let primaryCode = keyCodes.first ?? 0
-        lastScancodeHex = String(format: "0x%02X", primaryCode)
-        lastDispatchedLabel = primaryCode == 0 ? "LOCAL_KEY_RELEASE" : String(format: "LOCAL_KEY 0x%02X (mod: 0x%02X)", primaryCode, modifiers)
-        
-        // Direct transport is not available via public iOS APIs
-        return capability.level == .mockTesting
-    }
-    
-    public func sendMouseMove(dx: Int8, dy: Int8, buttons: UInt8, wheel: Int8) -> Bool {
-        totalLocalActionsDispatched += 1
-        lastDispatchedLabel = "LOCAL_MOUSE dx:\(dx) dy:\(dy) btn:\(buttons) whl:\(wheel)"
-        return capability.level == .mockTesting
-    }
-    
-    public func sendConsumerClick(usageCode: UInt16) -> Bool {
-        totalLocalActionsDispatched += 1
-        lastScancodeHex = String(format: "0x%04X", usageCode)
-        lastDispatchedLabel = String(format: "LOCAL_CONSUMER 0x%04X", usageCode)
-        return capability.level == .mockTesting
-    }
-    
-    public func sendGamepadReport(
-        buttons: UInt16,
-        leftStickX: Int16,
-        leftStickY: Int16,
-        rightStickX: Int16,
-        rightStickY: Int16,
-        leftTrigger: UInt8,
-        rightTrigger: UInt8
-    ) -> Bool {
-        totalLocalActionsDispatched += 1
-        lastDispatchedLabel = String(format: "LOCAL_GAMEPAD btn:0x%04X LT:%d RT:%d", buttons, leftTrigger, rightTrigger)
-        return capability.level == .mockTesting
-    }
-    
-    public func sendTabletReport(status: UInt8, x: UInt16, y: UInt16) -> Bool {
-        totalLocalActionsDispatched += 1
-        lastTabletPoint = (status, x, y)
-        lastDispatchedLabel = String(format: "LOCAL_TABLET st:0x%02X X:%d Y:%d", status, x, y)
-        return capability.level == .mockTesting
-    }
-    
-    public func sendTabletNeutral() -> Bool {
-        totalLocalActionsDispatched += 1
-        lastTabletPoint = (0, 0, 0)
-        lastDispatchedLabel = "LOCAL_TABLET NEUTRAL"
+        switch endpoint {
+        case 1:
+            let modifiers = payload.count > 0 ? payload[0] : 0
+            let primaryCode = payload.count > 2 ? payload[2] : 0
+            lastScancodeHex = String(format: "0x%02X", primaryCode)
+            lastDispatchedLabel = primaryCode == 0 ? "LOCAL_KEY_RELEASE" : String(format: "LOCAL_KEY 0x%02X (mod: 0x%02X)", primaryCode, modifiers)
+        case 2:
+            let buttons = payload.count > 0 ? payload[0] : 0
+            let dx = payload.count > 1 ? Int8(bitPattern: payload[1]) : 0
+            let dy = payload.count > 2 ? Int8(bitPattern: payload[2]) : 0
+            let wheel = payload.count > 3 ? Int8(bitPattern: payload[3]) : 0
+            lastDispatchedLabel = "LOCAL_MOUSE dx:\(dx) dy:\(dy) btn:\(buttons) whl:\(wheel)"
+        case 3:
+            let usageCode = payload.count > 1 ? (UInt16(payload[1]) << 8) | UInt16(payload[0]) : 0
+            lastScancodeHex = String(format: "0x%04X", usageCode)
+            lastDispatchedLabel = String(format: "LOCAL_CONSUMER 0x%04X", usageCode)
+        case 4:
+            let buttons = payload.count > 1 ? (UInt16(payload[1]) << 8) | UInt16(payload[0]) : 0
+            let lt = payload.count > 6 ? payload[6] : 0
+            let rt = payload.count > 7 ? payload[7] : 0
+            lastDispatchedLabel = String(format: "LOCAL_GAMEPAD btn:0x%04X LT:%d RT:%d", buttons, lt, rt)
+        case 5:
+            let status = payload.count > 0 ? payload[0] : 0
+            let x = payload.count > 2 ? (UInt16(payload[2]) << 8) | UInt16(payload[1]) : 0
+            let y = payload.count > 4 ? (UInt16(payload[4]) << 8) | UInt16(payload[3]) : 0
+            lastTabletPoint = (status, x, y)
+            if status == 0 && x == 0 && y == 0 {
+                lastDispatchedLabel = "LOCAL_TABLET NEUTRAL"
+            } else {
+                lastDispatchedLabel = String(format: "LOCAL_TABLET st:0x%02X X:%d Y:%d", status, x, y)
+            }
+        default:
+            lastDispatchedLabel = "LOCAL_UNKNOWN ep:\(endpoint)"
+        }
         return capability.level == .mockTesting
     }
     
