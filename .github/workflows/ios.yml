@@ -21,8 +21,8 @@ jobs:
 
     - name: Build iOS Package
       working-directory: ios
-      run: swift build
+      run: xcodebuild -scheme PocketHID -destination 'platform=iOS Simulator,name=iPhone 15' build
 
     - name: Run iOS Unit Tests
       working-directory: ios
-      run: swift test
+      run: xcodebuild -scheme PocketHID -destination 'platform=iOS Simulator,name=iPhone 15' test
