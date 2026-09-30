@@ -88,72 +88,26 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     
     // MARK: - HIDTransport Protocol Implementation
     
-    public func sendKeyboardReport(keyCodes: [UInt8], modifiers: UInt8) -> Bool {
-        var payload: [UInt8] = [modifiers, 0] // 2 bytes header
-        payload.append(contentsOf: keyCodes)
-        // Pad to exactly 8 bytes per standard report
-        while payload.count < 8 { payload.append(0) }
-        
-        return dispatchToBLE(endpoint: 1, payload: payload)
-    }
-    
-    public func sendMouseMove(dx: Int8, dy: Int8, buttons: UInt8, wheel: Int8) -> Bool {
-        let payload: [UInt8] = [
-            buttons,
-            UInt8(bitPattern: dx),
-            UInt8(bitPattern: dy),
-            UInt8(bitPattern: wheel)
-        ]
-        return dispatchToBLE(endpoint: 2, payload: payload)
-    }
-    
-    public func sendConsumerClick(usageCode: UInt16) -> Bool {
-        let payload: [UInt8] = [
-            UInt8(usageCode & 0xFF),
-            UInt8((usageCode >> 8) & 0xFF)
-        ]
-        return dispatchToBLE(endpoint: 3, payload: payload)
-    }
-    
-    public func sendGamepadReport(
-        buttons: UInt16,
-        leftStickX: Int16,
-        leftStickY: Int16,
-        rightStickX: Int16,
-        rightStickY: Int16,
-        leftTrigger: UInt8,
-        rightTrigger: UInt8
-    ) -> Bool {
-        let payload: [UInt8] = [
-            UInt8(buttons & 0xFF), UInt8((buttons >> 8) & 0xFF),
-            UInt8(bitPattern: Int8(clamping: leftStickX >> 8)), // Simplified packing for skeleton
-            UInt8(bitPattern: Int8(clamping: leftStickY >> 8)),
-            UInt8(bitPattern: Int8(clamping: rightStickX >> 8)),
-            UInt8(bitPattern: Int8(clamping: rightStickY >> 8)),
-            leftTrigger,
-            rightTrigger
-        ]
-        return dispatchToBLE(endpoint: 4, payload: payload)
-    }
-    
-    public func sendTabletReport(status: UInt8, x: UInt16, y: UInt16) -> Bool {
-        let payload: [UInt8] = [
-            status,
-            UInt8(x & 0xFF), UInt8((x >> 8) & 0xFF),
-            UInt8(y & 0xFF), UInt8((y >> 8) & 0xFF)
-        ]
-        return dispatchToBLE(endpoint: 5, payload: payload)
-    }
-    
-    public func sendTabletNeutral() -> Bool {
-        return sendTabletReport(status: 0, x: 0, y: 0)
+    public func sendRawReport(endpoint: UInt8, payload: [UInt8]) -> Bool {
+        let msgType: WireEncoder.MessageType
+        switch endpoint {
+        case 1: msgType = .kbReport
+        case 2: msgType = .mouseReport
+        case 3: msgType = .consumerClick
+        case 4: msgType = .gamepadReport
+        case 5: msgType = .tabletReport
+        default: return false
+        }
+        return dispatchToBLE(msgType: msgType, payload: payload)
     }
     
     // MARK: - Core Dispatch Boundary
     
+    private var sequenceNumber: UInt16 = 1
+    
     /// Encapsulates the opaque HID payload into the bridge wire envelope (without content inspection)
     /// and writes it to the GATT TX characteristic.
-    private func dispatchToBLE(endpoint: UInt8, payload: [UInt8]) -> Bool {
+    private func dispatchToBLE(msgType: WireEncoder.MessageType, payload: [UInt8]) -> Bool {
         let isConnected: Bool
         if case .connected = status { isConnected = true } else { isConnected = false }
         
@@ -162,10 +116,10 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
             return false
         }
         
-        // Ensure framing exactly matches the existing frozen protocol (POCKETHID-BRIDGE-WIRE-PROTOCOL.md)
-        // e.g. [Endpoint ID] + [Payload]
-        var wireEnvelope: [UInt8] = [endpoint]
-        wireEnvelope.append(contentsOf: payload)
+        guard let wireEnvelope = WireEncoder.encode(msgType: msgType, sequenceNo: sequenceNumber, payload: payload) else {
+            return false
+        }
+        sequenceNumber = sequenceNumber &+ 1
         
         // PENDING: GATT MTU segmentation logic
         // let data = Data(wireEnvelope)
