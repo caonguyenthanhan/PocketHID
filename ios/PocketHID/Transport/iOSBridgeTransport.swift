@@ -209,6 +209,7 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         connectedPeripheral = nil
         txCharacteristic = nil
+        writeQueue.removeAll()
 
         if case .disconnecting = status {
             status = .notConnected
