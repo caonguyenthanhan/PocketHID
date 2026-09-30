@@ -37,6 +37,10 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     // Configuration placeholders (Hardware-dependent, currently PENDING)
     private let targetDeviceName = "PocketHID-Bridge" // PENDING
     
+    // UUIDs from PocketHID Bridge Specification
+    private let bridgeServiceUUID = CBUUID(string: "A55A0001-E234-4B56-8A78-9ABCDEF01234")
+    private let bridgeCharacteristicRxUUID = CBUUID(string: "A55A0002-E234-4B56-8A78-9ABCDEF01234") // WriteWithoutResponse
+    
     public init() {
         self.capability = .externalBridgeGATT
         self.status = .notConnected
@@ -50,11 +54,11 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         
         status = .connecting(deviceName: targetDeviceName)
         
-        // PENDING: Real CoreBluetooth initialization and scanning
-        // centralManager = CBCentralManager(delegate: self, queue: nil)
-        
-        // Note: For now, it remains in connecting state since hardware validation is BLOCKED.
-        // We do NOT fake the CONNECTED state as per the strict specification.
+        if centralManager == nil {
+            centralManager = CBCentralManager(delegate: self, queue: nil)
+        } else if centralManager?.state == .poweredOn {
+            centralManager?.scanForPeripherals(withServices: [bridgeServiceUUID], options: nil)
+        }
     }
     
     private func isErrorStatus(_ status: ConnectionStatus) -> Bool {
@@ -83,10 +87,21 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         // Cancel peripheral connection
         if let peripheral = connectedPeripheral {
             centralManager?.cancelPeripheralConnection(peripheral)
+        } else {
+            status = .notConnected
         }
         
-        status = .notConnected
+        // Note: We don't set status = .notConnected here if we successfully called cancelPeripheralConnection,
+        // because the didDisconnectPeripheral delegate callback will handle the final transition.
         return true
+    }
+    
+    private func disconnectCleanup() {
+        if let peripheral = connectedPeripheral {
+            centralManager?.cancelPeripheralConnection(peripheral)
+        }
+        connectedPeripheral = nil
+        txCharacteristic = nil
     }
     
     // MARK: - HIDTransport Protocol Implementation
@@ -133,31 +148,76 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         return true
     }
     
-    // MARK: - CoreBluetooth Delegates (Skeleton)
+    // MARK: - CoreBluetooth Delegates
     
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state != .poweredOn {
-            status = .error(message: "Bluetooth disabled")
+        switch central.state {
+        case .poweredOn:
+            if case .connecting = status {
+                central.scanForPeripherals(withServices: [bridgeServiceUUID], options: nil)
+            }
+        case .poweredOff:
+            status = .error(message: "Bluetooth is powered off")
+            disconnectCleanup()
+        case .unauthorized:
+            status = .error(message: "Bluetooth is unauthorized")
+            disconnectCleanup()
+        case .unsupported:
+            status = .error(message: "Bluetooth is unsupported")
+            disconnectCleanup()
+        default:
+            break
         }
     }
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        // PENDING
+        centralManager?.stopScan()
+        connectedPeripheral = peripheral
+        peripheral.delegate = self
+        centralManager?.connect(peripheral, options: nil)
     }
     
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        // PENDING
+        peripheral.discoverServices([bridgeServiceUUID])
     }
     
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        status = .error(message: error?.localizedDescription ?? "Disconnected")
+        connectedPeripheral = nil
+        txCharacteristic = nil
+        
+        if case .disconnecting = status {
+            status = .notConnected
+        } else {
+            status = .error(message: error?.localizedDescription ?? "Disconnected")
+        }
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        // PENDING
+        guard error == nil else {
+            status = .error(message: error!.localizedDescription)
+            return
+        }
+        
+        guard let services = peripheral.services, let service = services.first(where: { $0.uuid == bridgeServiceUUID }) else {
+            status = .error(message: "Bridge service not found")
+            return
+        }
+        
+        peripheral.discoverCharacteristics([bridgeCharacteristicRxUUID], for: service)
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        // PENDING: Upon success -> status = .connected(deviceName: targetDeviceName)
+        guard error == nil else {
+            status = .error(message: error!.localizedDescription)
+            return
+        }
+        
+        guard let characteristics = service.characteristics, let characteristic = characteristics.first(where: { $0.uuid == bridgeCharacteristicRxUUID }) else {
+            status = .error(message: "Bridge RX characteristic not found")
+            return
+        }
+        
+        txCharacteristic = characteristic
+        status = .connected(deviceName: peripheral.name ?? targetDeviceName)
     }
 }
