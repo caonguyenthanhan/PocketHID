@@ -20,6 +20,7 @@ data class AppSettings(
     val soundEffectsEnabled: Boolean = true,
     val keepAwakeTimeout: String = "10 Minutes",
     val language: AppLanguage = AppLanguage.ENGLISH,
+    val voiceLanguage: AppLanguage = AppLanguage.ENGLISH,
     // Screen Behavior & Timeout Settings
     val keepScreenAwake: Boolean = false, // false = Allow screen to sleep (Default), true = Keep screen awake while PocketHID is open
     val screenSleepTimeoutMinutes: Int = 10, // 10 minutes inactivity timeout (Default)
@@ -90,6 +91,7 @@ object SettingsRepository {
     private const val KEY_FAST_SCROLL_MULTIPLIER = "fast_scroll_multiplier"
     private const val KEY_FAST_SCROLL_WIDTH = "fast_scroll_width"
     private const val KEY_LANGUAGE = "app_language"
+    private const val KEY_VOICE_LANGUAGE = "voice_language"
     private const val KEY_MODE_KEYBOARD = "mode_keyboard_visible"
     private const val KEY_MODE_MOUSE = "mode_mouse_visible"
     private const val KEY_MODE_GAMEPAD = "mode_gamepad_visible"
@@ -122,6 +124,7 @@ object SettingsRepository {
             soundEffectsEnabled = sp.getBoolean(KEY_SOUND_EFFECTS, true),
             keepAwakeTimeout = sp.getString(KEY_KEEP_AWAKE, "10 Minutes") ?: "10 Minutes",
             language = AppLanguage.fromString(sp.getString(KEY_LANGUAGE, "ENGLISH") ?: "ENGLISH"),
+            voiceLanguage = AppLanguage.fromString(sp.getString(KEY_VOICE_LANGUAGE, "ENGLISH") ?: "ENGLISH"),
             keepScreenAwake = sp.getBoolean(KEY_KEEP_SCREEN_AWAKE, false),
             screenSleepTimeoutMinutes = sp.getInt(KEY_SCREEN_SLEEP_TIMEOUT, 10),
             hostOs = HostOs.fromString(sp.getString(KEY_HOST_OS, "WINDOWS") ?: "WINDOWS"),
@@ -189,6 +192,7 @@ object SettingsRepository {
             putBoolean(KEY_SOUND_EFFECTS, finalSettings.soundEffectsEnabled)
             putString(KEY_KEEP_AWAKE, finalSettings.keepAwakeTimeout)
             putString(KEY_LANGUAGE, finalSettings.language.name)
+            putString(KEY_VOICE_LANGUAGE, finalSettings.voiceLanguage.name)
             putBoolean(KEY_KEEP_SCREEN_AWAKE, finalSettings.keepScreenAwake)
             putInt(KEY_SCREEN_SLEEP_TIMEOUT, finalSettings.screenSleepTimeoutMinutes)
             putString(KEY_HOST_OS, finalSettings.hostOs.name)

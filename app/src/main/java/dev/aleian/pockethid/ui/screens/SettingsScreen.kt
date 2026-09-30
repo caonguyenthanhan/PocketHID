@@ -108,6 +108,7 @@ fun SettingsScreen(
     var fastScrollEnabled by remember(currentSettings) { mutableStateOf(currentSettings.fastScrollEnabled) }
     var fastScrollMultiplier by remember(currentSettings) { mutableFloatStateOf(currentSettings.fastScrollMultiplier) }
     var appLanguage by remember(currentSettings) { mutableStateOf(currentSettings.language) }
+    var voiceLanguage by remember(currentSettings) { mutableStateOf(currentSettings.voiceLanguage) }
 
     var modeKeyboardVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeKeyboardVisible) }
     var modeMouseVisible by remember(currentSettings) { mutableStateOf(currentSettings.modeMouseVisible) }
@@ -278,6 +279,70 @@ fun SettingsScreen(
                     }
                 }
             }
+            
+            // Voice Language Selection Card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SurfaceContainerLowest)
+                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+                    .padding(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = if (appLanguage == AppLanguage.VIETNAMESE) "Ngôn ngữ nhận dạng giọng nói" else "Speech Recognition Language",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (voiceLanguage == AppLanguage.ENGLISH) "English (Active)" else "Tiếng Việt (Đang bật)",
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (voiceLanguage == AppLanguage.ENGLISH) CyanAccent.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                .border(1.dp, if (voiceLanguage == AppLanguage.ENGLISH) CyanAccent else DarkBorder, RoundedCornerShape(6.dp))
+                                .clickable { voiceLanguage = AppLanguage.ENGLISH }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "EN",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (voiceLanguage == AppLanguage.ENGLISH) CyanAccent else TextMuted
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (voiceLanguage == AppLanguage.VIETNAMESE) CyanAccent.copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                .border(1.dp, if (voiceLanguage == AppLanguage.VIETNAMESE) CyanAccent else DarkBorder, RoundedCornerShape(6.dp))
+                                .clickable { voiceLanguage = AppLanguage.VIETNAMESE }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "VI",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (voiceLanguage == AppLanguage.VIETNAMESE) CyanAccent else TextMuted
+                            )
+                        }
+                    }
+                }
+            }
 
             // Section 1: Mouse & Trackpad Engine
             MouseTrackpadSettingsSection(
@@ -423,7 +488,8 @@ fun SettingsScreen(
                             modeGamepadVisible = modeGamepadVisible,
                             modePresenterVisible = modePresenterVisible,
                             modeOneHandVisible = modeOneHandVisible,
-                            modeDrawVisible = modeDrawVisible
+                            modeDrawVisible = modeDrawVisible,
+                            voiceLanguage = voiceLanguage
                         )
                         SettingsRepository.updateSettings(updated)
                         val msg = if (appLanguage == AppLanguage.VIETNAMESE) "Đã lưu cài đặt!" else "Settings saved successfully!"

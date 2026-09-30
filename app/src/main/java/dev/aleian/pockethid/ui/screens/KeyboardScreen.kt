@@ -39,6 +39,8 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardHide
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -134,24 +136,30 @@ fun KeyboardScreen(
         }
     }
 
+    val transcriptText by voiceController.transcript.collectAsState()
+
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            val langCode = if (settings.language == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
+            val langCode = if (settings.voiceLanguage == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
             voiceController.startListening(langCode)
+        } else {
+            val isVi = settings.language == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE
+            terminalStreamText = if (isVi) "Từ chối quyền Mic" else "Mic Permission Denied"
         }
     }
 
     var prevVoiceState by remember { mutableStateOf(VoiceState.IDLE) }
     LaunchedEffect(voiceState) {
+        val isVi = settings.language == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE
         when (voiceState) {
             VoiceState.LISTENING -> {
                 dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_LISTENING_STARTED)
-                terminalStreamText = "Listening..."
+                terminalStreamText = if (isVi) "Đang nghe..." else "Listening..."
             }
             VoiceState.PROCESSING -> {
-                terminalStreamText = "Processing..."
+                terminalStreamText = if (isVi) "Đang xử lý..." else "Processing..."
             }
             VoiceState.RESULT -> {
                 dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_RESULT)
@@ -164,20 +172,34 @@ fun KeyboardScreen(
             }
             VoiceState.ERROR -> {
                 dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_ERROR)
-                terminalStreamText = "Voice Error"
-                voiceController.cancel()
+                terminalStreamText = if (!voicePlatform.checkAudioPermission()) {
+                    if (isVi) "Thiếu quyền Microphone" else "Mic Permission Denied"
+                } else if (transcriptText.isEmpty()) {
+                    if (isVi) "Không nghe rõ (Thử lại)" else "No speech detected (Retry)"
+                } else {
+                    if (isVi) "Lỗi nhận dạng (Thử lại)" else "Recognition Error (Retry)"
+                }
             }
             VoiceState.IDLE -> {
-                if (prevVoiceState == VoiceState.LISTENING) {
+                if (prevVoiceState == VoiceState.LISTENING || prevVoiceState == VoiceState.PROCESSING) {
                     dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_LISTENING_STOPPED)
+                    terminalStreamText = "ready>"
+                } else if (prevVoiceState == VoiceState.ERROR) {
                     terminalStreamText = "ready>"
                 }
             }
             VoiceState.UNAVAILABLE -> {
-                terminalStreamText = "Voice Unavailable"
+                terminalStreamText = if (isVi) "Giọng nói không khả dụng" else "Voice Unavailable"
+                voiceController.cancel()
             }
         }
         prevVoiceState = voiceState
+    }
+
+    LaunchedEffect(transcriptText) {
+        if (voiceState == VoiceState.LISTENING && transcriptText.isNotEmpty()) {
+            terminalStreamText = transcriptText
+        }
     }
 
     LaunchedEffect(isConnected) {
@@ -498,31 +520,62 @@ fun KeyboardScreen(
                                         )
                                     }
 
-                                    Box(
-                                        modifier = Modifier
-                                            .size(26.dp)
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Color(0xFFEF4444).copy(alpha = 0.2f) else DarkSurfaceVariant)
-                                            .clickable {
-                                                if (voiceState == VoiceState.LISTENING) {
-                                                    voiceController.cancel()
-                                                } else {
-                                                    if (!voicePlatform.checkAudioPermission()) {
-                                                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                    if (voiceState == VoiceState.ERROR) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(PrimaryBlue.copy(alpha = 0.2f))
+                                                .clickable {
+                                                    val langCode = if (settings.voiceLanguage == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
+                                                    voiceController.startListening(langCode)
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Refresh,
+                                                contentDescription = "Retry Voice",
+                                                tint = PrimaryBlue,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(DarkSurfaceVariant)
+                                                .clickable { voiceController.cancel() },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("✕", fontSize = 10.sp, color = TextMuted)
+                                        }
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Color(0xFFEF4444).copy(alpha = 0.2f) else DarkSurfaceVariant)
+                                                .clickable {
+                                                    if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) {
+                                                        voiceController.cancel()
                                                     } else {
-                                                        val langCode = if (settings.language == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
-                                                        voiceController.startListening(langCode)
+                                                        if (!voicePlatform.checkAudioPermission()) {
+                                                            permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                                        } else {
+                                                            val langCode = if (settings.voiceLanguage == dev.aleian.pockethid.model.AppLanguage.VIETNAMESE) "vi-VN" else "en-US"
+                                                            voiceController.startListening(langCode)
+                                                        }
                                                     }
-                                                }
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Icons.Default.MicOff else Icons.Default.Mic,
-                                            contentDescription = "Voice Input",
-                                            tint = if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Color(0xFFEF4444) else TextMuted,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Icons.Default.Stop else Icons.Default.Mic,
+                                                contentDescription = "Voice Input",
+                                                tint = if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.PROCESSING) Color(0xFFEF4444) else TextMuted,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
