@@ -76,10 +76,15 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
             return true
         }
 
-        // Transition to DISCONNECTING (Lifecycle window for neutral/safety flushing)
+        // Transition to DISCONNECTING
         status = .disconnecting
 
-        // ATTEMPT flushing neutral reports
+        // Clear outbound queue to prevent normal sends from delaying disconnect
+        writeQueue.removeAll()
+
+        // ATTEMPT flushing neutral reports locally.
+        // We cannot guarantee these leave the radio before cancelPeripheralConnection,
+        // but the Bridge firmware's BLE_GAP_EVENT_DISCONNECT hook guarantees host neutralization.
         let kbNeutral = HIDReportBuilder.buildKeyboardReport(keyCodes: [], modifiers: 0)
         _ = sendRawReport(endpoint: kbNeutral.endpoint, payload: kbNeutral.payload)
         let mouseNeutral = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
