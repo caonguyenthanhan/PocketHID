@@ -29,7 +29,16 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     @Published public private(set) var status: ConnectionStatus
     @Published public private(set) var capability: TransportCapability
 
-    private let lock = NSLock()
+    private let transportQueue = DispatchQueue(label: "PocketHID.BridgeTransport")
+
+    private var _status: ConnectionStatus = .notConnected {
+        didSet {
+            let newStatus = _status
+            DispatchQueue.main.async { [weak self] in
+                self?.status = newStatus
+            }
+        }
+    }
 
     // CoreBluetooth state
     private var centralManager: CBCentralManager?
@@ -49,20 +58,25 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     public init() {
         self.capability = .externalBridgeGATT
         self.status = .notConnected
+        self._status = .notConnected
         super.init()
     }
 
     // MARK: - Lifecycle API
 
     public func connect() {
-        lock.lock()
-        defer { lock.unlock() }
-        guard status == .notConnected || isErrorStatus(status) else { return }
+        transportQueue.async {
+            self.connectOnQueue()
+        }
+    }
 
-        status = .connecting(deviceName: targetDeviceName)
+    private func connectOnQueue() {
+        guard _status == .notConnected || isErrorStatus(_status) else { return }
+
+        _status = .connecting(deviceName: targetDeviceName)
 
         if centralManager == nil {
-            centralManager = CBCentralManager(delegate: self, queue: nil)
+            centralManager = CBCentralManager(delegate: self, queue: transportQueue)
         } else if centralManager?.state == .poweredOn {
             centralManager?.scanForPeripherals(withServices: [bridgeServiceUUID], options: nil)
         }
@@ -74,50 +88,54 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func disconnect() -> Bool {
-        lock.lock()
+        return transportQueue.sync {
+            return disconnectOnQueue()
+        }
+    }
+
+    private func disconnectOnQueue() -> Bool {
         // Only valid if we were connected
-        guard case .connected = status else {
-            status = .notConnected
-            lock.unlock()
+        guard case .connected = _status else {
+            _status = .notConnected
             return true
         }
 
         // Transition to DISCONNECTING
-        status = .disconnecting
+        _status = .disconnecting
 
         // Clear outbound queue to prevent normal sends from delaying disconnect
         writeQueue.removeAll()
-        lock.unlock()
 
         // ATTEMPT flushing neutral reports locally.
         // We cannot guarantee these leave the radio before cancelPeripheralConnection,
         // but the Bridge firmware's BLE_GAP_EVENT_DISCONNECT hook guarantees host neutralization.
         let kbNeutral = HIDReportBuilder.buildKeyboardReport(keyCodes: [], modifiers: 0)
-        _ = sendRawReport(endpoint: kbNeutral.endpoint, payload: kbNeutral.payload)
-        let mouseNeutral = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
-        _ = sendRawReport(endpoint: mouseNeutral.endpoint, payload: mouseNeutral.payload)
-        let gamepadNeutral = HIDReportBuilder.buildGamepadReport(buttons: 0, leftStickX: 0, leftStickY: 0, rightStickX: 0, rightStickY: 0, leftTrigger: 0, rightTrigger: 0)
-        _ = sendRawReport(endpoint: gamepadNeutral.endpoint, payload: gamepadNeutral.payload)
-        let tabletNeutral = HIDReportBuilder.buildTabletNeutral()
-        _ = sendRawReport(endpoint: tabletNeutral.endpoint, payload: tabletNeutral.payload)
+        _ = dispatchToBLEOnQueue(msgType: .kbReport, payload: kbNeutral.payload)
 
-        lock.lock()
-        defer { lock.unlock() }
-        flushQueue()
+        let mouseNeutral = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
+        _ = dispatchToBLEOnQueue(msgType: .mouseReport, payload: mouseNeutral.payload)
+
+        let gamepadNeutral = HIDReportBuilder.buildGamepadReport(buttons: 0, leftStickX: 0, leftStickY: 0, rightStickX: 0, rightStickY: 0, leftTrigger: 0, rightTrigger: 0)
+        _ = dispatchToBLEOnQueue(msgType: .gamepadReport, payload: gamepadNeutral.payload)
+
+        let tabletNeutral = HIDReportBuilder.buildTabletNeutral()
+        _ = dispatchToBLEOnQueue(msgType: .tabletReport, payload: tabletNeutral.payload)
+
+        flushQueueOnQueue()
 
         // Cancel peripheral connection
         if let peripheral = connectedPeripheral {
             centralManager?.cancelPeripheralConnection(peripheral)
         } else {
-            status = .notConnected
+            _status = .notConnected
         }
 
-        // Note: We don't set status = .notConnected here if we successfully called cancelPeripheralConnection,
+        // Note: We don't set _status = .notConnected here if we successfully called cancelPeripheralConnection,
         // because the didDisconnectPeripheral delegate callback will handle the final transition.
         return true
     }
 
-    private func disconnectCleanup() {
+    private func disconnectCleanupOnQueue() {
         if let peripheral = connectedPeripheral {
             centralManager?.cancelPeripheralConnection(peripheral)
         }
@@ -129,16 +147,18 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     // MARK: - HIDTransport Protocol Implementation
 
     public func sendRawReport(endpoint: UInt8, payload: [UInt8]) -> Bool {
-        let msgType: WireEncoder.MessageType
-        switch endpoint {
-        case 1: msgType = .kbReport
-        case 2: msgType = .mouseReport
-        case 3: msgType = .consumerClick
-        case 4: msgType = .gamepadReport
-        case 5: msgType = .tabletReport
-        default: return false
+        return transportQueue.sync {
+            let msgType: WireEncoder.MessageType
+            switch endpoint {
+            case 1: msgType = .kbReport
+            case 2: msgType = .mouseReport
+            case 3: msgType = .consumerClick
+            case 4: msgType = .gamepadReport
+            case 5: msgType = .tabletReport
+            default: return false
+            }
+            return dispatchToBLEOnQueue(msgType: msgType, payload: payload)
         }
-        return dispatchToBLE(msgType: msgType, payload: payload)
     }
 
     // MARK: - Core Dispatch Boundary
@@ -149,22 +169,19 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     
     /// Encapsulates the opaque HID payload into the bridge wire envelope (without content inspection)
     /// and writes it to the GATT TX characteristic.
-    private func dispatchToBLE(msgType: WireEncoder.MessageType, payload: [UInt8]) -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-
+    private func dispatchToBLEOnQueue(msgType: WireEncoder.MessageType, payload: [UInt8]) -> Bool {
         let isConnected: Bool
-        if case .connected = status { isConnected = true } else { isConnected = false }
+        if case .connected = _status { isConnected = true } else { isConnected = false }
 
         // Allow dispatch ONLY if CONNECTED or DISCONNECTING (for safety flush)
-        guard isConnected || status == .disconnecting else {
+        guard isConnected || _status == .disconnecting else {
             return false
         }
 
         // Validate queue bounds BEFORE accepting and encoding
         if writeQueue.count >= maxQueueDepth {
-            status = .error(message: "BLE write queue overflow")
-            disconnectCleanup()
+            _status = .error(message: "BLE write queue overflow")
+            disconnectCleanupOnQueue()
             return false
         }
 
@@ -175,12 +192,12 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
 
         let data = Data(wireEnvelope)
         writeQueue.append(data)
-        flushQueue()
+        flushQueueOnQueue()
 
         return true
     }
 
-    private func flushQueue() {
+    private func flushQueueOnQueue() {
         guard let peripheral = connectedPeripheral, let tx = txCharacteristic else {
             writeQueue.removeAll()
             return
@@ -195,30 +212,26 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     // MARK: - CoreBluetooth Delegates
 
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        lock.lock()
-        defer { lock.unlock() }
         switch central.state {
         case .poweredOn:
-            if case .connecting = status {
+            if case .connecting = _status {
                 central.scanForPeripherals(withServices: [bridgeServiceUUID], options: nil)
             }
         case .poweredOff:
-            status = .error(message: "Bluetooth is powered off")
-            disconnectCleanup()
+            _status = .error(message: "Bluetooth is powered off")
+            disconnectCleanupOnQueue()
         case .unauthorized:
-            status = .error(message: "Bluetooth is unauthorized")
-            disconnectCleanup()
+            _status = .error(message: "Bluetooth is unauthorized")
+            disconnectCleanupOnQueue()
         case .unsupported:
-            status = .error(message: "Bluetooth is unsupported")
-            disconnectCleanup()
+            _status = .error(message: "Bluetooth is unsupported")
+            disconnectCleanupOnQueue()
         default:
             break
         }
     }
 
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        lock.lock()
-        defer { lock.unlock() }
         centralManager?.stopScan()
         connectedPeripheral = peripheral
         peripheral.delegate = self
@@ -226,35 +239,29 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        lock.lock()
-        defer { lock.unlock() }
         peripheral.discoverServices([bridgeServiceUUID])
     }
 
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        lock.lock()
-        defer { lock.unlock() }
         connectedPeripheral = nil
         txCharacteristic = nil
         writeQueue.removeAll()
 
-        if case .disconnecting = status {
-            status = .notConnected
+        if case .disconnecting = _status {
+            _status = .notConnected
         } else {
-            status = .error(message: error?.localizedDescription ?? "Disconnected")
+            _status = .error(message: error?.localizedDescription ?? "Disconnected")
         }
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        lock.lock()
-        defer { lock.unlock() }
         guard error == nil else {
-            status = .error(message: error!.localizedDescription)
+            _status = .error(message: error!.localizedDescription)
             return
         }
 
         guard let services = peripheral.services, let service = services.first(where: { $0.uuid == bridgeServiceUUID }) else {
-            status = .error(message: "Bridge service not found")
+            _status = .error(message: "Bridge service not found")
             return
         }
 
@@ -262,31 +269,27 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        lock.lock()
-        defer { lock.unlock() }
         guard error == nil else {
-            status = .error(message: error!.localizedDescription)
+            _status = .error(message: error!.localizedDescription)
             return
         }
 
         guard let characteristics = service.characteristics, let characteristic = characteristics.first(where: { $0.uuid == bridgeCharacteristicRxUUID }) else {
-            status = .error(message: "Bridge RX characteristic not found")
+            _status = .error(message: "Bridge RX characteristic not found")
             return
         }
 
         guard characteristic.properties.contains(.writeWithoutResponse) else {
-            status = .error(message: "Bridge RX characteristic lacks writeWithoutResponse property")
-            disconnectCleanup()
+            _status = .error(message: "Bridge RX characteristic lacks writeWithoutResponse property")
+            disconnectCleanupOnQueue()
             return
         }
 
         txCharacteristic = characteristic
-        status = .connected(deviceName: peripheral.name ?? targetDeviceName)
+        _status = .connected(deviceName: peripheral.name ?? targetDeviceName)
     }
 
     public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
-        lock.lock()
-        defer { lock.unlock() }
-        flushQueue()
+        flushQueueOnQueue()
     }
 }
