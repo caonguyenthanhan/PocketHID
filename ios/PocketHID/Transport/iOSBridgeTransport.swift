@@ -36,7 +36,6 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
 
     // BLE Write Queue
     private var writeQueue: [Data] = []
-    private let maxQueueChunks = 200
 
     // Configuration placeholders (Hardware-dependent, currently PENDING)
     private let targetDeviceName = "PocketHID-Bridge" // PENDING
@@ -130,6 +129,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
 
     private var sequenceNumber: UInt16 = 1
 
+    private let maxQueueDepth = 50
+    
     /// Encapsulates the opaque HID payload into the bridge wire envelope (without content inspection)
     /// and writes it to the GATT TX characteristic.
     private func dispatchToBLE(msgType: WireEncoder.MessageType, payload: [UInt8]) -> Bool {
@@ -141,7 +142,10 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
             return false
         }
 
-        guard let peripheral = connectedPeripheral else {
+        // Validate queue bounds BEFORE accepting and encoding
+        if writeQueue.count >= maxQueueDepth {
+            status = .error(message: "BLE write queue overflow")
+            disconnectCleanup()
             return false
         }
 
@@ -150,31 +154,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         }
         sequenceNumber = sequenceNumber &+ 1
 
-        let maxWrite = peripheral.maximumWriteValueLength(for: .withoutResponse)
-        guard maxWrite > 0 else {
-            status = .error(message: "Invalid BLE maximumWriteValueLength (0)")
-            disconnectCleanup()
-            return false
-        }
-
-        // Calculate chunks
-        var chunks: [Data] = []
-        var offset = 0
-        while offset < wireEnvelope.count {
-            let length = min(maxWrite, wireEnvelope.count - offset)
-            let chunk = Data(wireEnvelope[offset..<(offset + length)])
-            chunks.append(chunk)
-            offset += length
-        }
-
-        // Enqueue if there is space
-        if writeQueue.count + chunks.count > maxQueueChunks {
-            status = .error(message: "BLE write queue overflow")
-            disconnectCleanup()
-            return false
-        }
-
-        writeQueue.append(contentsOf: chunks)
+        let data = Data(wireEnvelope)
+        writeQueue.append(data)
         flushQueue()
 
         return true
@@ -187,8 +168,8 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         }
 
         while !writeQueue.isEmpty && peripheral.canSendWriteWithoutResponse {
-            let chunk = writeQueue.removeFirst()
-            peripheral.writeValue(chunk, for: tx, type: .withoutResponse)
+            let packet = writeQueue.removeFirst()
+            peripheral.writeValue(packet, for: tx, type: .withoutResponse)
         }
     }
 
