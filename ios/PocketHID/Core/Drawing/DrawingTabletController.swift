@@ -71,7 +71,10 @@ public final class DrawingTabletController: ObservableObject {
         let transformed = pipeline.transform(rawPoint: point, tool: engine.activeTool)
         lastTransformedPoint = transformed
         
-        _ = transport?.sendTabletReport(status: transformed.status, x: transformed.x, y: transformed.y)
+        if let t = transport {
+            let report = HIDReportBuilder.buildTabletReport(status: transformed.status, x: transformed.x, y: transformed.y)
+            _ = t.sendRawReport(endpoint: report.endpoint, payload: report.payload)
+        }
     }
     
     public func onTouchMove(point: DrawingPoint, pointerCount: Int = 1) {
@@ -87,20 +90,29 @@ public final class DrawingTabletController: ObservableObject {
         let transformed = pipeline.transform(rawPoint: point, tool: engine.activeTool)
         lastTransformedPoint = transformed
         
-        _ = transport?.sendTabletReport(status: transformed.status, x: transformed.x, y: transformed.y)
+        if let t = transport {
+            let report = HIDReportBuilder.buildTabletReport(status: transformed.status, x: transformed.x, y: transformed.y)
+            _ = t.sendRawReport(endpoint: report.endpoint, payload: report.payload)
+        }
     }
     
     public func onTouchUp() {
         guard isDrawingActive else { return }
         isDrawingActive = false
         engine.endStroke()
-        _ = transport?.sendTabletNeutral()
+        if let t = transport {
+            let report = HIDReportBuilder.buildTabletNeutral()
+            _ = t.sendRawReport(endpoint: report.endpoint, payload: report.payload)
+        }
     }
     
     public func releaseDrawing() {
         isDrawingActive = false
         engine.cancelStroke()
-        _ = transport?.sendTabletNeutral()
+        if let t = transport {
+            let report = HIDReportBuilder.buildTabletNeutral()
+            _ = t.sendRawReport(endpoint: report.endpoint, payload: report.payload)
+        }
     }
     
     public func toggleToolbar() {

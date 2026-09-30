@@ -27,12 +27,16 @@ public struct ActionDispatcher {
         switch plan {
         case .keyStroke(let code, let modifiers):
             // Press key
-            _ = transport.sendKeyboardReport(keyCodes: [code], modifiers: modifiers)
+            let press = HIDReportBuilder.buildKeyboardReport(keyCodes: [code], modifiers: modifiers)
+            _ = transport.sendRawReport(endpoint: press.endpoint, payload: press.payload)
+
             // Release key (neutral)
-            return transport.sendKeyboardReport(keyCodes: [], modifiers: HidConstants.MOD_NONE)
+            let release = HIDReportBuilder.buildKeyboardReport(keyCodes: [], modifiers: HidConstants.MOD_NONE)
+            return transport.sendRawReport(endpoint: release.endpoint, payload: release.payload)
             
         case .consumerKey(let usageCode):
-            return transport.sendConsumerClick(usageCode: usageCode)
+            let report = HIDReportBuilder.buildConsumerClick(usageCode: usageCode)
+            return transport.sendRawReport(endpoint: report.endpoint, payload: report.payload)
             
         case .sequence(let plans):
             var success = true

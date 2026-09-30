@@ -73,9 +73,12 @@ public final class iOSBridgeTransport: NSObject, ObservableObject, HIDTransport,
         status = .disconnecting
         
         // ATTEMPT flushing neutral reports
-        _ = sendKeyboardReport(keyCodes: [], modifiers: 0)
-        _ = sendMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
-        _ = sendTabletNeutral()
+        let kbNeutral = HIDReportBuilder.buildKeyboardReport(keyCodes: [], modifiers: 0)
+        _ = sendRawReport(endpoint: kbNeutral.endpoint, payload: kbNeutral.payload)
+        let mouseNeutral = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
+        _ = sendRawReport(endpoint: mouseNeutral.endpoint, payload: mouseNeutral.payload)
+        let tabletNeutral = HIDReportBuilder.buildTabletNeutral()
+        _ = sendRawReport(endpoint: tabletNeutral.endpoint, payload: tabletNeutral.payload)
         
         // Cancel peripheral connection
         if let peripheral = connectedPeripheral {

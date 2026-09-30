@@ -107,7 +107,8 @@ public struct MouseView: View {
             let clampedDx = Int8(min(127, max(-127, Int(dx))))
             let clampedDy = Int8(min(127, max(-127, Int(dy))))
             
-            _ = transport.sendMouseMove(dx: clampedDx, dy: clampedDy, buttons: 0, wheel: 0)
+            let report = HIDReportBuilder.buildMouseMove(dx: clampedDx, dy: clampedDy, buttons: 0, wheel: 0)
+            _ = transport.sendRawReport(endpoint: report.endpoint, payload: report.payload)
         }
         lastDragLocation = value.location
     }
@@ -117,8 +118,10 @@ public struct MouseView: View {
         let distance = hypot(value.translation.width, value.translation.height)
         if distance < 5 {
             // Tap = Left Click
-            _ = transport.sendMouseMove(dx: 0, dy: 0, buttons: HidConstants.MOUSE_BUTTON_LEFT, wheel: 0)
-            _ = transport.sendMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
+            let press = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: HidConstants.MOUSE_BUTTON_LEFT, wheel: 0)
+            _ = transport.sendRawReport(endpoint: press.endpoint, payload: press.payload)
+            let release = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
+            _ = transport.sendRawReport(endpoint: release.endpoint, payload: release.payload)
             triggerClickHaptic()
         }
     }
@@ -136,10 +139,12 @@ public struct MouseView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    _ = transport.sendMouseMove(dx: 0, dy: 0, buttons: buttonMask, wheel: 0)
+                    let press = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: buttonMask, wheel: 0)
+                    _ = transport.sendRawReport(endpoint: press.endpoint, payload: press.payload)
                 }
                 .onEnded { _ in
-                    _ = transport.sendMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
+                    let release = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: 0)
+                    _ = transport.sendRawReport(endpoint: release.endpoint, payload: release.payload)
                     triggerClickHaptic()
                 }
         )

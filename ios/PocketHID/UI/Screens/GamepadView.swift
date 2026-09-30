@@ -192,7 +192,7 @@ public struct GamepadView: View {
     }
     
     private func dispatchGamepad(buttons: UInt16) {
-        _ = transport.sendGamepadReport(
+        let report = HIDReportBuilder.buildGamepadReport(
             buttons: buttons,
             leftStickX: 0,
             leftStickY: 0,
@@ -201,6 +201,7 @@ public struct GamepadView: View {
             leftTrigger: 0,
             rightTrigger: 0
         )
+        _ = transport.sendRawReport(endpoint: report.endpoint, payload: report.payload)
         if settings.hapticEnabled {
             #if os(iOS)
             let impact = UIImpactFeedbackGenerator(style: .light)

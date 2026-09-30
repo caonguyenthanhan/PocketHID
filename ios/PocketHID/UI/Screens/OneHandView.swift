@@ -99,7 +99,8 @@ public struct OneHandView: View {
                 DragGesture()
                     .onChanged { value in
                         let deltaY = Int8(min(127, max(-127, -Int(value.translation.height / 10))))
-                        _ = transport.sendMouseMove(dx: 0, dy: 0, buttons: 0, wheel: deltaY)
+                        let report = HIDReportBuilder.buildMouseMove(dx: 0, dy: 0, buttons: 0, wheel: deltaY)
+                        _ = transport.sendRawReport(endpoint: report.endpoint, payload: report.payload)
                     }
             )
             

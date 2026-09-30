@@ -44,16 +44,19 @@ final class TransportCapabilityTests: XCTestCase {
         let transport = iOSTransport(capability: .iOSPublicAPIBaseline)
 
         // Dispatching local actions while unsupported returns false cleanly without crashing
-        let kbResult = transport.sendKeyboardReport(keyCodes: [HidConstants.KEY_A], modifiers: 0)
+        let kbReport = HIDReportBuilder.buildKeyboardReport(keyCodes: [HidConstants.KEY_A], modifiers: 0)
+        let kbResult = transport.sendRawReport(endpoint: kbReport.endpoint, payload: kbReport.payload)
         XCTAssertFalse(kbResult)
         XCTAssertEqual(transport.lastScancodeHex, "0x04")
         XCTAssertEqual(transport.totalLocalActionsDispatched, 1)
 
-        let mouseResult = transport.sendMouseMove(dx: 10, dy: 20, buttons: 1, wheel: 0)
+        let mouseReport = HIDReportBuilder.buildMouseMove(dx: 10, dy: 20, buttons: 1, wheel: 0)
+        let mouseResult = transport.sendRawReport(endpoint: mouseReport.endpoint, payload: mouseReport.payload)
         XCTAssertFalse(mouseResult)
         XCTAssertEqual(transport.totalLocalActionsDispatched, 2)
 
-        let tabletResult = transport.sendTabletReport(status: 1, x: 1000, y: 2000)
+        let tabletReport = HIDReportBuilder.buildTabletReport(status: 1, x: 1000, y: 2000)
+        let tabletResult = transport.sendRawReport(endpoint: tabletReport.endpoint, payload: tabletReport.payload)
         XCTAssertFalse(tabletResult)
         XCTAssertEqual(transport.totalLocalActionsDispatched, 3)
     }
