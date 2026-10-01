@@ -23,6 +23,7 @@ public struct HidConstants {
     // Common Keys
     public static let KEY_NONE: UInt8       = 0x00
     public static let KEY_A: UInt8          = 0x04
+    public static let KEY_B: UInt8          = 0x05
     public static let KEY_C: UInt8          = 0x06
     public static let KEY_D: UInt8          = 0x07
     public static let KEY_L: UInt8          = 0x0F

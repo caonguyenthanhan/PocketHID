@@ -12,6 +12,7 @@
 		A10100032A00000100000001 /* ActionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200032A00000100000001 /* ActionResolver.swift */; };
 		A10100042A00000100000001 /* HostOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200042A00000100000001 /* HostOs.swift */; };
 		A10100052A00000100000001 /* PocketAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200052A00000100000001 /* PocketAction.swift */; };
+		A10100062B00000100000001 /* HIDReportBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200062B00000100000001 /* HIDReportBuilder.swift */; };
 		A10100062A00000100000001 /* DrawingCoordinatePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200062A00000100000001 /* DrawingCoordinatePipeline.swift */; };
 		A10100072A00000100000001 /* DrawingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200072A00000100000001 /* DrawingEngine.swift */; };
 		A10100082A00000100000001 /* DrawingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10200082A00000100000001 /* DrawingModel.swift */; };
@@ -68,6 +69,7 @@
 		A10200032A00000100000001 /* ActionResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResolver.swift; sourceTree = "<group>"; };
 		A10200042A00000100000001 /* HostOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostOs.swift; sourceTree = "<group>"; };
 		A10200052A00000100000001 /* PocketAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketAction.swift; sourceTree = "<group>"; };
+		A10200062B00000100000001 /* HIDReportBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HIDReportBuilder.swift; sourceTree = "<group>"; };
 		A10200062A00000100000001 /* DrawingCoordinatePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingCoordinatePipeline.swift; sourceTree = "<group>"; };
 		A10200072A00000100000001 /* DrawingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingEngine.swift; sourceTree = "<group>"; };
 		A10200082A00000100000001 /* DrawingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingModel.swift; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 				A10200032A00000100000001 /* ActionResolver.swift */,
 				A10200042A00000100000001 /* HostOs.swift */,
 				A10200052A00000100000001 /* PocketAction.swift */,
+				A10200062B00000100000001 /* HIDReportBuilder.swift */,
 			);
 			path = Action;
 			sourceTree = "<group>";
@@ -390,6 +393,7 @@
 				A10100032A00000100000001 /* ActionResolver.swift in Sources */,
 				A10100042A00000100000001 /* HostOs.swift in Sources */,
 				A10100052A00000100000001 /* PocketAction.swift in Sources */,
+				A10100062B00000100000001 /* HIDReportBuilder.swift in Sources */,
 				A10100062A00000100000001 /* DrawingCoordinatePipeline.swift in Sources */,
 				A10100072A00000100000001 /* DrawingEngine.swift in Sources */,
 				A10100082A00000100000001 /* DrawingModel.swift in Sources */,

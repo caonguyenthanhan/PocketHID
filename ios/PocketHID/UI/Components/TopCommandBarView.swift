@@ -105,7 +105,7 @@ public struct TopCommandBarView: View {
             return ThemeColors.cyanAccent
         case .unavailable:
             return ThemeColors.accentAmber
-        case .notConnected, .disconnected, .disconnecting:
+        case .notConnected, .disconnecting:
             return ThemeColors.textMuted
         case .error:
             return ThemeColors.errorContainer
@@ -120,7 +120,7 @@ public struct TopCommandBarView: View {
             return "Connecting \(name ?? "")…"
         case .unavailable:
             return "Direct HID: Unavailable"
-        case .notConnected, .disconnected:
+        case .notConnected:
             return "Not Connected"
         case .disconnecting:
             return "Disconnecting…"
