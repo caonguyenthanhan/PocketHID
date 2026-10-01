@@ -55,16 +55,16 @@ public struct KeyLegends {
     
     // QWERTY Row 1
     public static let row1: [KeyLegend] = [
-        KeyLegend(primary: "Q", keyCode: HidConstants.KEY_NONE, isAlphabetic: true), // Placeholder scancodes mapped via mapper
+        KeyLegend(primary: "Q", keyCode: HidConstants.KEY_Q, isAlphabetic: true), // Placeholder scancodes mapped via mapper
         KeyLegend(primary: "W", keyCode: HidConstants.KEY_W, isAlphabetic: true),
-        KeyLegend(primary: "E", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "R", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
+        KeyLegend(primary: "E", keyCode: HidConstants.KEY_E, isAlphabetic: true),
+        KeyLegend(primary: "R", keyCode: HidConstants.KEY_R, isAlphabetic: true),
         KeyLegend(primary: "T", keyCode: HidConstants.KEY_T, isAlphabetic: true),
         KeyLegend(primary: "Y", keyCode: HidConstants.KEY_Y, isAlphabetic: true),
-        KeyLegend(primary: "U", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "I", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "O", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "P", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
+        KeyLegend(primary: "U", keyCode: HidConstants.KEY_U, isAlphabetic: true),
+        KeyLegend(primary: "I", keyCode: HidConstants.KEY_I, isAlphabetic: true),
+        KeyLegend(primary: "O", keyCode: HidConstants.KEY_O, isAlphabetic: true),
+        KeyLegend(primary: "P", keyCode: HidConstants.KEY_P, isAlphabetic: true),
         KeyLegend(primary: "[", shifted: "{", keyCode: HidConstants.KEY_LEFTBRACE),
         KeyLegend(primary: "]", shifted: "}", keyCode: HidConstants.KEY_RIGHTBRACE),
         KeyLegend(primary: "\\", shifted: "|", keyCode: HidConstants.KEY_BACKSLASH)
@@ -75,11 +75,11 @@ public struct KeyLegends {
         KeyLegend(primary: "A", keyCode: HidConstants.KEY_A, isAlphabetic: true),
         KeyLegend(primary: "S", keyCode: HidConstants.KEY_S, isAlphabetic: true),
         KeyLegend(primary: "D", keyCode: HidConstants.KEY_D, isAlphabetic: true),
-        KeyLegend(primary: "F", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "G", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "H", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "J", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "K", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
+        KeyLegend(primary: "F", keyCode: HidConstants.KEY_F, isAlphabetic: true),
+        KeyLegend(primary: "G", keyCode: HidConstants.KEY_G, isAlphabetic: true),
+        KeyLegend(primary: "H", keyCode: HidConstants.KEY_H, isAlphabetic: true),
+        KeyLegend(primary: "J", keyCode: HidConstants.KEY_J, isAlphabetic: true),
+        KeyLegend(primary: "K", keyCode: HidConstants.KEY_K, isAlphabetic: true),
         KeyLegend(primary: "L", keyCode: HidConstants.KEY_L, isAlphabetic: true),
         KeyLegend(primary: ";", shifted: ":", keyCode: HidConstants.KEY_SEMICOLON),
         KeyLegend(primary: "'", shifted: "\"", keyCode: HidConstants.KEY_APOSTROPHE)
@@ -91,9 +91,9 @@ public struct KeyLegends {
         KeyLegend(primary: "X", keyCode: HidConstants.KEY_X, isAlphabetic: true),
         KeyLegend(primary: "C", keyCode: HidConstants.KEY_C, isAlphabetic: true),
         KeyLegend(primary: "V", keyCode: HidConstants.KEY_V, isAlphabetic: true),
-        KeyLegend(primary: "B", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "N", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
-        KeyLegend(primary: "M", keyCode: HidConstants.KEY_NONE, isAlphabetic: true),
+        KeyLegend(primary: "B", keyCode: HidConstants.KEY_B, isAlphabetic: true),
+        KeyLegend(primary: "N", keyCode: HidConstants.KEY_N, isAlphabetic: true),
+        KeyLegend(primary: "M", keyCode: HidConstants.KEY_M, isAlphabetic: true),
         KeyLegend(primary: ",", shifted: "<", keyCode: HidConstants.KEY_COMMA),
         KeyLegend(primary: ".", shifted: ">", keyCode: HidConstants.KEY_DOT),
         KeyLegend(primary: "/", shifted: "?", keyCode: HidConstants.KEY_SLASH)
