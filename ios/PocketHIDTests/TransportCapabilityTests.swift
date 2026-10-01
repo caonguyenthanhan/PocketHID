@@ -35,7 +35,7 @@ final class TransportCapabilityTests: XCTestCase {
         
         switch transport.status {
         case .unavailable(let reason):
-            XCTAssertTrue(reason.contains("Direct PC Bluetooth HID peripheral role is not available"))
+            XCTAssertTrue(reason.contains("Apple iOS does not expose Bluetooth HID Device peripheral APIs"))
         default:
             XCTFail("Default iOS status must be .unavailable under public baseline")
         }
