@@ -1,0 +1,59 @@
+name: CI Release Packaging
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Show Apple Build Environment
+      run: |
+        swift --version
+        xcodebuild -version
+
+    - name: Build iOS Package
+      working-directory: ios
+      run: xcodebuild -scheme PocketHID -destination 'generic/platform=iOS Simulator' build
+
+    - name: Run iOS Unit Tests
+      working-directory: ios
+      run: |
+        SIM_ID=$(xcrun simctl list devices available -j | jq -r '.devices[] | .[] | select(.name | contains("iPhone")) | .udid' | head -n 1)
+        echo "Using Simulator ID: $SIM_ID"
+        xcodebuild -scheme PocketHID -destination "platform=iOS Simulator,id=$SIM_ID" test
+
+    - name: Build iOS Archive (Unsigned)
+      working-directory: ios
+      run: |
+        xcodebuild -scheme PocketHID -destination 'generic/platform=iOS' archive -archivePath PocketHID.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+      
+    - name: Upload iOS Archive Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PocketHID-iOS-Archive-Unsigned
+        path: ios/PocketHID.xcarchive
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Build Android Debug APK
+      run: |
+        chmod +x ./gradlew
+        ./gradlew assembleDebug
+
+    - name: Upload Android Debug APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PocketHID-Android-Debug
+        path: app/build/outputs/apk/debug/app-debug.apk
