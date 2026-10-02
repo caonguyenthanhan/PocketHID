@@ -240,6 +240,7 @@ fun LandscapeDeckScreen(
                 if (resolved != selectedTopMode) {
                     selectedTopMode = resolved
                     dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.MODE_CHANGED)
+                    dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.MODE_CHANGED)
                 }
             },
             settings = settings,

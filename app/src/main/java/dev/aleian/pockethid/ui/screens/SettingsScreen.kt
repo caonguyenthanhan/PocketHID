@@ -87,6 +87,7 @@ fun SettingsScreen(
     var dragLock by remember(currentSettings) { mutableStateOf(currentSettings.dragLock) }
     var pasteDelay by remember(currentSettings) { mutableLongStateOf(currentSettings.pasteDelayMs) }
     var keyboardHaptics by remember(currentSettings) { mutableStateOf(currentSettings.keyboardHaptics) }
+    var hapticsEnabled by remember(currentSettings) { mutableStateOf(currentSettings.hapticsEnabled) }
     var soundEffectsEnabled by remember(currentSettings) { mutableStateOf(currentSettings.soundEffectsEnabled) }
     var keepAwake by remember(currentSettings) { mutableStateOf(currentSettings.keepAwakeTimeout) }
     var gpLeftDeadzone by remember(currentSettings) { mutableFloatStateOf(currentSettings.gamepadLeftDeadzone) }
@@ -379,6 +380,8 @@ fun SettingsScreen(
                 onPasteDelayChange = { pasteDelay = it },
                 keyboardHaptics = keyboardHaptics,
                 onKeyboardHapticsChange = { keyboardHaptics = it },
+                hapticsEnabled = hapticsEnabled,
+                onHapticsEnabledChange = { hapticsEnabled = it },
                 soundEffectsEnabled = soundEffectsEnabled,
                 onSoundEffectsEnabledChange = { soundEffectsEnabled = it },
                 language = appLanguage
@@ -462,6 +465,7 @@ fun SettingsScreen(
                             dragLock = dragLock,
                             pasteDelayMs = pasteDelay,
                             keyboardHaptics = keyboardHaptics,
+                            hapticsEnabled = hapticsEnabled,
                             soundEffectsEnabled = soundEffectsEnabled,
                             keepAwakeTimeout = keepAwake,
                             gamepadLeftDeadzone = gpLeftDeadzone,
@@ -521,6 +525,7 @@ fun SettingsScreen(
                         dragLock = true
                         pasteDelay = 15L
                         keyboardHaptics = true
+                        hapticsEnabled = true
                         soundEffectsEnabled = true
                         keepAwake = "10 Minutes"
                         appLanguage = AppLanguage.ENGLISH

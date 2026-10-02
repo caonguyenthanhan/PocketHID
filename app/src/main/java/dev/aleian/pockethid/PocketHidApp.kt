@@ -8,6 +8,7 @@ class PocketHidApp : Application() {
     override fun onCreate() {
         super.onCreate()
         SettingsRepository.init(this)
-        AudioFeedbackManager.init(this)
+        dev.aleian.pockethid.audio.AudioFeedbackManager.init(this)
+        dev.aleian.pockethid.haptic.HapticFeedbackManager.init(this)
     }
 }

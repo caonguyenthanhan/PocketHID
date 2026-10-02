@@ -82,8 +82,8 @@ fun PresenterScreen(
     var lastPointerY by remember { mutableStateOf(0f) }
 
     fun triggerHaptic() {
-        if (settings.keyboardHaptics) {
-            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        if (settings.hapticsEnabled) {
+            dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ACTION_ACCEPTED)
         }
     }
 

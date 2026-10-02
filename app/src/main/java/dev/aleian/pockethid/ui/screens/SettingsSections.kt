@@ -523,6 +523,8 @@ fun KeyboardSettingsSection(
     onPasteDelayChange: (Long) -> Unit,
     keyboardHaptics: Boolean,
     onKeyboardHapticsChange: (Boolean) -> Unit,
+    hapticsEnabled: Boolean,
+    onHapticsEnabledChange: (Boolean) -> Unit,
     soundEffectsEnabled: Boolean,
     onSoundEffectsEnabledChange: (Boolean) -> Unit,
     language: AppLanguage = AppLanguage.ENGLISH
@@ -597,6 +599,34 @@ fun KeyboardSettingsSection(
                 Switch(
                     checked = keyboardHaptics,
                     onCheckedChange = onKeyboardHapticsChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = TextPrimary,
+                        checkedTrackColor = PrimaryContainer
+                    )
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Phản hồi Haptic (Haptic Feedback)" else "Haptic Feedback",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = if (language == AppLanguage.VIETNAMESE) "Rung nhẹ khi thực hiện hành động (không áp dụng di chuột, cuộn)" else "Light haptic vibration on action (excluding mouse movement or scroll)",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+                Switch(
+                    checked = hapticsEnabled,
+                    onCheckedChange = onHapticsEnabledChange,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = TextPrimary,
                         checkedTrackColor = PrimaryContainer

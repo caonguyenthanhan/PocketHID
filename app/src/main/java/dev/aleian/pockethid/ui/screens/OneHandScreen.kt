@@ -125,8 +125,8 @@ fun OneHandScreen(
     fun triggerFeedback(text: String, isLightHaptic: Boolean = true) {
         feedbackText = text
         feedbackTime = System.currentTimeMillis()
-        if (isLightHaptic && settings.keyboardHaptics) {
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        if (isLightHaptic && settings.hapticsEnabled) {
+            dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ACTION_ACCEPTED)
         }
     }
 

@@ -156,6 +156,7 @@ fun KeyboardScreen(
         when (voiceState) {
             VoiceState.LISTENING -> {
                 dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_LISTENING_STARTED)
+                dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ACTION_ACCEPTED)
                 terminalStreamText = if (isVi) "Đang nghe..." else "Listening..."
             }
             VoiceState.PROCESSING -> {
@@ -163,6 +164,7 @@ fun KeyboardScreen(
             }
             VoiceState.RESULT -> {
                 dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_RESULT)
+                dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ACTION_ACCEPTED)
                 val text = voiceController.transcript.value
                 terminalStreamText = text
                 if (isConnected && transport != null) {
@@ -172,6 +174,7 @@ fun KeyboardScreen(
             }
             VoiceState.ERROR -> {
                 dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_ERROR)
+                dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ERROR)
                 terminalStreamText = if (!voicePlatform.checkAudioPermission()) {
                     if (isVi) "Thiếu quyền Microphone" else "Mic Permission Denied"
                 } else if (transcriptText.isEmpty()) {
@@ -183,6 +186,7 @@ fun KeyboardScreen(
             VoiceState.IDLE -> {
                 if (prevVoiceState == VoiceState.LISTENING || prevVoiceState == VoiceState.PROCESSING) {
                     dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.VOICE_LISTENING_STOPPED)
+                    dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ACTION_ACCEPTED)
                     terminalStreamText = "ready>"
                 } else if (prevVoiceState == VoiceState.ERROR) {
                     terminalStreamText = "ready>"

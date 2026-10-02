@@ -122,20 +122,24 @@ fun MainScreen(
                 is ConnectionState.Connected -> {
                     val name = current.device.name ?: current.device.address
                     dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.CONNECTED)
+                    dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.CONNECTED)
                     snackbarHostState.showSnackbar("Connected to $name. Ready to control.")
                 }
                 is ConnectionState.Error -> {
                     dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.ERROR)
+                    dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ERROR)
                     snackbarHostState.showSnackbar("Error: ${current.message}", duration = SnackbarDuration.Long)
                 }
                 is ConnectionState.Disconnected -> {
                     FocusLockController.reset()
                     if (prev is ConnectionState.Connected) {
                         dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.DISCONNECTED)
+                        dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.DISCONNECTED)
                         val name = (prev as ConnectionState.Connected).device.name ?: "Host"
                         snackbarHostState.showSnackbar("Disconnected from $name.")
                     } else if (prev is ConnectionState.Connecting) {
                         dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.ERROR)
+                        dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.ERROR)
                         snackbarHostState.showSnackbar("Could not connect. Please check host Bluetooth.")
                     }
                 }
@@ -415,6 +419,7 @@ fun MainScreen(
                     if (resolved != selectedTab) {
                         selectedTab = resolved
                         dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.MODE_CHANGED)
+                        dev.aleian.pockethid.haptic.HapticFeedbackManager.play(dev.aleian.pockethid.haptic.HapticEvent.MODE_CHANGED)
                     }
                     isDrawModesExpanded = false
                 }

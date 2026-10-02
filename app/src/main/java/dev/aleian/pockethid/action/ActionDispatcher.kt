@@ -4,6 +4,8 @@ import dev.aleian.pockethid.transport.InputTransport
 import kotlinx.coroutines.delay
 import dev.aleian.pockethid.audio.AudioFeedbackManager
 import dev.aleian.pockethid.audio.AudioEvent
+import dev.aleian.pockethid.haptic.HapticFeedbackManager
+import dev.aleian.pockethid.haptic.HapticEvent
 
 /**
  * Coordinates execution of [ActionExecutionPlan]s and [PocketAction]s onto an [InputTransport].
@@ -25,6 +27,7 @@ object ActionDispatcher {
         val success = execute(plan, transport)
         if (success && playFeedback) {
             AudioFeedbackManager.play(AudioEvent.ACTION_ACCEPTED)
+            HapticFeedbackManager.play(HapticEvent.ACTION_ACCEPTED)
         }
         return success
     }
