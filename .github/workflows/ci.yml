@@ -49,12 +49,12 @@ jobs:
 
     - name: Run Android Unit Tests
       run: |
+        sed -i '' '/org.gradle.java.home/d' gradle.properties || true
         chmod +x ./gradlew
         ./gradlew testDebugUnitTest
 
     - name: Build Android Debug APK
       run: |
-        sed -i '' '/org.gradle.java.home/d' gradle.properties || true
         ./gradlew assembleDebug
 
     - name: Upload Android Debug APK Artifact
