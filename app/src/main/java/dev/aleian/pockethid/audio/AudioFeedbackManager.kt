@@ -1,9 +1,14 @@
 package dev.aleian.pockethid.audio
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 object AudioFeedbackManager {
     private var controller: IAudioFeedbackController? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun init(context: Context) {
         if (controller == null) {
@@ -12,7 +17,9 @@ object AudioFeedbackManager {
     }
 
     fun play(event: AudioEvent) {
-        controller?.play(event)
+        scope.launch {
+            controller?.play(event)
+        }
     }
 
     // For tests

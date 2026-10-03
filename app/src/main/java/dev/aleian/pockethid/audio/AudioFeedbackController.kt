@@ -3,8 +3,7 @@ package dev.aleian.pockethid.audio
 import android.content.Context
 import android.media.AudioManager
 import dev.aleian.pockethid.model.SettingsRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+
 
 enum class AudioEvent {
     ACTION_ACCEPTED,

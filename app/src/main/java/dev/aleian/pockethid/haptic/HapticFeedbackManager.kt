@@ -1,9 +1,14 @@
 package dev.aleian.pockethid.haptic
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 object HapticFeedbackManager {
     private var controller: IHapticFeedbackController? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun init(context: Context) {
         if (controller == null) {
@@ -12,7 +17,9 @@ object HapticFeedbackManager {
     }
 
     fun play(event: HapticEvent) {
-        controller?.play(event)
+        scope.launch {
+            controller?.play(event)
+        }
     }
 
     // For tests

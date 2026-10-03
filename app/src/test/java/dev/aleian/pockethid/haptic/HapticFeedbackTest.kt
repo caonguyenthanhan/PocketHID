@@ -119,6 +119,7 @@ class HapticFeedbackTest {
             dev.aleian.pockethid.action.HostOs.WINDOWS, 
             playFeedback = true
         )
+        Thread.sleep(100)
         assertEquals(1, fakeVibrator.vibrateCount)
 
         // Continuous action with playFeedback = false should NOT play haptic
@@ -128,6 +129,7 @@ class HapticFeedbackTest {
             dev.aleian.pockethid.action.HostOs.WINDOWS, 
             playFeedback = false
         )
+        Thread.sleep(100)
         assertEquals(1, fakeVibrator.vibrateCount) // Count remains 1
     }
 }

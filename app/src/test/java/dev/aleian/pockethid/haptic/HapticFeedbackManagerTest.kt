@@ -25,6 +25,7 @@ class HapticFeedbackManagerTest {
         HapticFeedbackManager.play(HapticEvent.MODE_CHANGED)
         HapticFeedbackManager.play(HapticEvent.CONNECTED)
 
+        Thread.sleep(100)
         assertEquals(3, mockController.playedEvents.size)
         assertEquals(HapticEvent.ACTION_ACCEPTED, mockController.playedEvents[0])
         assertEquals(HapticEvent.MODE_CHANGED, mockController.playedEvents[1])

@@ -134,6 +134,7 @@ class AudioFeedbackTest {
             dev.aleian.pockethid.action.HostOs.WINDOWS, 
             playFeedback = true
         )
+        Thread.sleep(100)
         assertEquals(1, fakeAudioManager.playCount)
 
         // Continuous action with playFeedback = false should NOT play audio
@@ -143,6 +144,7 @@ class AudioFeedbackTest {
             dev.aleian.pockethid.action.HostOs.WINDOWS, 
             playFeedback = false
         )
+        Thread.sleep(100)
         assertEquals(1, fakeAudioManager.playCount) // Count remains 1
     }
 }
