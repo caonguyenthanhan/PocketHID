@@ -115,13 +115,49 @@ class TextInputResolverTest {
     }
 
     @Test
-    fun testResolveVietnameseUnicodeDropped() {
-        // Vietnamese characters don't have standard HID scancodes without OS layout context
-        // KeyMapper should gracefully drop them instead of sending corrupted strokes
+    fun testResolveVietnameseTelex() {
+        // Vietnamese characters should be converted to their Telex equivalents
+        // "Xin chào" -> "Xin chafo"
         val strokes = TextInputResolver.resolveText("Xin chào")
-        // 'X', 'i', 'n', ' ', 'c', 'h', 'o' are mapped (7 chars). 'à' is dropped.
-        assertEquals(7, strokes.size)
-        // Verify 'o' is the last one
+        
+        // 'X', 'i', 'n', ' ', 'c', 'h', 'a', 'f', 'o'
+        assertEquals(9, strokes.size)
+        
+        // 'X' (Shift+x)
+        assertEquals((HidConstants.KEY_A + ('x' - 'a')).toByte(), strokes[0].keyCode)
+        assertEquals(HidConstants.MOD_LEFT_SHIFT, strokes[0].modifiers)
+        
+        // ' ' (space)
+        assertEquals(HidConstants.KEY_SPACE, strokes[3].keyCode)
+        
+        // 'f' (from 'à')
+        assertEquals((HidConstants.KEY_A + ('f' - 'a')).toByte(), strokes[7].keyCode)
+        
+        // 'o'
+        assertEquals((HidConstants.KEY_A + ('o' - 'a')).toByte(), strokes[8].keyCode)
+    }
+
+    @Test
+    fun testBypassTelex() {
+        // When applyTelex is false, 'à' is dropped by KeyMapper
+        val strokes = TextInputResolver.resolveText("Xin chào", applyTelex = false)
+        assertEquals(7, strokes.size) // 'X', 'i', 'n', ' ', 'c', 'h', 'o'
         assertEquals((HidConstants.KEY_A + ('o' - 'a')).toByte(), strokes[6].keyCode)
+    }
+
+    @Test
+    fun testEmptyText() {
+        val strokes = TextInputResolver.resolveText("")
+        assertEquals(0, strokes.size)
+    }
+
+    @Test
+    fun testUnsupportedCharacters() {
+        // "Xin chào 😊" -> "Xin chafo " (the emoji is unsupported and should be dropped)
+        val strokes = TextInputResolver.resolveText("Xin chào 😊")
+        // "Xin chafo " -> 10 characters (including space before emoji)
+        assertEquals(10, strokes.size)
+        // Verify the last character is a space
+        assertEquals(HidConstants.KEY_SPACE, strokes[9].keyCode)
     }
 }

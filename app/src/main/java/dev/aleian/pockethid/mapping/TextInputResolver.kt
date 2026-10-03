@@ -12,9 +12,10 @@ object TextInputResolver {
      * Converts a string of text into a sequence of [HidKeyStroke]s.
      * Preserves shift states and punctuation.
      */
-    fun resolveText(text: String): List<HidKeyStroke> {
+    fun resolveText(text: String, applyTelex: Boolean = true): List<HidKeyStroke> {
         val list = mutableListOf<HidKeyStroke>()
-        for (char in text) {
+        val processedText = if (applyTelex) TelexConverter.convert(text) else text
+        for (char in processedText) {
             val stroke = KeyMapper.mapCharToStroke(char)
             if (stroke != null) {
                 list.add(stroke)
