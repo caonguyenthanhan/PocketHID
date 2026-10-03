@@ -45,6 +45,8 @@ class AndroidVoicePlatform(private val context: Context) : IVoicePlatform {
         val intent = Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, languageCode)
+            putExtra("android.speech.extra.LANGUAGE_PREFERENCE", languageCode)
+            putExtra("android.speech.extra.ONLY_RETURN_LANGUAGE_PREFERENCE", true)
             putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         }
         if (recognizer as? AndroidSpeechRecognizer != null) {

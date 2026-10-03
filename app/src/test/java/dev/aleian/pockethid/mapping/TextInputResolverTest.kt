@@ -113,4 +113,15 @@ class TextInputResolverTest {
         assertNotNull(tabStroke)
         assertEquals(HidConstants.KEY_TAB, tabStroke!!.keyCode)
     }
+
+    @Test
+    fun testResolveVietnameseUnicodeDropped() {
+        // Vietnamese characters don't have standard HID scancodes without OS layout context
+        // KeyMapper should gracefully drop them instead of sending corrupted strokes
+        val strokes = TextInputResolver.resolveText("Xin chào")
+        // 'X', 'i', 'n', ' ', 'c', 'h', 'o' are mapped (7 chars). 'à' is dropped.
+        assertEquals(7, strokes.size)
+        // Verify 'o' is the last one
+        assertEquals((HidConstants.KEY_A + ('o' - 'a')).toByte(), strokes[6].keyCode)
+    }
 }
