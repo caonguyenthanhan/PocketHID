@@ -124,6 +124,7 @@ fun KeyboardScreen(
     var terminalStreamText by remember { mutableStateOf("ready>") }
 
     var lastWarnTime by remember { mutableStateOf(0L) }
+    var lastAudioTime by remember { mutableStateOf(0L) }
 
     val voicePlatform = remember { AndroidVoicePlatform(context) }
     val voiceController = remember { VoiceInputController(voicePlatform) }
@@ -227,9 +228,14 @@ fun KeyboardScreen(
         return false
     }
 
-    fun triggerHaptic() {
+    fun triggerFeedback() {
         if (settings.keyboardHaptics) {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+        val now = System.currentTimeMillis()
+        if (now - lastAudioTime > 40) {
+            dev.aleian.pockethid.audio.AudioFeedbackManager.play(dev.aleian.pockethid.audio.AudioEvent.ACTION_ACCEPTED)
+            lastAudioTime = now
         }
     }
 
@@ -252,7 +258,7 @@ fun KeyboardScreen(
     fun sendKey(keyCode: Byte, extraModifier: Byte = 0) {
         if (!canSendInput()) return
         val totalMods = (getActiveModifiers().toInt() or extraModifier.toInt()).toByte()
-        triggerHaptic()
+        triggerFeedback()
         scope.launch {
             if (transport != null) {
                 ActionDispatcher.execute(ActionExecutionPlan.KeyStroke(keyCode, totalMods), transport)
@@ -263,7 +269,7 @@ fun KeyboardScreen(
 
     fun sendConsumerKey(usageCode: Int, label: String = "") {
         if (!canSendInput()) return
-        triggerHaptic()
+        triggerFeedback()
         lastSentCharInfo = label
         scope.launch {
             if (transport != null) {
@@ -273,7 +279,7 @@ fun KeyboardScreen(
     }
 
     fun cycleModifier(currentState: ModifierState): ModifierState {
-        triggerHaptic()
+        triggerFeedback()
         return when (currentState) {
             ModifierState.OFF -> ModifierState.STICKY
             ModifierState.STICKY -> ModifierState.LOCKED
@@ -697,7 +703,7 @@ fun KeyboardScreen(
                                     PocketImeInputView(ctx).apply {
                                         onCommitText = { text ->
                                             if (canSendInput() && transport != null) {
-                                                triggerHaptic()
+                                                triggerFeedback()
                                                 scope.launch {
                                                     TextInjector.injectText(text, transport, settings.pasteDelayMs)
                                                     
@@ -717,7 +723,7 @@ fun KeyboardScreen(
 
                                         onDeleteBack = { count ->
                                             if (canSendInput() && transport != null) {
-                                                triggerHaptic()
+                                                triggerFeedback()
                                                 scope.launch {
                                                     repeat(count) {
                                                         ActionDispatcher.execute(
@@ -734,7 +740,7 @@ fun KeyboardScreen(
 
                                         onDeleteForward = { count ->
                                             if (canSendInput() && transport != null) {
-                                                triggerHaptic()
+                                                triggerFeedback()
                                                 scope.launch {
                                                     repeat(count) {
                                                         ActionDispatcher.execute(
@@ -751,7 +757,7 @@ fun KeyboardScreen(
 
                                         onEditorAction = { actionCode ->
                                             if (canSendInput() && transport != null) {
-                                                triggerHaptic()
+                                                triggerFeedback()
                                                 scope.launch {
                                                     ActionDispatcher.execute(
                                                         ActionExecutionPlan.KeyStroke(HidConstants.KEY_ENTER),
@@ -767,7 +773,7 @@ fun KeyboardScreen(
                                             if (canSendInput() && transport != null) {
                                                 val stroke = TextInputResolver.resolveKeyEvent(event)
                                                 if (stroke != null) {
-                                                    triggerHaptic()
+                                                    triggerFeedback()
                                                     scope.launch {
                                                         ActionDispatcher.execute(
                                                             ActionExecutionPlan.KeyStroke(stroke.keyCode, stroke.modifiers),
