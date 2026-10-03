@@ -466,7 +466,7 @@ fun MouseTrackpadSettingsSection(
                             color = TextPrimary
                         )
                         Text(
-                            text = if (language == AppLanguage.VIETNAMESE) "Vuốt mép phải bàn rê để cuộn trang tốc độ cao" else "Drag right edge of trackpad for rapid scrolling",
+                            text = if (language == AppLanguage.VIETNAMESE) "Vuốt mép phải bàn rê để cuộn trang tốc độ cao" else "Drag the right edge of the trackpad to scroll rapidly.",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -558,7 +558,7 @@ fun KeyboardSettingsSection(
                             color = TextPrimary
                         )
                         Text(
-                            text = if (language == AppLanguage.VIETNAMESE) "Chống nghẽn buffer HID ring & nuốt ký tự host" else "Prevents HID ring buffer overflow & dropped chars",
+                            text = if (language == AppLanguage.VIETNAMESE) "Chống nghẽn buffer HID ring & nuốt ký tự host" else "Prevents overflow of the HID ring buffer and dropped characters.",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )

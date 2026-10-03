@@ -97,7 +97,7 @@ fun UnsupportedScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "PocketHID requires the Android Bluetooth HID Device profile (API 28+) enabled in the manufacturer's firmware. Some ROMs strip this profile.",
+                    text = "PocketHID requires the Android Bluetooth HID Device profile (API 28+). The manufacturer's firmware must have this profile enabled.",
                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                     color = TextMuted,
                     textAlign = TextAlign.Center
